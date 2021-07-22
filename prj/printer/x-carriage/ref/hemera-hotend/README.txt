@@ -1,0 +1,1 @@
+{E3D Hermes / Hemera CAD (V6&Volcano) %!s(bool=true)} by {FullMetalFox %!s(bool=true)} on Thingiverse: https://www.thingiverse.com/thing:4025946

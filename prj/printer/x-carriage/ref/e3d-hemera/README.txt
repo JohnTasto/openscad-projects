@@ -1,0 +1,1 @@
+{E3D Hemera Model  %!s(bool=true)} by {e3dsupport %!s(bool=true)} on Thingiverse: https://www.thingiverse.com/thing:4016291

@@ -1,0 +1,1 @@
+Customizable Linear Bushing / Bearing - LM8UU, LM8LUU, LM12UU, LM12LUU, LM16UU, ...  IGUS like by mightynozzle on Thingiverse: https://www.thingiverse.com/thing:2202854
