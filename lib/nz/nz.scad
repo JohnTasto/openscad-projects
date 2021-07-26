@@ -7,7 +7,7 @@
 
 $_debug = true;
 
-function tap(x, msg) = let(_ = [for (i = [1:1]) if ($_debug) echo(str(msg, ": ", x))]) x;
+function tap(x, msg="") = let(_ = [for (i = [1:1]) if ($_debug) echo(str(msg, ": ", x))]) x;
 
 
 /*********/
@@ -106,37 +106,52 @@ function projection_of_on(u, v) = ((u*v)/pow(norm(v), 2)) * v;
 /* matrices */
 /************/
 
-function unit(v) = let (n = norm(v)) n > 0 ? v / n : undef;
+function unit(v) =  v / norm(v);
 
 function transpose(m) = [for (j = [0 : len(m[0])-1]) [for (i = [0 : len(m)-1]) m[i][j]]];
 
 function identity(n) = [for (i = [0 : n-1]) [for (j = [0 : n-1]) i == j ? 1 : 0]];
 
-// same as the rotate module, but returns a matrix
-function rotation(a=0, v=[0,0,1]) = is_list(a)
-  ? [ [ cos(a.z), -sin(a.z),         0]
-    , [ sin(a.z),  cos(a.z),         0]
-    , [        0,         0,         1] ]
-  * [ [ cos(a.y),         0,  sin(a.y)]
-    , [        0,         1,         0]
-    , [-sin(a.y),         0,  cos(a.y)] ]
-  * [ [        1,         0,         0]
-    , [        0,  cos(a.x), -sin(a.x)]
-    , [        0,  sin(a.x),  cos(a.x)] ]
-  : rotation_from_to([0,0,1], v)
-  * [ [cos(a), -sin(a), 0]
-    , [sin(a),  cos(a), 0]
-    , [     0,       0, 1] ]
-  * rotation_from_to(v, [0,0,1]);
+function augment(n, m) = [for (i = [0 : n-1]) [for (j = [0 : n-1]) i < len(m) && j < len(m[i]) ? m[i][j] : i == j ? 1 : 0]];
 
-function rotation_from_to(u, v) = let (uu = unit(u), uv = unit(v), uw = unit(cross(uu, uv)))
+// same as the translate module, but returns a matrix
+function translate(v) = augment(4,
+  [ [1, 0, 0, v.x]
+  , [0, 1, 0, v.y]
+  , [0, 0, 1, v.z]
+  ]);
+
+function rotate_from_to(u, v) = let (uu = unit(u), uv = unit(v), uw = unit(cross(uu, uv)))
   uw*uw >= 0.99
-    ? transpose([uv, uw, cross(uw, uv)]) * [uu, uw, cross(uw, uu)]
+    ? augment(4, transpose([uv, uw, cross(uw, uv)]) * [uu, uw, cross(uw, uu)])
     : epsilon_equals(uu, uv)
-    ? identity(3)
+    ? identity(4)
     : undef;
 
-function rotation_to(v) = rotation_from_to([0,0,1], v);
+function rotate_to(v) = rotate_from_to([0,0,1], v);
+
+// same as the rotate module, but returns a matrix
+function rotate(a=0, v=[0,0,1]) = is_list(a)
+  ? augment(4,
+    [ [ cos(a.z), -sin(a.z),         0]
+    , [ sin(a.z),  cos(a.z),         0]
+    , [        0,         0,         1] ] *
+    [ [ cos(a.y),         0,  sin(a.y)]
+    , [        0,         1,         0]
+    , [-sin(a.y),         0,  cos(a.y)] ] *
+    [ [        1,         0,         0]
+    , [        0,  cos(a.x), -sin(a.x)]
+    , [        0,  sin(a.x),  cos(a.x)] ])
+  : rotate_from_to([0,0,1], v) *
+    augment(4,
+    [ [cos(a), -sin(a)]
+    , [sin(a),  cos(a)] ]) *
+    rotate_from_to(v, [0,0,1]);
+
+function scale(v) = augment(4,
+  [ [v.x,   0,   0]
+  , [  0, v.y,   0]
+  , [  0,   0, v.z] ]);
 
 function shear(zX=0, zY=0, yZ=0, yX=0, xY=0, xZ=0, z, y, x) = let
   ( zx = is_list(z) && len(z) == 2 && is_num(z[0]) && is_num(z[1]) ? z[0] : zX
@@ -146,10 +161,39 @@ function shear(zX=0, zY=0, yZ=0, yX=0, xY=0, xZ=0, z, y, x) = let
   , xy = is_list(x) && len(x) == 2 && is_num(x[0]) && is_num(x[1]) ? x[0] : xY
   , xz = is_list(x) && len(x) == 2 && is_num(x[0]) && is_num(x[1]) ? x[1] : xZ
   )
+  augment(4,
   [ [ 1, yx, zx]
   , [xy,  1, zy]
-  , [xz, yz,  1] ];
+  , [xz, yz,  1] ]);
 
+// function multmatrices(ms, i=0, prod=identity(4)) = i >= len(ms) ? prod : multmatrices(ms, i+1, prod*ms[i]);
+
+function multmatrices(ms, prod=identity(4), start=0, end=undef)
+  = start >= len(ms) || (is_num(end) && start >= end) ? prod
+  : multmatrices(ms, prod*ms[start], start+1, end);
+
+// // this doesn't actually allow memoization
+// // is memoization even compatible with tail recursion?
+// function _multmatrices(ms, prod, start, end)
+//   = start >= end ? prod
+//   : _multmatrices(ms, ms[end-1]*prod, start, end-1);
+// function multmatrices(ms, prod=identity(4), start=0, end=undef) = _multmatrices(ms, prod, start, is_num(end)?end:len(ms));
+
+// translate([-20,0,0])
+// rotate([0,30,0])
+// translate([0,0,5])
+// rotate([30,0,0])
+// box([5,5,5],[0,0,0]);
+
+// translate([0,0,0])
+// multmatrix(rotate([0,30,0]) * translate([0,0,5]) * rotate([30,0,0]))
+// box([5,5,5],[0,0,0]);
+
+// translate([20,0,0])
+// multmatrix(multmatrices([rotate([0,30,0]), translate([0,0,5]), rotate([30,0,0])]))
+// box([5,5,5],[0,0,0]);
+
+// echo(multmatrices(replicate(999999, identity(4))));
 
 /*******************/
 /* transformations */
@@ -195,7 +239,7 @@ module ring(a, v, n, start, end) {
 module rotate_about(tv, a, rv) translate(tv) rotate(a, rv) translate(-tv) children();
 
 // rotate from u to v
-module rotate_from_to(u, v) multmatrix(rotation_from_to(u, v)) children();
+module rotate_from_to(u, v) multmatrix(rotate_from_to(u, v)) children();
 
 // rotate from [0,0,1] to v
 module rotate_to(v) multmatrix(rotation_to(v)) children();
