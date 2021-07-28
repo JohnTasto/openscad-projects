@@ -242,7 +242,7 @@ module rotate_about(tv, a, rv) translate(tv) rotate(a, rv) translate(-tv) childr
 module rotate_from_to(u, v) multmatrix(rotate_from_to(u, v)) children();
 
 // rotate from [0,0,1] to v
-module rotate_to(v) multmatrix(rotation_to(v)) children();
+module rotate_to(v) multmatrix(rotate_to(v)) children();
 
 module shear(zX=0, zY=0, yZ=0, yX=0, xY=0, xZ=0, z, y, x) multmatrix(shear(zX, zY, yZ, yX, xY, xZ, z, y, x)) children();
 
