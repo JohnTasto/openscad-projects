@@ -2,27 +2,33 @@ use <nz/nz.scad>
 
 /*
 Features
-  - store small items securely
+  - secure storage for small parts
     - detents hold drawers closed and prevent pulling drawers out too far
-    - frame completely surrounds the drawer opening
-    - roof over drawers is flat; nothing for contents to get caught on
+    - frame completely surrounds the drawer opening when closed
+    - roof over drawers is flat - nothing for contents to get caught on
     - bins are slightly rounded at the bottom to aid removal of contents with one finger
+  - parametric
+    - two types of drawers that can be used interchangeably
+      - bin drawers hold rearrangeable bins
+      - fixed divider drawers have configurable walls built in
+    - adjustable line width, layer height, and slop to accommodate various printer setups
+    - several available drawer handle styles
+    - drawer grid size is configurable to match 25mm or 1" pegboard spacing, etc
   - modular
     - both bins and drawers can be rearranged as needs change
-    - any bin works in any drawar of the same height that is wide enough for it to fit
-      - a bin unit is the distance from the inside of one drawer to the inside of the next
+    - any bin works in any drawer of the same height that is wide enough for it to fit
+      - a bin unit is defined to be the distance from the inside of one drawer to the inside of the next
         - i.e., the width of the wall between drawers, including the drawer walls
       - possible drawer sizes (in bin units) include:
         - 2n + 1  =  1,  3,  5,  7,  9, 11, ...   requires very narrow hooks
         - 3n + 2  =  2,  5,  8, 11, 14, 17, ...   most fine grained grid resolution for general purpose
         - 4n + 3  =  3,  7, 11, 15, 19, 23, ...   wider drawers spread out hooks to use less material
-  - parametric
-    - adjustable line width, layer height, and slop to accommodate various printer setups
-    - several available drawer handle styles
-    - drawer grid size is configurable to match 25mm or 1" pegboard spacing, etc
-  - prints in spiralize/vase mode for easy high quality prints
+  - easy to print
+    - everything except front trim pieces are designed for spiralize/vase mode
+    - overhangs are all 45°
     - perimeter folds back on itself to fill gaps and increase strength
     - drawer sides are corrugated for added rigidity
+    - optional double walled drawer that still prints in vase mode
 
 
 TODO
@@ -117,18 +123,27 @@ stretch = 0;  // [0.00:0.05:5.00]
 Active_model = "small assembly - h>1";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // for side and trim
 Side = "top";  // [top, top left, left, bottom left, bottom, bottom right, right, top right]
-// in bin units
-Frame_unit_width = 2;  // [1:1:12]
-// in bin units
-Frame_unit_depth = 24;  // [2:1:60]
 // in frame units, used for frames, drawers, sides, and trim
 Frame_width = 4;  // [1:1:8]
 // in frame units, used for frames, drawers, bins, sides, and trim
 Frame_height = 2;  // [1:1:8]
+// fixed divider drawers are double walled and have configurable built in dividers, but bins will not fit
+Fixed_divider_drawer = false;
 // in bin units, used only for bins
 Bin_width = 2;  // [0:1:16]
 // in bin units, used only for bins
 Bin_depth = 2;  // [0:1:16]
+
+/* [Config] */
+// in bin units
+Frame_unit_width = 2;  // [1:1:12]
+// in bin units
+Frame_unit_depth = 24;  // [2:1:60]
+// fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the bin unit size as a side effect
+Double_wall_bin_drawers = false;
+// if enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip
+Add_lip_behind_face_of_double_wall_drawers = true;
+
 
 /* [Demo Settings] */
 Show_drawers_in_assembly_demos = false;
@@ -174,7 +189,7 @@ fTop = fLayerHN*3;
 
 fudge  = 0.01;
 fudge2 = 0.02;
-gap    = 0.03;  // by empirical testing, Cura needs at least a 0.03mm gap to prevent merging parts
+gap    = 0.04;  // by empirical testing, Cura needs a 0.03mm gap to prevent merging parts, plus leeway for curve approximations
 
 function bLayerRelFloor(h) = div(h, bLayerHN)*bLayerHN;
 function bLayerAbsFloor(h) = max(0, div(h-bLayerH0, bLayerHN)*bLayerHN + bLayerH0);
@@ -223,17 +238,26 @@ claspW = fWall2*2 + fSlopXY + lPH + lPC + lWS;
 claspD = fWall2*2 + fSlopXY + sPH;
 hookD = claspD + fSlopXY;
 
+dubWallBinDrawers = Double_wall_bin_drawers;
+dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
+
+divisions =
+[ [2, [1,1]]
+, [4, [[2, [1,1]], 4, [2, [1,1]]]]
+, [3, [1,1,1]]
+];
+
 bins = [Frame_unit_width, Frame_unit_depth];
 
-bGridXY = fWall2*2 + claspD + stretchX + fSlopXY*2 + dWall*2 + dSlopXY*2;
+bGridXY = fWall2*2 + claspD + stretchX + fSlopXY*2 + (dubWallBinDrawers?dWall2:dWall)*2 + dSlopXY*2;
 binXY = bGridXY - bSlopXY*2;
 binZ = bLayerAbsFloor(10);
 binR = binXY;
 
 echo(str("Bin grid spacing: ", bGridXY, " X&Y"));
 
-drawerX = bGridXY*bins.x + dWall*2;
-drawerY = bGridXY*bins.y + dWall*2;
+drawerX = bGridXY*bins.x + (!dubWallBinDrawers ? dWall*2 : dWall2*2);
+drawerY = bGridXY*bins.y + (!dubWallBinDrawers ? dWall*2 : (dubWallFaceLip ? dWall2*3 + gap : dWall2*2));
 drawerZ = dLayerRelCeil(binZ + bSlopZ) + dFloor;
 
 fGridX = bGridXY*(bins.x+1);
@@ -315,7 +339,7 @@ kIL = fLayerHN/2;       // keep inset length
 
 // bottom: bottom, holds drawer in
 bPH = dLayerH0 + dLayerHN*3/2;  // bottom peak height  (never as tall as it should be due to filament dragging)
-bSH = dLayerH0 + dLayerHN;      // bottom slot height
+bSH = dLayerH0 + dLayerHN;      // bottom division height
 bPL = fLayerHN*5/2;             // bottom peak length
 bFL = bPH*bRS;                  // bottom front length
 bBL = bPH*bRS;                  // bottom back length
@@ -334,7 +358,7 @@ peakW1 = peakWN - (fWall2 + gap)*stopLinesH0
        + dLayerAbsFloor(fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2)
        - (fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2);
 
-echo(str("peakW1=", peakW1, (peakW1<0 ? ". Drawer h=1 is not recommended." : ".")));
+echo(str("peakW1=", peakW1, (peakW1<0 ? ". Drawers heights of at least two units are recommended." : ".")));
 
 bulgeH = fBulgeIY*2 - dSlop45*2 - fBulgeWall*2
        - railWN - railD*2;
@@ -374,6 +398,7 @@ fSideZ = fLayerAbsCeil(fGridZ + dFaceD + tLip);
 
 drawerYFrameZAlign = fFloor + fGridZError + dFloat + fBulgeWall + drawerY/2;
 drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
+
 
 
 ///////////
@@ -512,14 +537,14 @@ function fillWall        (w, flushSides, wall2) = fillResidueShare(w, flushSides
 function fillGap         (w, flushSides, wall2) = fillResidueShare(w, flushSides, wall2) + gap;
 
 
-module sliceX(size, translate=[0,0]
+module sliceX(bounds, translate=[0,0]
 , flushT=false, flushB=false, flushL=false, flushR=false
 , centerX=false, centerY=false
 , cutT=false, cutB=false, cutMid=false, cutAlt=false
 , wall2=fWall2
 ) {
-  x = abs(size.x);
-  y = abs(size.y);
+  x = abs(bounds.x);
+  y = abs(bounds.y);
   flushSides = (flushL?1:0) + (flushR?1:0);
   flushEnds  = (flushT?1:0) + (flushB?1:0);
   flushEndOffset = (flushT?fudge/2:0) - (flushB?fudge/2:0);
@@ -527,8 +552,8 @@ module sliceX(size, translate=[0,0]
   fillGrid  = fillGrid (x, flushSides, wall2);
   fillWall  = fillWall (x, flushSides, wall2);
   fillGap   = fillGap  (x, flushSides, wall2);
-  tx = translate.x + (centerX ? -size.x/2 : 0) + (size.x<0 ? size.x : 0);
-  ty = translate.y + (centerY ? -size.y/2 : 0) + size.y/2;
+  tx = translate.x + (centerX ? -bounds.x/2 : 0) + (bounds.x<0 ? bounds.x : 0);
+  ty = translate.y + (centerY ? -bounds.y/2 : 0) + bounds.y/2;
   module antiChildren(dir) render() difference() {
     translate([flushL?-fudge:0, flushEndOffset]) rect([x+fudge*flushSides, y+fudge*flushEnds], [1,0]);  // bounds for gaps
     intersection() {
@@ -549,15 +574,15 @@ module sliceX(size, translate=[0,0]
           translate([itx, flushEndOffset]) rect([fillWall+fillGap*2, y+fudge*flushEnds], [1,0]);  // one wall + both gaps
           if (cutT) { antiChildren(-1)
             if ($children>0) children();
-            else translate(translate.x-tx, translate.y-ty) rect(size*4, [0,0]);
+            else translate(translate.x-tx, translate.y-ty) rect(bounds*4, [0,0]);
           }
           if (cutB) { antiChildren(1)
             if ($children>0) children();
-            else translate(translate.x-tx, translate.y-ty) rect(size*4, [0,0]);
+            else translate(translate.x-tx, translate.y-ty) rect(bounds*4, [0,0]);
           }
           if (cutAlt || is_num(cutAlt)) { antiChildren((mod(i+(is_num(cutAlt)?cutAlt:0), 2)*2-1))
             if ($children>0) children();
-            else translate(translate.x-tx, translate.y-ty) rect(size*4, [0,0]);
+            else translate(translate.x-tx, translate.y-ty) rect(bounds*4, [0,0]);
           }
         }
       }
@@ -568,90 +593,90 @@ module sliceX(size, translate=[0,0]
   }
 }
 
-module sliceY(size, translate=[0,0]
+module sliceY(bounds, translate=[0,0]
 , flushT=false, flushB=false, flushL=false, flushR=false
 , centerX=false, centerY=false
 , cutL=false, cutR=false, cutMid=false, cutAlt=false
 , wall2=fWall2
-) rotate(90) sliceX([size.y, -size.x], [translate.y, -translate.x]
+) rotate(90) sliceX([bounds.y, -bounds.x], [translate.y, -translate.x]
   , flushT=flushL, flushB=flushR, flushL=flushB, flushR=flushT
   , centerX=centerY, centerY=centerX
   , cutT=cutL, cutB=cutR, cutMid=cutMid, cutAlt=cutAlt
   , wall2=wall2
   ) if ($children>0) rotate(-90) children();
-    else translate(translate.y, -translate.x) rect([size.y*4, -size.x*4], [0,0]);
+    else translate(translate.y, -translate.x) rect([bounds.y*4, -bounds.x*4], [0,0]);
 
-module eSliceX(h, size, translate=[0,0]
+module eSliceX(h, bounds, translate=[0,0]
 , flushT=false, flushB=false, flushL=false, flushR=false
 , centerX=false, centerY=false, centerZ=false
 , cutT=false, cutB=false, cutMid=false, cutAlt=false
 , wall2=fWall2, layerH=fLayerHN, hFudge=0
 ) translate([0, 0, (centerZ?-h/2:0)+(h<0?h:0)])
     if ((cutAlt || is_num(cutAlt)) && (abs(h)>=layerH)) for (i=[0:abs(h)/layerH-1]) {
-      translate([0, 0, layerH*i]) extrude(layerH+(epsilon_equals(i, abs(h)/layerH-1)?abs(hFudge):0)) sliceX(size, translate
+      translate([0, 0, layerH*i]) extrude(layerH+(epsilon_equals(i, abs(h)/layerH-1)?abs(hFudge):0)) sliceX(bounds, translate
       , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
       , centerX=centerX, centerY=centerY
       , cutT=cutT, cutB=cutB, cutMid=cutMid, cutAlt=mod(i+(is_num(cutAlt)?cutAlt:0), 2)
       , wall2=wall2
       ) if ($children>0) children();
-        else translate(translate) rect(size*4, [0,0]);
+        else translate(translate) rect(bounds*4, [0,0]);
     }
-    // else extrude(abs(h)+fudge) sliceX(size, translate
-    else extrude(abs(h)+abs(hFudge)) sliceX(size, translate
+    // else extrude(abs(h)+fudge) sliceX(bounds, translate
+    else extrude(abs(h)+abs(hFudge)) sliceX(bounds, translate
       , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
       , centerX=centerX, centerY=centerY
       , cutT=cutT, cutB=cutB, cutMid=cutMid
       , wall2=wall2
-      ) translate(translate) rect(size*4, [0,0]);
+      ) translate(translate) rect(bounds*4, [0,0]);
 
-module eSliceY(h, size, translate=[0,0]
+module eSliceY(h, bounds, translate=[0,0]
 , flushT=false, flushB=false, flushL=false, flushR=false
 , centerX=false, centerY=false, centerZ=false
 , cutL=false, cutR=false, cutMid=false, cutAlt=false
 , wall2=fWall2, layerH=fLayerHN, hFudge=0
 ) translate([0, 0, (centerZ?-h/2:0)+(h<0?h:0)])
     if ((cutAlt || is_num(cutAlt)) && (abs(h)>=layerH)) for (i=[0:abs(h)/layerH-1]) {
-      translate([0, 0, layerH*i]) extrude(layerH+(epsilon_equals(i, abs(h)/layerH-1)?abs(hFudge):0)) sliceY(size, translate
+      translate([0, 0, layerH*i]) extrude(layerH+(epsilon_equals(i, abs(h)/layerH-1)?abs(hFudge):0)) sliceY(bounds, translate
       , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
       , centerX=centerX, centerY=centerY
       , cutL=cutL, cutR=cutR, cutMid=cutMid, cutAlt=mod(i+(is_num(cutAlt)?cutAlt:0), 2)
       , wall2=wall2
       ) if ($children>0) children();
-        else translate(translate) rect(size*4, [0,0]);
+        else translate(translate) rect(bounds*4, [0,0]);
     }
-    // else extrude(abs(h)+fudge) sliceY(size, translate
-    else extrude(abs(h)+abs(hFudge)) sliceY(size, translate
+    // else extrude(abs(h)+fudge) sliceY(bounds, translate
+    else extrude(abs(h)+abs(hFudge)) sliceY(bounds, translate
       , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
       , centerX=centerX, centerY=centerY
       , cutL=cutL, cutR=cutR, cutMid=cutMid
       , wall2=wall2
-      ) translate(translate) rect(size*4, [0,0]);
+      ) translate(translate) rect(bounds*4, [0,0]);
 
-module eSlice(h, size, translate=[0,0]
+module eSlice(h, bounds, translate=[0,0]
 , flushT=false, flushB=false, flushL=false, flushR=false
 , centerX=false, centerY=false, centerZ=false
 , cutT=false, cutB=false, cutL=false, cutR=false
 , cutMidX=false, cutMidY=false, cutAltX=false, cutAltY=false
 , wall2=fWall2, layerH=fLayerHN, hFudge=0
-) if (fillResidueShare(size.x, (flushL?1:0)+(flushR?1:0), wall2) < fillResidueShare(size.y, (flushT?1:0)+(flushB?1:0), wall2)) {
-    eSliceX(h, size, translate
+) if (fillResidueShare(bounds.x, (flushL?1:0)+(flushR?1:0), wall2) < fillResidueShare(bounds.y, (flushT?1:0)+(flushB?1:0), wall2)) {
+    eSliceX(h, bounds, translate
     , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
     , centerX=centerX, centerY=centerY, centerZ=centerZ
     , cutT=cutT, cutB=cutB, cutMid=cutMidX, cutAlt=cutAltX
     , layerH=layerH, hFudge=hFudge
     , wall2=wall2
     ) if ($children>0) children();
-      else translate(translate) rect(size*4, [0,0]);
+      else translate(translate) rect(bounds*4, [0,0]);
   }
   else {
-    eSliceY(h, size, translate
+    eSliceY(h, bounds, translate
     , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
     , centerX=centerX, centerY=centerY, centerZ=centerZ
     , cutL=cutL, cutR=cutR, cutMid=cutMidY, cutAlt=cutAltY
     , layerH=layerH, hFudge=hFudge
     , wall2=wall2
     ) if ($children>0) children();
-      else translate(translate) rect(size*4, [0,0]);
+      else translate(translate) rect(bounds*4, [0,0]);
   }
 
 
@@ -1022,12 +1047,6 @@ module cornerMask(r, offset, align) translate([(fGridX-offset.x)*align.x, (fGrid
   translate([-align.x*r, 0]) rect([(fGridX/2+offset.x+r)*align.x, (fGridY/2+offset.y)*align.y]);
 }
 
-// doesn't appear to be used anymore; I don't even remember what it was for
-// module cornerFloor(r, size, offset, align) intersection() {
-//   translate([(fGridX-offset.x-r)*align.x, (fGridY-offset.y-r)*align.y]) rect([size.x*align.x, size.y*align.y]);
-//   cornerMask(r, offset, align);
-// }
-
 
 // CORNERS
 
@@ -1392,14 +1411,14 @@ module brTrim(x=1, z=1, print=true) {
 ///////////
 
 
-module frame(x=1, z=1, hookInserts=false, drawer=false, drawFace=true, drawTop=true, drawFloor=true, drawSides=true) {
+module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFace=true, drawTop=true, drawFloor=true, drawSides=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  stopTop = /*fLayerRelFloor*/(drawerY + gap - dFloat - dTravel - fWall2*sqrt(2)/2 + dSlopXY);
+  stopTop = /*fLayerRelFloor*/(drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY);
   stopZIdeal = fGridY*(t-b+1) - claspW - hookLR - fWallGrid*2 - dSlopZ*2;
   stopZError = dLayerAbsFloor(stopZIdeal) - stopZIdeal;
   drawerZIdeal = fGridY*(t-b) + drawerZ;
@@ -1564,7 +1583,7 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, drawFace=true, drawTop=t
 
     if (drawer || is_num(drawer))
       translate([0, drawerZFrameYAlign+fGridY*b, drawerYFrameZAlign+(is_num(drawer)?drawer:0)])
-        rotate([-90,0,0]) drawer(x, h=t-b+1, drawFace=drawFace);
+        rotate([-90,0,0]) drawer(x, h=t-b+1, divisions=divisions, drawFace=drawFace);
 
     if (hookInserts) for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b, fFloor]) hookInsert();
   }
@@ -1577,22 +1596,25 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, drawFace=true, drawTop=t
 ////////////
 
 
-module drawer(x=1, h=1, drawFace=true) {
-  // h=1;
+module drawer(x=1, h=1, divisions=undef, drawFace=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(h) && h>=1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   w = fGridX*(r-l) + drawerX;
-  faceZ = dLayerAbsFloor(fGridY*h - dSlopZ);
+  divided = is_list(divisions);
+  dubWall = divided || dubWallBinDrawers;
   faceX = w - drawerX + fBulgeOX*2;
+  faceZ = dLayerAbsFloor(fGridY*h - dSlopZ);
+  bodyY = drawerY + (dubWall ? gap*2 : 0);
   bodyZ = dLayerAbsFloor(fGridY*(h-1) + drawerZ);
   stopZIdeal = fGridY*h - claspW - hookLR - fWallGrid*2 - dSlopZ*2;
   stopZ = dLayerAbsFloor(stopZIdeal);
   stopZError = stopZ - stopZIdeal;
   stopHIdeal = (fWall2 + gap)*(h==1 ? stopLinesH0 : stopLinesHN);
   stopH = stopHIdeal - stopZError;
-  lipTop = dLayerRelRound(bodyZ - stopZ + stopHIdeal - dSlopZ + dSlop45);
+  brace = !dubWall && fBulgeWall >= dWall2 + gap;
+  braceTop = dLayerRelRound(bodyZ - stopZ + stopHIdeal - dSlopZ + dSlop45);
   railW = railWN - (h==1 ? stopH : 0);
   peakW = peakWN - (h==1 ? stopH : 0);
   bulgeZ = fHornY - fWall2 - dSlopZ;
@@ -1601,6 +1623,92 @@ module drawer(x=1, h=1, drawFace=true) {
   module bump() hull() {
     box([-fudge, -dBL-dPL-dFL, railW], [1,1,0]);
     translate([0, -dBL, 0]) box([dPH, -dPL, peakW], [1,1,0]);
+  }
+
+  module dividerWall(length) rotate([90,0,90]) extrude(length, center=true) {
+    difference() {
+      union() {
+        rect([dWall2+binR*2, dFloor+binR*sqrt(2)/2], [0,1]);
+        rect([dWall2, bodyZ], [0,1]);
+      }
+      rect([dWall2+binR*2, dFloor*2-fudge2], [0,0]);
+      flipX() translate([dWall2/2+binR, dFloor+binR*sqrt(2)/2]) circle(r=binR);
+    }
+  }
+
+  headOrID = function (x) is_list(x) ? head(x) : x;
+
+  function positions(bounds, divisions) = let (total=sum(map(headOrID, divisions)))
+    [for (i=-1, p=0; i<len(divisions); i=i+1, p=p+headOrID(divisions[min(i, len(divisions)-1)])) bounds.y*p/total];
+
+  module dividerWalls(bounds, divisions, outer=true) {
+    if (outer) {
+      dividerWall(bounds.x);
+      translate([0, bounds.y, 0]) dividerWall(bounds.x);
+      flipX() translate([bounds.x/2, bounds.y/2, 0]) rotate(90) dividerWall(bounds.y);
+    }
+    if (is_list(divisions) && len(divisions)>=1) {
+      dividers = positions(bounds, divisions);
+      if (len(dividers)>=3) for (i=[1:len(dividers)-2]) translate([0, dividers[i], 0]) dividerWall(bounds.x);
+      for (i=[0:len(divisions)-1]) if (is_list(divisions[i]) && len(divisions[i])==2) {
+        subBounds = [dividers[i+1]-dividers[i], bounds.x];
+        translate([-subBounds.y/2, dividers[i]+subBounds.x/2, 0]) rotate(-90) dividerWalls(subBounds, divisions[i][1], outer=false);
+      }
+    }
+  }
+
+  module dividerSurrogates(bounds, divisions) {
+    if (is_list(divisions) && len(divisions)>=1) {
+      dividers = positions(bounds, divisions);
+      width = function (i) min((dividers[i+1]-dividers[i])/2, binR*(1-sqrt(2)/2)+dWall2/2);
+      if (len(dividers)>=3) for (i=[1:len(dividers)-2])
+        translate([0, dividers[i]-width(i-1)])
+          rect([bounds.x, width(i-1)+width(i)], [0,1]);
+      for (i=[0:len(divisions)-1]) if (is_list(divisions[i]) && len(divisions[i])==2) {
+        subBounds = [dividers[i+1]-dividers[i], bounds.x];
+        translate([-subBounds.y/2, dividers[i]+subBounds.x/2]) rotate(-90) dividerSurrogates(subBounds, divisions[i][1]);
+      }
+    }
+  }
+
+  module dividerCuts(bounds, divisions, outer=true) {
+    divisions = outer ? concat(dubWallFaceLip?[[0]]:[], divisions, [[0]]) : divisions;
+    if (is_list(divisions) && len(divisions)>=1) {
+      dividers = positions(bounds, divisions);
+      edge = dWall2 + gap;
+      width = function (i) min((dividers[i+1]-dividers[i])/2, binR*(1-sqrt(2)/2)+edge/2);
+      if (len(dividers)>=3) {
+        // side cuts
+        for (i=[1:len(dividers)-2]) for (j=[0:(bodyZ-dFloor)/dLayerHN-1])
+          translate([(bounds.x/2-edge/2)*(mod(j, 2)==0?1:-1), dividers[i], dFloor+dLayerHN*j])
+            box([gap, dWall2+gap, dLayerHN+fudge], [0,0,1]);
+        // angle cuts
+        translate([0, 0, dFloor-fudge*2]) extrude(bodyZ-dFloor+fudge*3) difference() {
+          for (i=[1:len(dividers)-2]) flipX() translate([bounds.x/2-edge/2, dividers[i]]) {
+            translate([0, -edge/2]) tull([-width(i-1)+edge/2, -width(i-1)+edge/2]) circle(d=gap, $fn=8);
+            translate([0,  edge/2]) tull([-width(i  )+edge/2,  width(i  )-edge/2]) circle(d=gap, $fn=8);
+          }
+          for (i=[0:len(divisions)-1]) if (is_list(divisions[i]) && len(divisions[i])==2) {
+            subBounds = [dividers[i+1]-dividers[i], bounds.x];
+            translate([-subBounds.y/2, dividers[i]+subBounds.x/2]) rotate(-90) dividerSurrogates(subBounds, divisions[i][1]);
+          }
+        }
+      }
+      for (i=[0:len(divisions)-1]) {
+        division = dividers[i+1] - dividers[i];
+        subBounds = [division, bounds.x];
+        // mid cuts
+        if (division<bounds.x && division<binR*(2-sqrt(2))+edge && division>=edge)
+          translate([0, 0, dFloor-fudge*2]) extrude(bodyZ-dFloor+fudge*3) difference() {
+            hull() flipX() translate([bounds.x/2-division/2, dividers[i]+division/2]) rotate(-90) teardrop_2d(d=gap, $fn=8);
+            if (is_list(divisions[i]) && len(divisions[i])==2)
+              translate([-subBounds.y/2, dividers[i]+subBounds.x/2]) rotate(-90) dividerSurrogates(subBounds, divisions[i][1]);
+          }
+        // recurse
+        if (is_list(divisions[i]) && len(divisions[i])==2)
+          translate([-subBounds.y/2, dividers[i]+subBounds.x/2, 0]) rotate(-90) dividerCuts(subBounds, divisions[i][1], outer=false);
+      }
+    }
   }
 
   module handleProfile(r, trunc) {
@@ -1644,79 +1752,114 @@ module drawer(x=1, h=1, drawFace=true) {
     }
   }
 
-  if (l<=r && h>=1) translate([fGridX*(r+l)/2, 0, 0]) {
+  if (l<=r && h>=1) translate([fGridX*(r+l)/2, dubWall?-gap:0, 0]) {
     difference() {
       union() {
-        box([w, drawerY, bodyZ], [0,0,1]);
+        box([w, bodyY, bodyZ], [0,0,1]);
         // bulges
         translate([0, 0, bulgeZ]) {
           innerBulge = fBulgeIY*2 - dSlop45*2 - fBulgeWall*2;
           for (i=[1:h]) translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
-            box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,0,0]);
-            translate([0, fBulgeWall/2, 0]) box([w+fBulgeWall*2, drawerY+fBulgeWall, innerBulge-(i==h?stopH:0)], [0,0,0]);
+            box([w, bodyY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,0,0]);
+            translate([0, fBulgeWall/2, 0]) box([w+fBulgeWall*2, bodyY+fBulgeWall, innerBulge-(i==h?stopH:0)], [0,0,0]);
           }
           translate([0, 0, -innerBulge/2]) {
-            box([w, drawerY/2+fBulgeWall/2, innerBulge/2-bulgeZ], [0,1,1]);
+            box([w, bodyY/2+fBulgeWall/2, innerBulge/2-bulgeZ], [0,1,1]);
             hull() {
-              box([w, drawerY/2+fBulgeWall/2, innerBulge/2-bulgeZ+fLayerH0], [0,1,1]);
-              box([w, drawerY/2+fBulgeWall, innerBulge/2-bulgeZ+fLayerH0+fBulgeWall/2], [0,1,1]);
+              box([w, bodyY/2+fBulgeWall/2, innerBulge/2-bulgeZ+fLayerH0], [0,1,1]);
+              box([w, bodyY/2+fBulgeWall, innerBulge/2-bulgeZ+fLayerH0+fBulgeWall/2], [0,1,1]);
             }
           }
           translate([0, 0, -(h==1?stopH/2:0)]) hull() {
-            translate([0, fBulgeWall/2, -fBulgeWall/2]) box([w, drawerY+fBulgeWall, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,0,0]);
-            translate([0, fBulgeWall/2, 0]) box([w+fBulgeWall*2, drawerY+fBulgeWall, innerBulge-(h==1?stopH:0)], [0,0,0]);
+            translate([0, fBulgeWall/2, -fBulgeWall/2]) box([w, bodyY+fBulgeWall, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,0,0]);
+            translate([0, fBulgeWall/2, 0]) box([w+fBulgeWall*2, bodyY+fBulgeWall, innerBulge-(h==1?stopH:0)], [0,0,0]);
           }
         }
         // stops
-        translate([0, drawerY/2+fBulgeWall, stopZ])
-          extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45) polygon(
-          [ [ w/2+fBulgeWall*(1-sqrt(2)), -fBulgeWall*sqrt(2)-fWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall            ,                    -fWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall            ,                     0               ]
-          , [-w/2-fBulgeWall            ,                     0               ]
-          , [-w/2-fBulgeWall            ,                    -fWall2*sqrt(2)/2]
-          , [-w/2-fBulgeWall*(1-sqrt(2)), -fBulgeWall*sqrt(2)-fWall2*sqrt(2)/2]
+        translate([0, bodyY/2+fBulgeWall, stopZ])
+          extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=2) polygon(
+          [ [ w/2+fBulgeWall*(1-sqrt(2))                                   , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+          , [ w/2+fBulgeWall                                               ,                    -dWall2*sqrt(2)/2]
+          , [ w/2+fBulgeWall                                               ,                                    0]
+          , [ w/2+fBulgeWall-(!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+          , [ w/2+fBulgeWall-(!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),         !brace?-fBulgeWall*sqrt(2):0]
+          , [-w/2-fBulgeWall+(!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),         !brace?-fBulgeWall*sqrt(2):0]
+          , [-w/2-fBulgeWall+(!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+          , [-w/2-fBulgeWall                                               ,                                    0]
+          , [-w/2-fBulgeWall                                               ,                    -dWall2*sqrt(2)/2]
+          , [-w/2-fBulgeWall*(1-sqrt(2))                                   , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
           ]);
-        // back lip block
-        translate([0, drawerY/2-dWall2, bodyZ]) box([w, fBulgeWall+dWall2, stopZ-bodyZ-fudge], [0,1,1]);
+        // back brace block
+        if (brace) translate([0, drawerY/2-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
       }
-      // back lip cut
-      translate([0, drawerY/2, bodyZ-lipTop]) {
+      // back brace cut
+      if (brace) translate([0, drawerY/2, bodyZ-braceTop]) {
         rL = [w, fBulgeWall];
         difference() {
           eSliceX(-rL.y, rL+[0, fudge], flushL=true, flushR=true, centerX=true, wall2=dWall2);
           rotate([45,0,0]) box([w, -fBulgeWall*sqrt(2), -fBulgeWall*sqrt(2)], [0,1,1]);
         }
-        eSliceX(lipTop, rL-[dWall2*2, dWall2], centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
-        eSliceY(lipTop, [rL.x-dWall2*2, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
+        eSliceX(braceTop, rL-[dWall2*2, dWall2], centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
+        eSliceY(braceTop, [rL.x-dWall2*2, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
       }
+      // cavity
+      if (dubWall) translate([0, drawerY/2+gap-dWall2, dFloor]) {
+        if (divided) translate([0, fudge, 0])
+          box([w-dWall2*2+fudge2, -drawerY+dWall2+(dubWallFaceLip?dWall2:-gap)-fudge2, bodyZ], [0,1,1]);
+        box([w-dWall2*2, -drawerY+dWall2-gap-fudge, bodyZ], [0,1,1]);
+      }
+      // front wall cut
+      if (dubWall && !$preview) translate([0, drawerY/2+gap-dWall2-fudge, dFloor]) for (i=[0:(bodyZ-dFloor)/dLayerHN-1])
+        translate([(w-dWall2*2-gap)*(mod(i, 2)==0?1:-1)/2, 0, i*dLayerHN]) box([gap, dWall2+fBulgeWall+fudge2, dLayerHN+fudge], [0,1,1]);
       // rail
       flipX() translate([w/2+fBulgeWall, fBulgeWall/2, railZ]) hull() {
-        box([fudge, drawerY+fBulgeWall+fudge2, railW+railD*2], [1,0,0]);
-        box([-railD, drawerY+fBulgeWall+fudge2, railW], [1,0,0]);
+        box([fudge, bodyY+fBulgeWall+fudge2, railW+railD*2], [1,0,0]);
+        box([-railD, bodyY+fBulgeWall+fudge2, railW], [1,0,0]);
       }
-      // bottom slot
+      // bottom division
       if (bPH>0) for (i=[l:r]) translate([fGridX*i-fGridX*(r+l)/2, dFloat, 0])
         flipX() translate([fSideIX-fSlopXY-claspW-hookTB-dSlopXY, 0, 0]) hull() {
-          translate([0, -drawerY/2+dTravel+bIL+bFL+bPL+bBL*(bSH/bPH)-gap, 0]) {
-            box([bW+dSlopXY*2, -drawerY, -fudge]);
-            translate([0, -bBL*(bSH/bPH), 0]) box([bW+dSlopXY*2, -drawerY, bSH]);
+          translate([0, -drawerY/2+dTravel+bIL+bFL+bPL+bBL*(bSH/bPH)-(dubWall?0:gap), 0]) {
+            box([bW+dSlopXY*2, -bodyY, -fudge]);
+            translate([0, -bBL*(bSH/bPH), 0]) box([bW+dSlopXY*2, -bodyY, bSH]);
           }
         }
     }
     // bumps
-    flipX() translate([w/2+fBulgeWall-railD, 0, railZ]) {
+    flipX() translate([w/2+fBulgeWall-railD, dubWall?gap:0, railZ]) {
       translate([0, drawerY/2+fBulgeWall, 0]) bump();
       translate([0, -drawerY/2+dFL+dPL+dBL+dInset, 0]) bump();
     }
+    // dividers
+    if (divided) translate([0, -drawerY/2-dWall2/2+(dubWallFaceLip?dWall2+gap:0), 0]) {
+      bounds = [w-dWall2, drawerY+gap-(dubWallFaceLip?dWall2+gap:0)];
+      if ($preview) render() intersection() {
+        dividerWalls(bounds, divisions);
+        translate([0, dubWallFaceLip?-dWall2/2:0, 0]) box([bounds.x, bounds.y+(dubWallFaceLip?dWall2/2:0), bodyZ], [0,1,1]);
+      }
+      else difference() {
+        intersection() {
+          dividerWalls(bounds, divisions);
+          translate([0, dubWallFaceLip?-dWall2/2:0, 0]) box([bounds.x, bounds.y+(dubWallFaceLip?dWall2/2:0), bodyZ], [0,1,1]);
+        }
+        dividerCuts(bounds, divisions);
+      }
+    }
+    // extra lip (bin drawers)
+    if (!divided && dubWallBinDrawers && dubWallFaceLip) difference() {
+      translate([0, -drawerY/2+gap, dFloor-fudge]) box([w-dWall2, dWall2, bodyZ-dFloor+fudge], [0,1,1]);
+      if (!$preview) translate([0, -drawerY/2+gap-fudge, dFloor]) for (i=[0:(bodyZ-dFloor)/dLayerHN-1])
+        translate([(w-dWall2*2-gap)*(mod(i, 2)==0?1:-1)/2, 0, i*dLayerHN]) box([gap, dWall2+fudge2, dLayerHN+fudge], [0,1,1]);
+    }
     // face
-    if (drawFace) translate([0, -drawerY/2-gap-dWall2, 0]) {
-      box([dWall2, dWall2+gap+fudge, bodyZ], [0,1,1]);
+    // drawFace=false;
+    if (drawFace) translate([0, -drawerY/2-(dubWall?0:gap)-dWall2, 0]) {
+      if (!dubWall) box([dWall2, dWall2+gap+fudge, bodyZ], [0,1,1]);
       box([faceX, dWall2, faceZ], [0,1,1]);
     }
     // handle
     if (drawFace && handleReach>0) {
-      // naming things is hard, so h & r shaddow outer scope (r means right above, but radius here)
+      // h & r shaddow outer scope (above, r means right, but here, it means radius) (naming stuff is hard!)
       h = dLayerAbsFloor(handleLip/2 + handleLip*sqrt(2)/2 - dWall2/2 + dLayerHN/2);
       r = (h*2 + dWall2 - dLayerHN)/(2 + sqrt(2)*2);  // derived by removing `dLayerAbsFloor` from above and solving for `handleLip`
       trunc = r*sqrt(2) - dWall2/2 + dLayerHN/2;
@@ -1725,7 +1868,7 @@ module drawer(x=1, h=1, drawFace=true) {
       step = 360/$fn;
       layers = dLayerRelFloor(r + trunc - dFloor) / dLayerHN;
       difference() {
-        translate([0, -drawerY/2-gap-dWall2, 0]) {
+        translate([0, -drawerY/2-(dubWall?0:gap)-dWall2, 0]) {
           difference() {
             handleSweep(r, a, b, step) handleOuter(r, trunc);
             translate([0, dWall2, -fudge]) {
@@ -1738,7 +1881,7 @@ module drawer(x=1, h=1, drawFace=true) {
             }
             difference() {
               handleSweep(r, a, b, step) handleCut(r, trunc);
-              translate([0, dWall2, dFloor]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
+              if (!$preview) translate([0, dWall2, dFloor]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
                 box([(a+r+fudge)*(mod(i, 2)==0?1:-1), -gap-dWall2*2, dLayerHN+fudge]);
             }
           }
@@ -1754,7 +1897,7 @@ module drawer(x=1, h=1, drawFace=true) {
             translate([0, dWall2]) rect([a*2+fudge2, b], [0,1]);
           }
         }
-        translate([0, -drawerY/2-gap, dFloor]) for (i=[0:layers-1]) translate([0, 0, i*dLayerHN]) {
+        if (!$preview) translate([0, -drawerY/2-(dubWall?0:gap), dFloor]) for (i=[0:layers-1]) translate([0, 0, i*dLayerHN]) {
           dir = mod(i, 2)==0 ? 1 : -1;
           box([(a+r+fudge)*dir*-1, -gap-dWall2, dLayerHN+fudge]);
           box([(a-dWall2/2)*dir, -gap-dWall2, dLayerHN+fudge]);
@@ -2148,15 +2291,15 @@ module demoFrameLarge2(drawers=true, trim=true) {
   }
 }
 
-module demoDrawerBumpAlignment(x=1, h=1, drawer=dTravel)
+module demoDrawerBumpAlignment(x=1, h=1, drawer=dTravel, divisions=undef)
   rotate([90,0,0]) translate([0, -drawerZFrameYAlign, -drawerYFrameZAlign-drawer]) {
-    frame(x, [0, h-1], drawer=drawer, drawFace=false, drawFloor=false, drawSides=false);
+    frame(x, [0, h-1], drawer=drawer, divisions=divisions, drawFace=true, drawFloor=false, drawSides=false);
     frame(x, [-1, -h], drawTop=false, drawFloor=false, drawSides=false);
   }
 
-module demoDrawerZAlignment(x=1, h=1)
+module demoDrawerZAlignment(x=1, h=1, divisions=undef)
   rotate([90,0,0]) translate([0, -drawerZFrameYAlign, -drawerYFrameZAlign])
-    frame(x, [0, h-1], drawer=true, drawFace=false, drawFloor=false);
+    frame(x, [0, h-1], drawer=true, divisions=divisions, drawFace=false, drawFloor=false);
 
 
 
@@ -2183,7 +2326,7 @@ if (Active_model=="bump alignment - drawer open") demoDrawerBumpAlignment(x=Fram
 if (Active_model=="z alignment") demoDrawerZAlignment(x=Frame_width, h=Frame_height);
 
 if (Active_model=="frame") frame(x=Frame_width, z=Frame_height);
-if (Active_model=="drawer") drawer(x=Frame_width, h=Frame_height);
+if (Active_model=="drawer") drawer(x=Frame_width, h=Frame_height, divisions=Fixed_divider_drawer?divisions:undef);
 if (Active_model=="bin") bin(x=Bin_width, y=Bin_depth, h=Frame_height);
 if (Active_model=="side") {
   if (Side==   "top"      )  tSide(x=Frame_width);
@@ -2236,7 +2379,7 @@ translate([0, 0, -1]) {
 // Side = "top";  // [top, top left, left, bottom left, bottom, bottom right, right, top right]
 
 
-// color([.5,.5,.5,.125]) slice(dLayerH0, dLayerHN, minH=0, maxH=fGridY*3-dSlopZ, size=[25, 80, 0.01]);
+// color([.5,.5,.5,.125]) slice(dLayerH0, dLayerHN, minH=0, maxH=fGridY*3-dSlopZ, bounds=[25, 80, 0.01]);
 
 // box([212, 1, 1], [0,0,0]);
 
