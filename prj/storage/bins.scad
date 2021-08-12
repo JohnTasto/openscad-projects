@@ -43,7 +43,7 @@ General
       [x] adjust back/floor fill
       [x] adjust front corner fills
       [x] option to fill behind hooks
-      [ ] calculate `stretchX` from desired `fGridX`
+      [x] calculate `stretchX` from desired `fGridX`
     [-] y
       [ ] calculate `binZ` from desired `fGridY`
   [x] instead of t/b/f/b/l/r, make everything instead take x/y/z/h
@@ -114,44 +114,67 @@ Bonus
 
 peak = 0;  // [0.00:0.05:1.00]
 slop = 0;  // [0.00:0.05:1.00]
-stretch = 0;  // [0.00:0.05:5.00]
 // peak = 0.32;  // [0.00:0.05:1.00]
 // slop = 0.11;  // [0.00:0.05:1.00]
-// stretch = 0.26;  // [0.00:0.05:5.00]
 
 /* [Main] */
 Active_model = "small assembly - h>1";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
-// for side and trim
+// Active_model = "bump alignment - drawer shut";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
+// Active_model = "bump alignment - drawer open";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
+// Active_model = "z alignment";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
+// specify which side ifif side or trim is selected above
 Side = "top";  // [top, top left, left, bottom left, bottom, bottom right, right, top right]
-// in frame units, used for frames, drawers, sides, and trim
-Frame_width = 4;  // [1:1:8]
-// in frame units, used for frames, drawers, bins, sides, and trim
-Frame_height = 2;  // [1:1:8]
 // fixed divider drawers are double walled and have configurable built in dividers, but bins will not fit
 Fixed_divider_drawer = false;
-// in bin units, used only for bins
-Bin_width = 2;  // [0:1:16]
-// in bin units, used only for bins
-Bin_depth = 2;  // [0:1:16]
+// in frame units
+Frame_drawer_side_and_trim_width = 3;  // [1:1:8]
+// in frame units
+Frame_drawer_side_and_trim_height = 2;  // [1:1:8]
+// in bin units
+Bin_width = 2;  // [1:1:16]
+// in bin units
+Bin_depth = 2;  // [1:1:16]
+// in frame units
+Bin_height = 2;  // [1:1:8]
 
-/* [Config] */
-// in bin units
-Frame_unit_width = 2;  // [1:1:12]
-// in bin units
-Frame_unit_depth = 24;  // [2:1:60]
-// fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the bin unit size as a side effect
-Double_wall_bin_drawers = false;
-// if enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip
+/* [Grid Spacing] */
+// The number of bin units that fit a drawer one unit wide is calculated to minimize horizontal frame stretch.
+Frame_unit_width_in_mm = 16.65;  // [10.00:0.05:50.00]
+// Overrides above setting if non-zero. Eliminates horizontal frame stretch, but unlikely to align to existing grid (e.g., pegboard).
+Frame_unit_width_in_bin_units = 2;  // [0:1:12]
+// Enable if using bin drawers and specifying frame unit width in mm, and disable if using only fixed divider drawers. It widens the frame sides to give bins a snug fit in their drawers, but wastes horizontal space and reduces vertical space for drawer side rails, which may necessitate increasing the frame unit height. This setting has no effect when specifying frame unit width in bin units.
+Horizontal_frame_stretch = true;
+// A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
+Frame_depth_in_bin_units = 12;  // [2:1:60]
+// Must leave adequate room for side bulges
+Frame_unit_height_in_mm = 15;  // [10.00:0.05:50.00]
+// Fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the bin unit size as a side effect.
+Double_bin_drawer_walls = false;
+// If enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
 Add_lip_behind_face_of_double_wall_drawers = true;
 
-
-/* [Demo Settings] */
+/* [Demos] */
 Show_drawers_in_assembly_demos = false;
 Show_trim_in_assembly_demos = false;
-
+// Improve preview performance by removing all the thin alternating cuts
+Simple_preview = true;
 
 
 /* [Hidden] */
+
+Frame_width = Frame_drawer_side_and_trim_width;
+Frame_height = Frame_drawer_side_and_trim_height;
+
+fWmm = Frame_unit_width_in_mm;
+fWbu = Frame_unit_width_in_bin_units;
+fDbu = Frame_depth_in_bin_units;
+fHmm = Frame_unit_height_in_mm;
+
+dubWallBinDrawers = Double_bin_drawer_walls;
+dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
+
+drawCuts = !$preview || !Simple_preview;
+
 
 $fn = 24;
 
@@ -159,18 +182,18 @@ $fn = 24;
 // d - drawer
 // f - frame
 
-bWall = 0.6;
+bWall = 0.4;
 bWall2 = bWall*2;
-bLayerH0 = 0.44;
-bLayerHN = 0.28;
+bLayerH0 = 0.3;
+bLayerHN = 0.2;
 bSlopXY = 0.15;
 bSlopZ = bLayerHN;
 bFloor = bLayerH0 + bLayerHN*3;
 
-dWall = 0.6;
+dWall = 0.4;
 dWall2 = dWall*2;
-dLayerH0 = 0.44;
-dLayerHN = 0.28;
+dLayerH0 = 0.3;
+dLayerHN = 0.2;
 dSlopXY = 0.25;
 dSlopZ = dLayerHN + slop;
 dSlop45 = max(0, dSlopZ - dSlopXY);
@@ -229,8 +252,6 @@ sRL = fLayerRelCeil(sPH*6);    // ramp length
 sFI = 0;                       // front inset length
 sBI = 0;                       // back inset length
 
-stretchX = stretch;
-fillStretch = true;
 
 hookLR = 1.25;
 hookTB = 2.5;
@@ -238,39 +259,22 @@ claspW = fWall2*2 + fSlopXY + lPH + lPC + lWS;
 claspD = fWall2*2 + fSlopXY + sPH;
 hookD = claspD + fSlopXY;
 
-dubWallBinDrawers = Double_wall_bin_drawers;
-dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
 
-divisions =
-[ [2, [1,1]]
-, [4, [[2, [1,1]], 4, [2, [1,1]]]]
-, [3, [1,1,1]]
-];
+fGridY = fHmm;
+drawerZ = fGridY - fWall2 - hookD - dSlopZ*2;
+binZ = bLayerAbsFloor(drawerZ - dFloor - bSlopZ);
 
-bins = [Frame_unit_width, Frame_unit_depth];
+dSides = dubWallBinDrawers ? dWall2*2 : dWall*2;
+bMinGridXY = fWall2*2 + claspD + fSlopXY*2 + dSides + dSlopXY*2;
 
-bGridXY = fWall2*2 + claspD + stretchX + fSlopXY*2 + (dubWallBinDrawers?dWall2:dWall)*2 + dSlopXY*2;
+binsX = fWbu>0 ? fWbu : floor(fWmm/bMinGridXY) - 1;
+bGridXY = fWbu>0 ? bMinGridXY : fWmm/(binsX+1);
 binXY = bGridXY - bSlopXY*2;
-binZ = bLayerAbsFloor(10);
-binR = binXY;
+drawerX = fWbu>0 ? bGridXY*binsX + dSides : bGridXY*binsX + dSides + (Horizontal_frame_stretch ? 0 : bGridXY - bMinGridXY);
+fGridX = fWbu>0 ? bGridXY*(binsX+1) : fWmm;
+stretchX = fWbu>0 ? 0 : Horizontal_frame_stretch ? bGridXY - bMinGridXY : 0;
 
-echo(str("Bin grid spacing: ", bGridXY, " X&Y"));
-
-drawerX = bGridXY*bins.x + (!dubWallBinDrawers ? dWall*2 : dWall2*2);
-drawerY = bGridXY*bins.y + (!dubWallBinDrawers ? dWall*2 : (dubWallFaceLip ? dWall2*3 + gap : dWall2*2));
-drawerZ = dLayerRelCeil(binZ + bSlopZ) + dFloor;
-
-fGridX = bGridXY*(bins.x+1);
-fGridY = fWall2 + hookD + drawerZ + dSlopZ*2;
-
-echo(str("Drawer grid spacing: ", fGridX, " X, ", fGridY, " Z"));
-
-
-handleElliptical = false;
-handleReach = 15;
-handleLip = 5;
-handleR = 5;  // only applies to "rectangle" handle
-handleTray = false;
+fillStretch = true;
 
 
 // O - outer
@@ -291,13 +295,6 @@ fBulgeIY = fBulgeOY - fWall2;
 fBulgeWall = fBulgeOX - fSideOX;
 fTHookY = fTopOY;
 fBHookY = -fHornY + fWallGrid;
-
-fGridZIdeal = fFloor + fBulgeWall + drawerY + gap;  // gap is from behind the drawer face
-fGridZ = fLayerAbsCeil(fGridZIdeal);
-fGridZError = fGridZ - (fGridZIdeal);
-
-
-mountingHoleD = 4;  // set to 0 to disable
 
 
 railD = fBulgeWall/2 - stretchX/4;
@@ -366,7 +363,11 @@ bulgeH = fBulgeIY*2 - dSlop45*2 - fBulgeWall*2
 echo(str(bulgeH, " rail clearance.", (bulgeH<0 ? " Parts are degenerate." : "")));
 
 
-fDrawerLayerCompLines = 2;  // thicker drawer roof along edges to compensate for drawer height layer quantization
+binsY = fDbu;
+drawerY = bGridXY*binsY + (!dubWallBinDrawers ? dWall*2 : (dubWallFaceLip ? dWall2*3 + gap : dWall2*2));
+fGridZIdeal = fFloor + fBulgeWall + drawerY + gap;  // gap is from behind the drawer face
+fGridZ = fLayerAbsCeil(fGridZIdeal);
+fGridZError = fGridZ - (fGridZIdeal);
 
 
 dFloat = dSlopXY/2;  // how far a fully closed drawer still sticks out due to rough mating surfaces
@@ -378,6 +379,9 @@ hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;     
 kInset = kIL;                                                                        // front keep bump
 
 dTravel = drawerY + fBulgeWall - dInset - dFL - dPL - dBL;
+
+drawerYFrameZAlign = fFloor + fGridZError + dFloat + fBulgeWall + drawerY/2;
+drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
 
 
 // t - trim
@@ -396,8 +400,31 @@ tClearance = (tPH > 0 ? fWallGrid : 0) + bPH;
 
 fSideZ = fLayerAbsCeil(fGridZ + dFaceD + tLip);
 
-drawerYFrameZAlign = fFloor + fGridZError + dFloat + fBulgeWall + drawerY/2;
-drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
+
+echo(str("Bins per frame unit: ", binsX, " bins wide, ", binsY, " bins deep"));
+echo(str("Bin unit size: ", bGridXY, "mm wide, ", bGridXY, "mm deep"));
+echo(str("Frame unit size: ", fGridX, "mm wide, ", fGridY, "mm high, ", fGridZ, "mm deep"));
+echo(str("Side depth: ", fSideZ, "mm"));
+
+
+fDrawerLayerCompLines = 2;  // thicker drawer roof along edges to compensate for drawer height layer quantization
+
+mountingHoleD = 4;  // set to 0 to disable
+
+binR = binXY;
+
+divisions = [ [2], [3] ];
+// divisions =
+// [ [2, [1,1]]
+// , [4, [[2, [1,1]], 4, [2, [1,1]]]]
+// , [3, [1,1,1]]
+// ];
+
+handleElliptical = false;
+handleReach = 20;
+handleLip = 5;
+handleR = 5;  // only applies to "rectangle" handle
+handleTray = false;
 
 
 
@@ -564,7 +591,7 @@ module sliceX(bounds, translate=[0,0]
       translate([-fudge*2, gap*dir]) rect([x+fudge2*2, y], [1,0]);  // expose only top or bottom
     }
   }
-  translate([tx, ty]) {
+  if (drawCuts) translate([tx, ty]) {
     if (fillWalls>0) {
       if (cutMid) translate([flushL?-fudge:0, 0]) rect([x+fudge*flushSides, gap], [1,0]);
       for (i=[0:fillWalls-1]) {
@@ -1418,7 +1445,7 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  stopTop = /*fLayerRelFloor*/(drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY);
+  stopTop = drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY;
   stopZIdeal = fGridY*(t-b+1) - claspW - hookLR - fWallGrid*2 - dSlopZ*2;
   stopZError = dLayerAbsFloor(stopZIdeal) - stopZIdeal;
   drawerZIdeal = fGridY*(t-b) + drawerZ;
@@ -1532,11 +1559,13 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
               box([-fWall2, -fWall2, -stopTop-fBulgeWall], [1,1,1]);
             }
           }
-          if (stopTop>=fLayerHN) for (i=[0:2:fLayerRelFloor(stopTop)/fLayerHN-1]) translate([0, 0, -i*fLayerHN+(i==0?fudge:0)])
-            box([-fBulgeWall/2+fWall2/2, -(fWall2+gap)*dStopLines-fudge, -fLayerHN-(i==0?fudge:0)]);
+          if (stopTop>=fLayerHN && drawCuts) for (i=[0:2:fLayerRelFloor(stopTop)/fLayerHN-1])
+            translate([0, 0, -i*fLayerHN+(i==0?fudge:0)])
+              box([-fBulgeWall/2+fWall2/2, -(fWall2+gap)*dStopLines-fudge, -fLayerHN-(i==0?fudge:0)]);
         }
-        if (stopTop>=fLayerHN) for (i=[0:2:fLayerRelFloor(stopTop)/fLayerHN-1]) translate([-fBulgeWall/2+fWall2/2, fWall2-stopZError, -i*fLayerHN])
-          box([-fBulgeWall/2-fWall2/2, -(fWall2+gap)*dStopLines-fWall2+stopZError, -fLayerHN]);
+        if (stopTop>=fLayerHN) for (i=[0:2:fLayerRelFloor(stopTop)/fLayerHN-1])
+          translate([-fBulgeWall/2+fWall2/2, fWall2-stopZError, -i*fLayerHN])
+            box([-fBulgeWall/2-fWall2/2, -(fWall2+gap)*dStopLines-fWall2+stopZError, -fLayerHN]);
       }
       // drawerZError compensation
       if (fDrawerLayerCompLines>=1) for (i=[1:fDrawerLayerCompLines]) translate([fGridX*(r-l)/2+fSideOX-fWall2*i-gap*i, fGridY*t+fTopOY, 0])
@@ -1793,7 +1822,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         if (brace) translate([0, drawerY/2-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
       }
       // back brace cut
-      if (brace) translate([0, drawerY/2, bodyZ-braceTop]) {
+      if (brace && drawCuts) translate([0, drawerY/2, bodyZ-braceTop]) {
         rL = [w, fBulgeWall];
         difference() {
           eSliceX(-rL.y, rL+[0, fudge], flushL=true, flushR=true, centerX=true, wall2=dWall2);
@@ -1809,7 +1838,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         box([w-dWall2*2, -drawerY+dWall2-gap-fudge, bodyZ], [0,1,1]);
       }
       // front wall cut
-      if (dubWall && !$preview) translate([0, drawerY/2+gap-dWall2-fudge, dFloor]) for (i=[0:(bodyZ-dFloor)/dLayerHN-1])
+      if (dubWall && drawCuts) translate([0, drawerY/2+gap-dWall2-fudge, dFloor]) for (i=[0:(bodyZ-dFloor)/dLayerHN-1])
         translate([(w-dWall2*2-gap)*(mod(i, 2)==0?1:-1)/2, 0, i*dLayerHN]) box([gap, dWall2+fBulgeWall+fudge2, dLayerHN+fudge], [0,1,1]);
       // rail
       flipX() translate([w/2+fBulgeWall, fBulgeWall/2, railZ]) hull() {
@@ -1833,7 +1862,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
     // dividers
     if (divided) translate([0, -drawerY/2-dWall2/2+(dubWallFaceLip?dWall2+gap:0), 0]) {
       bounds = [w-dWall2, drawerY+gap-(dubWallFaceLip?dWall2+gap:0)];
-      if ($preview) render() intersection() {
+      if (drawCuts) render() intersection() {
         dividerWalls(bounds, divisions);
         translate([0, dubWallFaceLip?-dWall2/2:0, 0]) box([bounds.x, bounds.y+(dubWallFaceLip?dWall2/2:0), bodyZ], [0,1,1]);
       }
@@ -1848,7 +1877,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
     // extra lip (bin drawers)
     if (!divided && dubWallBinDrawers && dubWallFaceLip) difference() {
       translate([0, -drawerY/2+gap, dFloor-fudge]) box([w-dWall2, dWall2, bodyZ-dFloor+fudge], [0,1,1]);
-      if (!$preview) translate([0, -drawerY/2+gap-fudge, dFloor]) for (i=[0:(bodyZ-dFloor)/dLayerHN-1])
+      if (drawCuts) translate([0, -drawerY/2+gap-fudge, dFloor]) for (i=[0:(bodyZ-dFloor)/dLayerHN-1])
         translate([(w-dWall2*2-gap)*(mod(i, 2)==0?1:-1)/2, 0, i*dLayerHN]) box([gap, dWall2+fudge2, dLayerHN+fudge], [0,1,1]);
     }
     // face
@@ -1881,7 +1910,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
             }
             difference() {
               handleSweep(r, a, b, step) handleCut(r, trunc);
-              if (!$preview) translate([0, dWall2, dFloor]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
+              if (drawCuts) translate([0, dWall2, dFloor]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
                 box([(a+r+fudge)*(mod(i, 2)==0?1:-1), -gap-dWall2*2, dLayerHN+fudge]);
             }
           }
@@ -1897,7 +1926,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
             translate([0, dWall2]) rect([a*2+fudge2, b], [0,1]);
           }
         }
-        if (!$preview) translate([0, -drawerY/2-(dubWall?0:gap), dFloor]) for (i=[0:layers-1]) translate([0, 0, i*dLayerHN]) {
+        if (drawCuts) translate([0, -drawerY/2-(dubWall?0:gap), dFloor]) for (i=[0:layers-1]) translate([0, 0, i*dLayerHN]) {
           dir = mod(i, 2)==0 ? 1 : -1;
           box([(a+r+fudge)*dir*-1, -gap-dWall2, dLayerHN+fudge]);
           box([(a-dWall2/2)*dir, -gap-dWall2, dLayerHN+fudge]);
@@ -2327,7 +2356,7 @@ if (Active_model=="z alignment") demoDrawerZAlignment(x=Frame_width, h=Frame_hei
 
 if (Active_model=="frame") frame(x=Frame_width, z=Frame_height);
 if (Active_model=="drawer") drawer(x=Frame_width, h=Frame_height, divisions=Fixed_divider_drawer?divisions:undef);
-if (Active_model=="bin") bin(x=Bin_width, y=Bin_depth, h=Frame_height);
+if (Active_model=="bin") bin(x=Bin_width, y=Bin_depth, h=Bin_height);
 if (Active_model=="side") {
   if (Side==   "top"      )  tSide(x=Frame_width);
   if (Side==   "top left" ) tlSide(x=Frame_width);

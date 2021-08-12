@@ -54,7 +54,7 @@ function cube(x) = x*x*x;
 
 function _gcd(x, y) = y==0 ? x : _gcd(y, mod(x, y));
 function gcd(x, y) = x==0 ? y : _gcd(x, y);
-function lcd(x, y) = abs(x*y) / gcd(x, y);
+function lcm(x, y) = abs(x*y) / gcd(x, y);
 
 
 /*********/
