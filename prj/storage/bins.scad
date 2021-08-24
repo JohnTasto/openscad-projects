@@ -92,15 +92,17 @@ Bin_depth = 2;  // [1:1:16]
 Bin_height = 2;  // [1:1:8]
 
 /* [Grid Spacing] */
-// Align frame units to an external grid. If bin drawers are enabled (below), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
+// Widens frame sides and narrows drawers as needed to align to bin grid, but wastes horizontal space and narrows the drawer side rails.
+Bin_drawer_compensation = true;
+// Align frame units to an external grid. If bin drawers are compensated (above), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
 Frame_unit_width_in_mm = 16.65;  // [10.00:0.05:50.00]
-// Widens frame sides and narrows drawers as needed to align to bin grid, but wastes horizontal space and narrows the drawer side rails which may necessitate increasing the frame unit height. Disabling this setting has no effect when specifying frame unit width in bin units.
-Enable_bin_drawers = true;
-// If greater than zero, overrides the above two settings to set the frame unit width with bin drawers enabled and no wasted horizontal space.
+// If greater than zero, overrides the above two settings to enable bin drawers with no wasted horizontal space.
 Frame_unit_width_in_bin_units = 2;  // [0:1:12]
-// A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
-Frame_depth_in_bin_units = 12;  // [2:1:60]
-// Must leave adequate room for side bulges
+// Depth from back of frame to front of drawer face, not including extra lip on sides and trim. If bin drawers are compensated, the number of bin units that fit a drawer is calculated to minimize wasted space behind drawers.
+Frame_depth_in_mm = 100;  // [10.00:0.05:500.00]
+// If greater than zero and either bin drawers are compensated or frame unit width is specified in bin units, overrides the above setting for no wasted space behind drawers. A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
+Frame_depth_in_bin_units = 12;  // [0:1:60]
+// Check the console to ensure there is adequate space for bumps.
 Frame_unit_height_in_mm = 15;  // [10.00:0.05:50.00]
 // Fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the bin unit size as a side effect.
 Double_bin_drawer_walls = false;
@@ -121,8 +123,11 @@ Frame_height = Frame_drawer_side_and_trim_height;
 
 fWmm = Frame_unit_width_in_mm;
 fWbu = Frame_unit_width_in_bin_units;
+fDmm = Frame_depth_in_mm;
 fDbu = Frame_depth_in_bin_units;
 fHmm = Frame_unit_height_in_mm;
+
+binDrawersEnabled = Bin_drawer_compensation || Frame_unit_width_in_bin_units;
 
 dubWallBinDrawers = Double_bin_drawer_walls;
 dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
@@ -238,15 +243,16 @@ fGridY = fHmm;
 drawerZ = fGridY - fWall2 - hookD - dSlopZ*2;
 binZ = bFloorZ(drawerZ - dBase - bSlopZ);
 
-dSides = dubWallBinDrawers ? dWall2*2 : dWall*2;
-bMinGridXY = fWall2*2 + claspD + fSlopXY*2 + dSides + dSlopXY*2 + bSlopXY;
+dWallsX = dubWallBinDrawers ? dWall2*2 : dWall*2;
+bMinGridXY = fWall2*2 + claspD + fSlopXY*2 + dWallsX + dSlopXY*2 + bSlopXY;
 
-binsX = fWbu>0 ? fWbu : floor(fWmm/bMinGridXY) - 1;
-bGridXY = fWbu>0 ? bMinGridXY : fWmm/(binsX+1);
-binXY = bGridXY - bSlopXY;
-drawerX = bGridXY*binsX + bSlopXY + dSides + (fWbu==0 && !Enable_bin_drawers ? bGridXY-bMinGridXY : 0);
-fGridX = fWbu>0 ? bGridXY*(binsX+1) : fWmm;
-stretchX = fWbu==0 && Enable_bin_drawers ? bGridXY-bMinGridXY : 0;
+fWUseBU = fWbu>0;
+binsX    = fWUseBU ? fWbu : floor(fWmm/bMinGridXY) - 1;
+bGridXY  = fWUseBU ? bMinGridXY : fWmm/(binsX+1);
+binXY    = bGridXY - bSlopXY;
+drawerX  = bGridXY*binsX + bSlopXY + dWallsX + (!fWUseBU && !Bin_drawer_compensation ? bGridXY-bMinGridXY : 0);
+fGridX   = fWUseBU ? bGridXY*(binsX+1) : fWmm;
+stretchX = !fWUseBU && Bin_drawer_compensation ? bGridXY-bMinGridXY : 0;
 
 fillStretch = false;  // Adds squiggles to fill holes. This may increase print time more than expected due to acceleration.
 
@@ -283,7 +289,7 @@ bRS = 1;                  // bottom ramp slope
 
 // drawer
 // dPH = railD;              // drawer peak height
-dPH = 1+ railD+dSlopXY/4;    // drawer peak height
+dPH = railD+dSlopXY/4;    // drawer peak height
 dPL = fH(2);              // drawer peak length
 dFL = dPH*dFS;            // drawer front length
 dBL = dPH*dBS;            // drawer back length
@@ -334,38 +340,22 @@ railWN = peakWN + max(dPH*2, cPH*2-railD*2+dSlop45*2, hPH*2-railD*2+dSlop45*2, k
 stopLinesH0 = 2;
 stopLinesHN = 3;
 
-
 peakW1 = peakWN - (fWall2 + gap)*stopLinesH0
        + dFloorZ(fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2)
        - (fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2);
-echo("Bump peak width:")
-echo(str("  ", peakW1, "mm for single unit high drawers"));
-echo(str("  ", peakWN, "mm for multiple unit high drawers"));
-if (peakW1<0) {
-  if (peakWN<0) {
-    echo("All parts are degenerate. Possible fixes:");
-    echo("  ∙ increase frame unit height");
-    echo("  ∙ adjust frame unit width");
-    echo("  ∙ disable bin drawers");
-    echo("  ∙ reduce bump height");
-    echo("  ∙ reduce spring width");
-  }
-  else {
-    echo("Single unit high parts are degenerate.");
-    echo("Multiple unit high drawers are ok.");
-  }
-}
-
-
-binsY = fDbu;
-drawerY = bGridXY*binsY + bSlopXY + (!dubWallBinDrawers ? dWall*2 : (dubWallFaceLip ? dWall2*2 : dWall2-gap));
-fGridZIdeal = fBase + fBulgeWall + drawerY + gap;  // <      gaps are from behind the drawer face       ^
-fGridZ = fCeilZ(fGridZIdeal);
-fGridZError = fGridZ - (fGridZIdeal);
 
 
 dFloat = dSlopXY/2;  // how far a fully closed drawer still sticks out due to rough mating surfaces
 dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
+dWallsY = dubWallBinDrawers ? (dubWallFaceLip ? dWall2*2 : dWall2-gap) : dWall*2;
+
+fDUseBU = fDbu>0 && binDrawersEnabled;
+drawerMaxY  = fDUseBU ? undef                              : fFloorZ(fDmm - dFaceD) - fBase - fBulgeWall - gap;
+binsY       = fDUseBU ? fDbu                               : floor((drawerMaxY - bSlopXY - dWallsY)/bGridXY);
+drawerY     = fDUseBU ? bGridXY*binsY + bSlopXY + dWallsY  : Bin_drawer_compensation ? bGridXY*binsY + bSlopXY + dWallsY : drawerMaxY;
+fGridZIdeal = fDUseBU ? fBase + fBulgeWall + drawerY + gap : undef;
+fGridZ      = fDUseBU ? fCeilZ(fGridZIdeal)                : fFloorZ(fDmm - dFaceD);
+fGridZError = fDUseBU ? fGridZ - fGridZIdeal               : drawerMaxY - drawerY;
 
 cInset = cIL + dBL + dPL - (railD+dSlopXY-dPH)*dFS + dFloat + fBase + fGridZError;  // back catch bump
 dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;                  // front drawer bump
@@ -395,18 +385,6 @@ tClearance = (tPH > 0 ? fWallGrid : 0) + bPH;
 fSideZ = fCeilZ(fGridZ + dFaceD + tLip);
 
 
-echo("Bins units per frame unit:");
-echo(str("  ", binsX, " bin unit", binsX==1 ? "" : "s", " wide"));
-echo(str("  ", binsY, " bin unit", binsY==1 ? "" : "s", " deep"));
-echo("Bin unit size:");
-echo(str("  ", bGridXY, "mm wide"));
-echo(str("  ", bGridXY, "mm deep"));
-echo("Frame unit size:");
-echo(str("  ", fGridX, "mm wide"));
-echo(str("  ", fGridY, "mm high"));
-echo(str("  ", fGridZ, "mm deep (", fSideZ, "mm deep sides)"));
-
-
 fDrawerLayerCompLines = 2;  // thicken drawer roof along edges to compensate for drawer height layer quantization
 
 mountingHoleD = 4;  // set to 0 to disable
@@ -425,6 +403,42 @@ handleReach = 20;
 handleLip = 5;
 handleR = 5;  // only applies to "rectangle" handle
 handleTray = false;
+
+
+echo("Frame unit size:");
+echo(str("    width:  \t", fGridX, " mm"));
+echo(str("    height: \t", fGridY, " mm"));
+if (binDrawersEnabled) {
+  echo("Bin unit size:");
+  echo(str("    sides:  \t", bGridXY, " mm"));
+  echo("Bins units per frame unit:");
+  echo(str("    width:  \t", binsX, " bin unit", binsX==1 ? "" : "s"));
+  echo(str("    height: \t", binsY, " bin unit", binsY==1 ? "" : "s"));
+}
+echo("Depths:")
+echo(str("    frame: \t", fGridZ, " mm"));
+echo(str("    sides: \t", fSideZ, " mm"));
+echo(str("    face (closed):   \t", fGridZ+dFaceD , " mm"));
+echo(str("    face (open):     \t", fGridZ+dFaceD+dTravel , " mm"));
+echo(str("    handle (closed): \t", fGridZ+dFaceD+handleReach, " mm"));
+echo(str("    handle (open):   \t", fGridZ+dFaceD+handleReach+dTravel, " mm"));
+echo("Bump peak width:")
+echo(str("    part height = 1: \t", peakW1, " mm"));
+echo(str("    part height > 1: \t", peakWN, " mm"));
+if (peakW1<0) {
+  if (peakWN<0) {
+    echo("Inadequate space for bumps on all parts. Possible fixes:");
+    echo("    ∙ increase frame unit height");
+    echo("    ∙ adjust frame unit width");
+    echo("    ∙ disable bin drawers");
+    echo("    ∙ reduce bump height");
+    echo("    ∙ reduce spring width");
+  }
+  else {
+    echo("Inadequate space for bumps on single unit high parts.");
+    echo("Multiple unit high drawers are ok.");
+  }
+}
 
 
 
@@ -1652,10 +1666,16 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
 
   if (bulgeMidH<stopH) {
     echo("Drawer has overhangs over 45°. Possible fixes:");
-    echo("  ∙ reduce stop lines");
-    echo("  ∙ increase frame unit height");
-    echo("  ∙ adjust frame unit width");
-    echo("  ∙ disable bin drawers");
+    echo("    ∙ reduce stop lines");
+    echo("    ∙ increase frame unit height");
+    echo("    ∙ adjust frame unit width");
+    echo("    ∙ disable bin drawers");
+  }
+
+  if (!binDrawersEnabled && !divided) {
+    echo("Bin drawers are disabled. Possible fixes:");
+    echo("    ∙ enable bin drawer compensation");
+    echo("    ∙ specify frame unit width in bin units");
   }
 
   module bump() hull() {
@@ -1972,7 +1992,13 @@ module bin(x=1, y=1, h=1) {
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   w = bGridXY*(r-l) + binXY;
   d = bGridXY*(b-f) + binXY;
-  echo(f=f, b=b, l=l, r=r);
+
+  if (!binDrawersEnabled) {
+    echo("Bins are disabled. Possible fixes:");
+    echo("    ∙ enable bin drawer compensation");
+    echo("    ∙ specify frame unit width in bin units");
+  }
+
   if (f<=b && l<=r && h>=1) translate([bGridXY*(r+l)/2, bGridXY*(b+f)/2, 0]) {
     box([w, d, bBase], [0,0,1]);
     translate([0, 0, bBase+binR*sqrt(2)/2]) {
@@ -2365,7 +2391,7 @@ module demoDrawerBinAlignment(x=1, h=1, divisions=undef) {
     cols = (r-l+1)*(binsX+1) - 1;
     rows = binsY;
     translate([bGridXY*(1-cols)/2+fGridX*(r+l)/2, bGridXY*(1-rows)/2-(dubWall&&!dubWallFaceLip?dWall2/2+gap/2:0), dBase+bSlopZ])
-      for (i=[0:cols-1+9]) for (j=[0:rows-1])
+      for (i=[0:cols-1]) for (j=[0:rows-1])
         translate([bGridXY*i, bGridXY*j, 0]) box([binXY, binXY, bFloorZ(fGridY*(h-1) + binZ)], [0,0,1]);
   }
 }
