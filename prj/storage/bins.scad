@@ -97,7 +97,7 @@ Bin_drawer_compensation = true;
 // Align frame units to an external grid. If bin drawers are compensated (above), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
 Frame_unit_width_in_mm = 16.65;  // [10.00:0.05:50.00]
 // If greater than zero, overrides the above two settings to enable bin drawers with no wasted horizontal space.
-Frame_unit_width_in_bin_units = 2;  // [0:1:12]
+Frame_unit_width_in_bin_units = 0;  // [0:1:12]
 // Depth from back of frame to front of drawer face, not including extra lip on sides and trim. If bin drawers are compensated, the number of bin units that fit a drawer is calculated to minimize wasted space behind drawers.
 Frame_depth_in_mm = 100;  // [10.00:0.05:500.00]
 // If greater than zero and either bin drawers are compensated or frame unit width is specified in bin units, overrides the above setting for no wasted space behind drawers. A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
@@ -337,10 +337,11 @@ peakWN = fBulgeIY*2 - dSlop45*2 - dPH*2 - railD*2 - stretchX - dSW*2;
 // calculate rail width so the steepest peak overhang is 45°
 railWN = peakWN + max(dPH*2, cPH*2-railD*2+dSlop45*2, hPH*2-railD*2+dSlop45*2, kPH*2-railD*2+dSlop45*2);
 
-stopLinesH0 = 2;
-stopLinesHN = 3;
+fStopLines0 = 2;
+fStopLinesN = 3;
+dStopLines  = 2;
 
-peakW1 = peakWN - (fWall2 + gap)*stopLinesH0
+peakW1 = peakWN - (fWall2 + gap)*fStopLines0
        + dFloorZ(fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2)
        - (fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2);
 
@@ -367,6 +368,7 @@ dTravel = drawerY + fBulgeWall - dInset - dFL - dPL - dBL;
 drawerYFrameZAlign = fBase + fGridZError + dFloat + fBulgeWall + drawerY/2;
 drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
 
+fStopTop = drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY - (dWall2+gap)*sqrt(2)*(dStopLines-1);
 
 // t - trim
 tPH = fSlopXY*7/4;             // peak height (set to 0 to disable trim - affects top sides some)
@@ -429,8 +431,9 @@ if (peakW1<0) {
   if (peakWN<0) {
     echo("Inadequate space for bumps on all parts. Possible fixes:");
     echo("    ∙ increase frame unit height");
+    echo("    ∙ disable bin drawer compensation");
     echo("    ∙ adjust frame unit width");
-    echo("    ∙ disable bin drawers");
+    echo("    ∙ toggle double bin drawer walls");
     echo("    ∙ reduce bump height");
     echo("    ∙ reduce spring width");
   }
@@ -438,6 +441,20 @@ if (peakW1<0) {
     echo("Inadequate space for bumps on single unit high parts.");
     echo("Multiple unit high drawers are ok.");
   }
+}
+  echo(fStopTop, fBulgeWall);
+if (fStopTop<0) {
+  echo("Inadequate space for frame stops. Possible fixes:");
+  echo("    ∙ reduce drawer stop lines");
+  echo("    ∙ disable bin drawer compensation");
+  echo("    ∙ adjust frame unit width");
+  echo("    ∙ toggle double bin drawer walls");
+}
+
+// highlight errors
+module hl(e) {
+  if (e) color([0.9, 0.1, 0.1]) children();
+  else children();
 }
 
 
@@ -1459,7 +1476,6 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  stopTop = drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY;
   stopZIdeal = fGridY*(t-b+1) - claspW - hookLR - fWallGrid*2 - dSlopZ*2;
   stopZError = dFloorZ(stopZIdeal) - stopZIdeal;
   drawerZIdeal = fGridY*(t-b) + drawerZ;
@@ -1534,15 +1550,15 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
     translate([fGridX*r, 0, 0]) rFrame(b, t);
 
     translate([fGridX*(r+l)/2, 0, 0]) flipX() {
-      dStopLines = t-b==0 ? stopLinesH0 : stopLinesHN;
-      stopHIdeal = (fWall2 + gap)*dStopLines;
+      fStopLines = t-b==0 ? fStopLines0 : fStopLinesN;
+      stopHIdeal = (fWall2 + gap)*fStopLines;
       stopH = stopHIdeal - stopZError;
       railW = (railWN - ((t-b)==0 ? stopH : 0) + railD*2 - dSlop45*2) / (drawSides ? 1 : 2);
       peakW = (peakWN - ((t-b)==0 ? stopH : 0)) / (drawSides ? 1 : 2);
       railZ = fGridY*b - ((t-b)==0 ? stopH/2 : 0);
 
       // drawer rail bumps
-      translate([fGridX*(r-l)/2+fBulgeIX, railZ, 0]) {
+      hl(peakW<0) translate([fGridX*(r-l)/2+fBulgeIX, railZ, 0]) {
         // cushion
         hull() {
           box([fWall2, -railW, cInset+cBL+cPL], [1,drawSides?0:1,1]);
@@ -1565,21 +1581,21 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
         }
       }
       // drawer stops
-      if (dStopLines>=1) translate([fGridX*(r-l)/2+fBulgeIX, fGridY*t+fBulgeIY+stopZError, fGridZ]) {
+      if (fStopLines>0) hl(fStopTop<0) translate([fGridX*(r-l)/2+fBulgeIX, fGridY*t+fBulgeIY+stopZError, fGridZ]) {
         difference() {
-          for (i=[0:dStopLines-1]) translate([fWall2, -fWall2*i-gap*(i+1), 0]) {
+          for (i=[0:fStopLines-1]) translate([fWall2, -fWall2*i-gap*(i+1), 0]) {
             hull() {
-              box([-fBulgeWall-fWall2, -fWall2, -stopTop], [1,1,1]);
-              box([-fWall2, -fWall2, -stopTop-fBulgeWall], [1,1,1]);
+              box([-fBulgeWall-fWall2, -fWall2, -fStopTop], [1,1,1]);
+              box([-fWall2, -fWall2, -fStopTop-fBulgeWall], [1,1,1]);
             }
           }
-          if (stopTop>=fLayerHN && drawCuts) for (i=[0:2:fFloorH(stopTop)/fLayerHN-1])
+          if (fStopTop>=fLayerHN && drawCuts) for (i=[0:2:fFloorH(fStopTop)/fLayerHN-1])
             translate([0, 0, -i*fLayerHN+(i==0?fudge:0)])
-              box([-fBulgeWall/2+fWall2/2, -(fWall2+gap)*dStopLines-fudge, -fLayerHN-(i==0?fudge:0)]);
+              box([-fBulgeWall/2+fWall2/2, -(fWall2+gap)*fStopLines-fudge, -fLayerHN-(i==0?fudge:0)]);
         }
-        if (stopTop>=fLayerHN) for (i=[0:2:fFloorH(stopTop)/fLayerHN-1])
+        if (fStopTop>=fLayerHN) for (i=[0:2:fFloorH(fStopTop)/fLayerHN-1])
           translate([-fBulgeWall/2+fWall2/2, fWall2-stopZError, -i*fLayerHN])
-            box([-fBulgeWall/2-fWall2/2, -(fWall2+gap)*dStopLines-fWall2+stopZError, -fLayerHN]);
+            box([-fBulgeWall/2-fWall2/2, -(fWall2+gap)*fStopLines-fWall2+stopZError, -fLayerHN]);
       }
       // drawerZError compensation
       if (fDrawerLayerCompLines>=1) for (i=[1:fDrawerLayerCompLines]) translate([fGridX*(r-l)/2+fSideOX-fWall2*i-gap*i, fGridY*t+fTopOY, 0])
@@ -1654,7 +1670,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
   stopZIdeal = fGridY*h - claspW - hookLR - fWallGrid*2 - dSlopZ*2;
   stopZ = dFloorZ(stopZIdeal);
   stopZError = stopZ - stopZIdeal;
-  stopHIdeal = (fWall2 + gap)*(h==1 ? stopLinesH0 : stopLinesHN);
+  stopHIdeal = (fWall2 + gap)*(h==1 ? fStopLines0 : fStopLinesN);
   stopH = stopHIdeal - stopZError;
   brace = !dubWall && fBulgeWall >= dWall2 + gap;
   braceTop = dRoundH(bodyZ - stopZ + stopHIdeal - dSlopZ + dSlop45);
@@ -1666,16 +1682,18 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
 
   if (bulgeMidH<stopH) {
     echo("Drawer has overhangs over 45°. Possible fixes:");
-    echo("    ∙ reduce stop lines");
+    echo("    ∙ reduce frame stop lines");
     echo("    ∙ increase frame unit height");
+    echo("    ∙ disable bin drawer compensation");
     echo("    ∙ adjust frame unit width");
-    echo("    ∙ disable bin drawers");
+    echo("    ∙ toggle double bin drawer walls");
   }
 
   if (!binDrawersEnabled && !divided) {
     echo("Bin drawers are disabled. Possible fixes:");
     echo("    ∙ enable bin drawer compensation");
     echo("    ∙ specify frame unit width in bin units");
+    echo("    ∙ use only divider drawers");
   }
 
   module bump() hull() {
@@ -1810,41 +1828,41 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
     }
   }
 
-  if (l<=r && h>=1) translate([fGridX*(r+l)/2, dubWall?-gap:0, 0]) {
+  if (l<=r && h>=1) hl(!binDrawersEnabled && !divided) translate([fGridX*(r+l)/2, dubWall?-gap:0, 0]) {
     difference() {
       union() {
         box([w, bodyY, bodyZ], [0,0,1]);
         // bulges
         translate([0, -drawerY/2+(dubWall?gap:0), bulgeZ]) {
-          for (i=[1:h]) translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
+          for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0)) translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
             box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
             box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
           }
-          translate([0, 0, -bulgeMidH/2]) {
-            box([w, drawerY+fBulgeWall/2, bulgeMidH/2-bulgeZ], [0,1,1]);
+          translate([0, drawerY-fudge, -bulgeMidH/2]) {
+            box([w, fBulgeWall/2+fudge, bulgeMidH/2-bulgeZ], [0,1,1]);
             hull() {
-              box([w, drawerY+fBulgeWall/2, bulgeMidH/2-bulgeZ+fLayerH0], [0,1,1]);
-              box([w, drawerY+fBulgeWall, bulgeMidH/2-bulgeZ+fLayerH0+fBulgeWall/2], [0,1,1]);
+              box([w, fBulgeWall/2+fudge, bulgeMidH/2-bulgeZ+fLayerH0], [0,1,1]);
+              box([w, fBulgeWall+fudge, bulgeMidH/2-bulgeZ+fLayerH0+fBulgeWall/2], [0,1,1]);
             }
           }
-          translate([0, 0, -(h==1?stopH/2:0)]) hull() {
-            translate([0, 0, -fBulgeWall/2]) box([w, drawerY+fBulgeWall, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
-            box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(h==1?stopH:0)], [0,1,0]);
+          translate([0, drawerY-fudge, -(h==1?stopH/2:0)]) hull() {
+            translate([0, 0, -fBulgeWall/2]) box([w, fBulgeWall+fudge, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
+            box([w+fBulgeWall*2, fBulgeWall+fudge, bulgeMidH-(h==1?stopH:0)], [0,1,0]);
           }
         }
         // stops
-        translate([0, bodyY/2+fBulgeWall, stopZ])
-          extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=2) polygon(
-          [ [ w/2+fBulgeWall*(1-sqrt(2))                                   , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall                                               ,                    -dWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall                                               ,                                    0]
-          , [ w/2+fBulgeWall-(!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
-          , [ w/2+fBulgeWall-(!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),         !brace?-fBulgeWall*sqrt(2):0]
-          , [-w/2-fBulgeWall+(!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),         !brace?-fBulgeWall*sqrt(2):0]
-          , [-w/2-fBulgeWall+(!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
-          , [-w/2-fBulgeWall                                               ,                                    0]
-          , [-w/2-fBulgeWall                                               ,                    -dWall2*sqrt(2)/2]
-          , [-w/2-fBulgeWall*(1-sqrt(2))                                   , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+        if (dStopLines>0) hl(bulgeMidH<stopH) translate([0, bodyY/2+fBulgeWall, stopZ]) for (i=[0:dStopLines-1])
+          translate([0, -(dWall2+gap)*sqrt(2)*i, 0]) extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=4) polygon(
+          [ [ w/2+fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+          , [ w/2+fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
+          , [ w/2+fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
+          , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+          , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
+          , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
+          , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+          , [-w/2-fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
+          , [-w/2-fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
+          , [-w/2-fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
           ]);
         // back brace block
         if (brace) translate([0, drawerY/2-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
@@ -1887,7 +1905,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         }
     }
     // bumps
-    flipX() translate([w/2+fBulgeWall-railD, dubWall?gap:0, railZ]) {
+    hl(peakW<0) flipX() translate([w/2+fBulgeWall-railD, dubWall?gap:0, railZ]) {
       translate([0, drawerY/2+fBulgeWall, 0]) render() difference() {
         bump();
         translate([-fudge*2, 0, bulgeMidH/2]) rotate([45]) box([dPH+fudge*3, fBulgeWall*sqrt(2)/2, fBulgeWall*sqrt(2)]);
@@ -1992,32 +2010,34 @@ module bin(x=1, y=1, h=1) {
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   w = bGridXY*(r-l) + binXY;
   d = bGridXY*(b-f) + binXY;
-
+  z = bFloorZ(fGridY*(h-1) + binZ);
+  bulge = binR*sqrt(2)/2;
   if (!binDrawersEnabled) {
     echo("Bins are disabled. Possible fixes:");
     echo("    ∙ enable bin drawer compensation");
     echo("    ∙ specify frame unit width in bin units");
   }
 
-  if (f<=b && l<=r && h>=1) translate([bGridXY*(r+l)/2, bGridXY*(b+f)/2, 0]) {
+  if (f<=b && l<=r && h>=1) hl(!binDrawersEnabled) translate([bGridXY*(r+l)/2, bGridXY*(b+f)/2, 0]) {
     box([w, d, bBase], [0,0,1]);
-    translate([0, 0, bBase+binR*sqrt(2)/2]) {
-      box([w, d, bFloorZ(fGridY*(h-1)+binZ)-bBase-binR*sqrt(2)/2], [0,0,1]);
-      box([w-binR*(2-sqrt(2)), d-binR*(2-sqrt(2)), -bBase-binR*sqrt(2)/2], [0,0,1]);
+    box([w-binR*(2-sqrt(2)), d-binR*(2-sqrt(2)), z], [0,0,1]);
+    translate([0, 0, bBase+bulge]) {
+      box([w, d, z-bBase-bulge], [0,0,1]);
       intersection() {
         hull() flipX() translate([w/2-binR, 0, 0]) difference() {
           rotate([90, 0]) cylinder(d, r=binR, center=true);
-          translate([-binR*(1-sqrt(2)/2)/2-fudge, 0, 0]) box([binR*(1+sqrt(2)/2)+fudge2, d+fudge2, binR*2], [0,0,0]);
+          translate([(-binR/2+bulge/2)-fudge, 0, 0]) box([binR+bulge+fudge2, d+fudge2, binR*2], [0,0,0]);
+          translate([bulge-fudge, 0, z-bBase-bulge]) box([binR-bulge+fudge2, d+fudge2, bulge*2-z+bBase+fudge], [1,0,1]);
         }
         hull() flipY() translate([0, d/2-binR, 0]) difference() {
           rotate([0, 90]) cylinder(w, r=binR, center=true);
-          translate([0, -binR*(1-sqrt(2)/2)/2-fudge, 0]) box([w+fudge2, binR*(1+sqrt(2)/2)+fudge2, binR*2], [0,0,0]);
+          translate([0, -binR/2+bulge/2-fudge, 0]) box([w+fudge2, binR+bulge+fudge2, binR*2], [0,0,0]);
+          translate([0, bulge-fudge, z-bBase-bulge]) box([w+fudge2, binR-bulge+fudge2, bulge*2-z+bBase+fudge], [0,1,1]);
         }
       }
     }
   }
 }
-
 
 
 /////////////////
