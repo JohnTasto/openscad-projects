@@ -38,6 +38,8 @@ Tips
     - slightly more strength in normal (non-vase) mode since the layers are more uniform
       - particularly for fixed divider drawers
       - more ringing at Z seam if Z acceleration and jerk are high
+      - may have problems with second layer overhangs if Initial Layer Horizontal Expansion is negative
+          because Wall Line Count must be 1 so there is no inner wall for the outer wall to attach to
     - significantly more strength with ~25% higher Outer Wall Flow since layers are smashed together
       - set Wall Count to 1
       - set Outer Wall Wipe Distance to 0
@@ -65,12 +67,8 @@ Possible future improvements
 */
 
 
-peak = 0;  // [0.00:0.05:1.00]
-slop = 0;  // [0.00:0.05:1.00]
-// peak = 0.32;  // [0.00:0.05:1.00]
-// slop = 0.11;  // [0.00:0.05:1.00]
-
 /* [Main] */
+
 Active_model = "small assembly - h>1";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // Active_model = "bump alignment - drawer shut";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // Active_model = "bump alignment - drawer open";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
@@ -91,7 +89,9 @@ Bin_depth = 2;  // [1:1:16]
 // in frame units
 Bin_height = 2;  // [1:1:8]
 
+
 /* [Grid Spacing] */
+
 // Widens frame sides and narrows drawers as needed to align to bin grid, but wastes horizontal space and narrows the drawer side rails.
 Bin_drawer_compensation = true;
 // Align frame units to an external grid. If bin drawers are compensated (above), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
@@ -109,7 +109,9 @@ Double_bin_drawer_walls = false;
 // If enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
 Add_lip_behind_face_of_double_wall_drawers = true;
 
+
 /* [Demos] */
+
 Show_drawers_in_assembly_demos = false;
 Show_trim_in_assembly_demos = false;
 // Improves preview performance by removing all the thin alternating cuts.
@@ -135,7 +137,7 @@ dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
 drawCuts = !$preview || !Simple_preview;
 
 
-$fn = 24;
+$fn = 16;
 
 
 fudge  = 0.01;
@@ -180,16 +182,14 @@ bSlopXY = 0.15;
 bSlopZ  = bH(1);
 
 dSlopXY = 0.25;
-dSlopZ  = dH(1) + slop;
+dSlopZ  = dH(1);
 dSlop45 = max(0, dSlopZ - dSlopXY);
 
 fSlopXY = 0.15;//0.2;
-fSlopZBack  = -fH(1.25);  // hook overhang
-fSlopZFront = -fH(1.5);   // hook bumps
-fSlopZTrim  = -fH(1.25);  // trim bumps
+fSlopZ  = -fH(1.25);  // hook overhang
 
-bBase = bZ(4);
-dBase = dZ(7);
+bBase = bZ(5);
+dBase = dZ(6);
 fBase = fZ(7);
 fTop = fH(3);
 
@@ -215,21 +215,29 @@ function fRoundH(h) = let (f=fFloorH(h), c=fCeilH(h)) h-f < c-h ? f : c;
 function fRoundZ(z) = let (f=fFloorZ(z), c=fCeilZ(z)) z-f < c-z ? f : c;
 
 // l - lock
-lPH = peak;//0.75;//1.5;            // peak height
+// Disabled because it makes frame segments almost impossible to separate, but it should work if
+// that is something you want. Note it also takes up a lot of space, and will likely require
+// increasing the frame unit width and height.
+lRS = 16;                     // ramp slope
+lPH = 0;//fWall*1.5;          // peak height
 lPC = max(0, lPH-fSlopXY*2);  // peak extra clearance (in addition to normal slop)
-lWS = 0;//.28;//fWall/2;        // wall seperation (makes the latch a bit more springy)
-lLL = fH(2);                // latch length (at peak)
-lSL = fH(8);                // strike length (at peak)
-lRL = fH(48);               // ramp length
-lIL = fTop;                 // inset length
+lWS = 0;//fWall/2;            // wall seperation (makes the latch a bit more springy)
+lLL = fH(2);                  // latch length (at peak)
+lSL = fH(8);                  // strike length (at peak)
+lRL = lPH*lRS;                // ramp length
+lIL = fTop;                   // inset length
+lSlop = -fH(0.5);             // slop
 
 // s - snap
-sPH = fSlopXY*7/4;             // peak height
-sPL = fH(2);                   // peak length
-sLL = fCeilH(sPH*3/2);  // latch length
-sRL = fCeilH(sPH*6);    // ramp length
-sFI = 0;                       // front inset length
-sBI = 0;                       // back inset length
+sLS = 2;                      // latch slope
+sRS = 6;                      // ramp slope
+sPH = fSlopXY*7/4;            // peak height
+sPL = fH(2);                  // peak length
+sLL = sPH*sLS;                // latch length
+sRL = sPH*sRS;                // ramp length
+sFI = fH(0.5);                // front inset length
+sBI = 0;                      // back inset length
+sSlop = -fH(0.5);             // slop
 
 
 hookLR = 1.25;
@@ -254,7 +262,7 @@ drawerX  = bGridXY*binsX + bSlopXY + dWallsX + (!fWUseBU && !Bin_drawer_compensa
 fGridX   = fWUseBU ? bGridXY*(binsX+1) : fWmm;
 stretchX = !fWUseBU && Bin_drawer_compensation ? bGridXY-bMinGridXY : 0;
 
-fillStretch = false;  // Adds squiggles to fill holes. This may increase print time more than expected due to acceleration.
+stretchXFill = false;  // Adds squiggles to fill holes. This may increase print time more than expected due to acceleration.
 
 
 // O - outer
@@ -280,57 +288,57 @@ fBHookY = -fHornY + fWallGrid;
 railD = fBulgeWall/2 - stretchX/4;
 
 // these are actually reciprocals of slopes
-dFS = 1;                  // drawer front slope
-dBS = 4;                  // drawer back slope
-cRS = 8;                  // catch ramp slope
-hRS = 6;                  // hold ramp slope
-kRS = 1;                  // keep ramp slope
-bRS = 1;                  // bottom ramp slope
+dFS = 1;                      // drawer front slope
+dBS = 4;                      // drawer back slope
+cRS = 8;                      // catch ramp slope
+hRS = 6;                      // hold ramp slope
+kRS = 1;                      // keep ramp slope
+bRS = 1;                      // bottom ramp slope
 
 // drawer
-// dPH = railD;              // drawer peak height
-dPH = railD+dSlopXY/4;    // drawer peak height
-dPL = fH(2);              // drawer peak length
-dFL = dPH*dFS;            // drawer front length
-dBL = dPH*dBS;            // drawer back length
-dSW = dH(4);              // drawer spring width
+// dPH = railD;                  // drawer peak height
+dPH = railD+dSlopXY/4;        // drawer peak height
+dPL = fH(2);                  // drawer peak length
+dFL = dPH*dFS;                // drawer front length
+dBL = dPH*dBS;                // drawer back length
+dSW = dH(4);                  // drawer spring width
 
 // catch: back, holds drawer shut
-// cPH = railD*3/4;          // catch peak height
-cPH = railD;              // catch peak height
-cPL = fH(2);              // catch peak length
-cFL = cPH*cRS;            // catch front length
-cBL = cPH*dFS;            // catch back length
-cIL = 0;                  // catch inset length (acts only on itself)
-cCH = dSlopXY-dSlopXY/4;  // catch cushion height
-// cCH = dSlopXY;            // catch cushion height
+// cPH = railD*3/4;              // catch peak height
+cPH = railD;                  // catch peak height
+cPL = fH(2);                  // catch peak length
+cFL = cPH*cRS;                // catch front length
+cBL = cPH*dFS;                // catch back length
+cIL = 0;                      // catch inset length (acts only on itself)
+cCH = dSlopXY-dSlopXY/4;      // catch cushion height
+// cCH = dSlopXY;                // catch cushion height
 
 // hold: front, holds drawer open
-// hPH = railD;              // hold peak height
-hPH = railD+dSlopXY/4;    // hold peak height
-hPL = fH(2);              // hold peak length
-hFL = hPH*dBS;            // hold front length
-hBL = hPH*hRS;            // hold back length
-hIL = 0;                  // hold inset length (acts only on itself)
+// hPH = railD;                  // hold peak height
+hPH = railD+dSlopXY/4;        // hold peak height
+hPL = fH(2);                  // hold peak length
+hFL = hPH*dBS;                // hold front length
+hBL = hPH*hRS;                // hold back length
+hIL = 0;                      // hold inset length (acts only on itself)
 
 // keep: front, holds drawer in
-// kPH = railD*9/8;          // keep peak height
-kPH = railD+dSlopXY/2;    // keep peak height
-kPL = fH(1.5);            // keep peak length
-kFL = kPH*kRS;            // keep front length
-kBL = kPH*dFS;            // keep back length
-kIL = fH(0.5);            // keep inset length (also pulls hold and front drawer bump with it)
+// kPH = railD*9/8;              // keep peak height
+kPH = railD+dSlopXY/2;        // keep peak height
+kPL = fH(1.5);                // keep peak length
+kFL = kPH*kRS;                // keep front length
+kBL = kPH*dFS;                // keep back length
+kIL = fH(0.5);                // keep inset length (also pulls hold and front drawer bump with it)
 
 // bottom: bottom, holds drawer in
-// bPH = dZ(2.5);            // bottom peak height  (never as tall as it should be due to filament dragging)
-// bSH = dZ(2);              // bottom slot height (must be even until Cura adds way to disable extra walls on even layers)
-bPH = dZ(3.5);            // bottom peak height  (never as tall as it should be due to filament dragging)
-bSH = dZ(4);              // bottom slot height (must be even until Cura adds way to disable extra walls on even layers)
-bPL = fH(2.5);            // bottom peak length
-bFL = bPH*bRS;            // bottom front length
-bBL = bPH*bRS;            // bottom back length
-bIL = fH(0.5);            // bottom inset length
-bW  = fWall4;             // bottom width
+// bPH = dZ(2.5);                // bottom peak height (never as tall as it should be due to filament dragging)
+// bSH = dZ(2);                  // bottom slot height (must be even if using spiralize in Cura)
+bPH = dZ(3.5);                // bottom peak height (never as tall as it should be due to filament dragging)
+bSH = dZ(3);                  // bottom slot height (must be even if using spiralize in Cura)
+bPL = fH(2.5);                // bottom peak length
+bFL = bPH*bRS;                // bottom front length
+bBL = bPH*bRS;                // bottom back length
+bIL = fH(0.5);                // bottom inset length
+bPW = fWall4;                 // bottom peak width
 
 peakWN = fBulgeIY*2 - dSlop45*2 - dPH*2 - railD*2 - stretchX - dSW*2;
 
@@ -371,16 +379,19 @@ drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
 fStopTop = drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY - (dWall2+gap)*sqrt(2)*(dStopLines-1);
 
 // t - trim
-tPH = fSlopXY*7/4;             // peak height (set to 0 to disable trim - affects top sides some)
-tPL = fH(2);                   // peak length
-tLL = fCeilH(tPH*3/2);         // latch length
-tRL = fCeilH(tPH*6);           // ramp length
-tIL = 0;                       // inset length
+tLS = 2;                      // latch slope
+tRS = 6;                      // ramp slope
+tPH = fSlopXY*7/4;            // peak height (set to 0 to disable trim - affects top sides some)
+tPL = fH(2);                  // peak length
+tLL = tPH*tLS;                // latch length
+tRL = tPH*tRS;                // ramp length
+tIL = fH(0.5);                // inset length
+tSlop = -fH(0.25);            // slop
 
 tLip = 2;  // extra trim thickness around front rim - important for giving trim pieces extra strength
 tFloat = fSlopXY/2;  // how far the trim is expected to stick out due to rough mating surfaces
 tBase = fFloorZ(dFaceD - tFloat + tLip);
-tInsert = tPH > 0 ? fCeilH(tFloat + fSlopZTrim + tIL + tRL + tPL*2 + tLL*2) : 0;
+tInsert = tPH > 0 ? fCeilH(tFloat + tIL - fSlopXY*tLS + tSlop + tRL + tPL*2 + tLL*2) : 0;
 trimZ = tBase + tInsert;
 tClearance = (tPH > 0 ? fWallGrid : 0) + bPH;
 
@@ -399,6 +410,8 @@ divisions = [ [2, [1,1]], [3, [1,1]] ];
 // , [4, [[2, [1,1]], 4, [2, [1,1]]]]
 // , [3, [1,1,1]]
 // ];
+
+dChamfer = dBase;
 
 handleElliptical = false;
 handleReach = 20;
@@ -451,10 +464,23 @@ if (fStopTop<0) {
   echo("    ∙ toggle double bin drawer walls");
 }
 
+
+
+///////////////////
+// COLOR HELPERS //
+///////////////////
+
+
 // highlight errors
 module hl(e) {
   if (e) color([0.9, 0.1, 0.1]) children();
   else children();
+}
+
+// conditional color
+module condColor(c) {
+  if (is_list(c)) color(c) children();
+  else if (c) children();
 }
 
 
@@ -469,10 +495,10 @@ module hl(e) {
 // hang     - how far below the origin to sink the stem into whatever its growing out of
 // overlap  - how far past the stem the hook overlaps the floor of the adjacent piece (negative if the stem overlaps)
 // stop     - width of the backstop - if set, indicates hook is a strike plate, otherwise its a latch
-module hook(dir, hook, stem, hang=fudge, overlap=fSlopXY-fSlopZBack, stop=undef) render() translate([-dir*(claspW+hook)/2, stem]) {
+module hook(dir, hook, stem, hang=fudge, overlap=fSlopXY-fSlopZ, stop=undef) render() translate([-dir*(claspW+hook)/2, stem]) {
   hookZ = max(0, fBase-overlap);
   hangZ = max(0, fBase-overlap-hang-stem);
-  bumpZ = fCeilZ(hookZ + hook);
+  bumpZ = hookZ + hook;//fCeilZ(hookZ + hook);
   // strike stem
   if (is_num(stop)) {
     scale([dir, 1]) rotate([90,0,0]) {
@@ -502,12 +528,12 @@ module hook(dir, hook, stem, hang=fudge, overlap=fSlopXY-fSlopZBack, stop=undef)
       ]);
     }
     // 90° strike plate
-    translate([0, 0, fGridZ-lIL-lRL-lSL+fSlopZFront]) rotate([180,270,0]) extrude((lPH+fWall2)*dir) polygon(
-    [ [ lSL-fSlopZFront,               0]
+    translate([0, 0, fGridZ-lIL-lRL-lSL+lSlop]) rotate([180,270,0]) extrude((lPH+fWall2)*dir) polygon(
+    [ [       lSL-lSlop,               0]
     , [   fWall2-claspD,               0]
     , [        fWall2/2, claspD-fWall2/2]
     , [claspD-stem-hang, stem+hang      ]
-    , [ lSL-fSlopZFront, stem+hang      ]
+    , [       lSL-lSlop, stem+hang      ]
     ]);
   }
   // latch stem (trimmed)
@@ -522,32 +548,32 @@ module hook(dir, hook, stem, hang=fudge, overlap=fSlopXY-fSlopZBack, stop=undef)
   translate([stop?0:dir*lWS, 0, 0]) difference() {
     rotate([180,270,0]) extrude((hook+lPH+fWall2)*dir)
       if (stop) polygon(
-      [ [         0                                         , 0         ]
-      , [         0                                         , fWall2    ]
-      , [max(     0,  bumpZ+fSlopZFront+sBI    +sPL  +sLL  ), fWall2    ]
-      , [max(     0,  bumpZ+fSlopZFront+sBI    +sPL  +sLL*2), fWall2+sPH]
-      , [max(     0,  bumpZ+fSlopZFront+sBI    +sPL*2+sLL*2), fWall2+sPH]
-      , [max(     0,  bumpZ+fSlopZFront+sBI+sRL+sPL*2+sLL*2), fWall2    ]
-      , [min(fGridZ, fGridZ            -sFI-sRL-sPL  -sLL  ), fWall2    ]
-      , [min(fGridZ, fGridZ            -sFI-sRL-sPL        ), fWall2+sPH]
-      , [min(fGridZ, fGridZ            -sFI-sRL            ), fWall2+sPH]
-      , [min(fGridZ, fGridZ            -sFI                ), fWall2    ]
-      , [    fGridZ                                         , fWall2    ]
-      , [    fGridZ                                         , 0         ]
+      [ [         0                                               , 0         ]
+      , [         0                                               , fWall2    ]
+      , [max(     0,  bumpZ+sBI-fSlopXY*sLS+sSlop    +sPL  +sLL  ), fWall2    ]
+      , [max(     0,  bumpZ+sBI-fSlopXY*sLS+sSlop    +sPL  +sLL*2), fWall2+sPH]
+      , [max(     0,  bumpZ+sBI-fSlopXY*sLS+sSlop    +sPL*2+sLL*2), fWall2+sPH]
+      , [max(     0,  bumpZ+sBI-fSlopXY*sLS+sSlop+sRL+sPL*2+sLL*2), fWall2    ]
+      , [min(fGridZ, fGridZ-sFI                  -sRL-sPL  -sLL  ), fWall2    ]
+      , [min(fGridZ, fGridZ-sFI                  -sRL-sPL        ), fWall2+sPH]
+      , [min(fGridZ, fGridZ-sFI                  -sRL            ), fWall2+sPH]
+      , [min(fGridZ, fGridZ-sFI                                  ), fWall2    ]
+      , [    fGridZ                                               , fWall2    ]
+      , [    fGridZ                                               , 0         ]
       ]);
       else polygon(
-      [ [     hookZ                                         , 0         ]
-      , [     hookZ                                         , fWall2    ]
-      , [max( hookZ,  bumpZ            +sBI                ), fWall2    ]
-      , [max( hookZ,  bumpZ            +sBI          +sLL  ), fWall2+sPH]
-      , [max( hookZ,  bumpZ            +sBI    +sPL  +sLL  ), fWall2+sPH]
-      , [max( hookZ,  bumpZ            +sBI    +sPL  +sLL*2), fWall2    ]
-      , [min(fGridZ, fGridZ-fSlopZFront-sFI-sRL-sPL*2-sLL*2), fWall2    ]
-      , [min(fGridZ, fGridZ-fSlopZFront-sFI-sRL-sPL*2-sLL  ), fWall2+sPH]
-      , [min(fGridZ, fGridZ-fSlopZFront-sFI-sRL-sPL  -sLL  ), fWall2+sPH]
-      , [min(fGridZ, fGridZ-fSlopZFront-sFI-sRL-sPL        ), fWall2    ]
-      , [    fGridZ                                         , fWall2    ]
-      , [    fGridZ                                         , 0         ]
+      [ [     hookZ                                               , 0         ]
+      , [     hookZ                                               , fWall2    ]
+      , [max( hookZ,  bumpZ+sBI                                  ), fWall2    ]
+      , [max( hookZ,  bumpZ+sBI                            +sLL  ), fWall2+sPH]
+      , [max( hookZ,  bumpZ+sBI                      +sPL  +sLL  ), fWall2+sPH]
+      , [max( hookZ,  bumpZ+sBI                      +sPL  +sLL*2), fWall2    ]
+      , [min(fGridZ, fGridZ-sFI+fSlopXY*sLS-sSlop-sRL-sPL*2-sLL*2), fWall2    ]
+      , [min(fGridZ, fGridZ-sFI+fSlopXY*sLS-sSlop-sRL-sPL*2-sLL  ), fWall2+sPH]
+      , [min(fGridZ, fGridZ-sFI+fSlopXY*sLS-sSlop-sRL-sPL  -sLL  ), fWall2+sPH]
+      , [min(fGridZ, fGridZ-sFI+fSlopXY*sLS-sSlop-sRL-sPL        ), fWall2    ]
+      , [    fGridZ                                               , fWall2    ]
+      , [    fGridZ                                               , 0         ]
       ]);
     // latch mask
     if (!stop) translate([fWall2*dir, fudge, 0]) rotate([90,0,0]) extrude(sPH+fWall2+fudge) scale([dir, 1]) polygon(
@@ -567,8 +593,8 @@ module hook(dir, hook, stem, hang=fudge, overlap=fSlopXY-fSlopZBack, stop=undef)
 
 module tHooks(drawHooks=true) flipX() translate([fSideIX-fSlopXY-claspW/2-hookTB/2, fTHookY, 0]) {
   translate([-claspW/2-hookTB/2, hookD, fGridZ-bIL-bFL]) hull() {
-    translate([0, 0, bFL]) box([bW, -fudge, -bFL-bPL-bBL]);
-    box([bW, bPH, -bPL]);
+    translate([0, 0, bFL]) box([bPW, -fudge, -bFL-bPL-bBL]);
+    box([bPW, bPH, -bPL]);
   };
   if (drawHooks) hook(1, hookTB, hookD, stop=claspD-fWall2);
 }
@@ -901,14 +927,14 @@ module sideBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0
   ]);
 
 module trimBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0]) extrude(size.y) polygon(
-  [ [-fudge,        0                                     ]
-  , [     0,        0                                     ]
-  , [     0, max(0, tFloat+fSlopZTrim+tIL+tRL+tPL        )]
-  , [   tPH, max(0, tFloat+fSlopZTrim+tIL+tRL+tPL  +tLL  )]
-  , [   tPH, max(0, tFloat+fSlopZTrim+tIL+tRL+tPL*2+tLL  )]
-  , [     0, max(0, tFloat+fSlopZTrim+tIL+tRL+tPL*2+tLL*2)]
-  , [     0,        tInsert                               ]
-  , [-fudge,        tInsert                               ]
+  [ [-fudge,        0                                            ]
+  , [     0,        0                                            ]
+  , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+tRL+tPL        )]
+  , [   tPH, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+tRL+tPL  +tLL  )]
+  , [   tPH, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+tRL+tPL*2+tLL  )]
+  , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+tRL+tPL*2+tLL*2)]
+  , [     0,        tInsert                                      ]
+  , [-fudge,        tInsert                                      ]
   ]);
 
 
@@ -972,45 +998,44 @@ module bSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
 
 // SIDES
 
-module tSide(x=1, z=[0], trim=false) {
-  if (trim && tPH>0) tTrim(x, z, print=false);
+module tSide(x=1, z=[0], trim=false, color=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) translate([0, fGridY*(y+1), 0]) {
+  if (l<=r) condColor(color) translate([0, fGridY*(y+1), 0]) {
     if (tPH>0) extrude(fBase) translate([fGridX*l-fBulgeOX, fBHookY+bPH]) rect([fGridX*(r-l)+fBulgeOX*2, tClearance-bPH+fWall2]);
     extrude(fSideZ) translate([fGridX*l-fBulgeOX, fBHookY+tClearance]) rect([fGridX*(r-l)+fBulgeOX*2, fWall2]);
     tlSeamFill(l);
     trSeamFill(r);
     tSideBase(l, r);
   }
+  if (tPH>0) condColor(trim) render() tTrim(x, z, print=false);
 }
 
-module bSide(x=1, z=[0], trim=false) {
-  if (trim && tPH>0) bTrim(x, z, print=false);
+module bSide(x=1, z=[0], trim=false, color=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) translate([0, fGridY*(y-1), 0]) {
+  if (l<=r) condColor(color) translate([0, fGridY*(y-1), 0]) {
     // extrude(fBase) translate([fGridX*l-fBulgeOX, fHornY]) rect([fGridX*(r-l)+fBulgeOX*2, -fWall4]);
     extrude(fSideZ) translate([fGridX*l-fBulgeOX, fTHookY]) rect([fGridX*(r-l)+fBulgeOX*2, -fWall2]);
     blSeamFill(l);
     brSeamFill(r);
     bSideBase(l, r);
   }
+  if (tPH>0) condColor(trim) render() bTrim(x, z, print=false);
 }
 
-module lSide(x=[0], z=1, trim=false) {
-  if (trim && tPH>0) lTrim(x, z, print=false);
+module lSide(x=[0], z=1, trim=false, color=true) {
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
-  if (t>=b) translate([fGridX*(x[0]-1), 0, 0]) {
+  if (t>=b) condColor(color) translate([fGridX*(x[0]-1), 0, 0]) {
     extrude(fBase) for (i=[b:t]) if (i>b) translate([fSideIX, fGridY*(i-0.5)]) rect([claspD+stretchX/2+fWallGrid, claspW*2+hookLR*2-fWall2*2-fSlopXY-lPC*2-lWS*2], [1,0]);
     extrude(fBase) translate([fSideIX, fGridY*t]) translate([0,  fHornY]) rect([claspD+stretchX/2+fWallGrid, -claspW-hookLR+fWallGrid+lPC+lWS]);
     extrude(fBase) translate([fSideIX, fGridY*b]) translate([0, -fHornY]) rect([claspD+stretchX/2+fWallGrid,  claspW+hookLR-fWallGrid-lPC-lWS]);
@@ -1019,7 +1044,7 @@ module lSide(x=[0], z=1, trim=false) {
     extrude(fSideZ) translate([fSideOX, fGridY*b-fHornY]) rect([-fWall2, fGridY*(t-b)+fHornY*2]);
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       rHooks();
-      if (fillStretch) rHookFill();
+      if (stretchXFill) rHookFill();
       translate([fSideIX, 0, 0]) {
         rB = [fBulgeWall+fWall2, fHornY*2-claspW*2-hookLR*2-fSlopXY*2];
         rL = rB - [fWall2, fWall2*2];
@@ -1039,24 +1064,24 @@ module lSide(x=[0], z=1, trim=false) {
       }
     }
   }
+  if (tPH>0) condColor(trim) render() lTrim(x, z, print=false);
 }
 
-module rSide(x=[0], z=1, trim=false) {
-  if (trim && tPH>0) rTrim(x, z, print=false);
+module rSide(x=[0], z=1, trim=false, color=true) {
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
-  if (t>=b) translate([fGridX*(x[0]+1), 0, 0]) {
+  if (t>=b) condColor(color) translate([fGridX*(x[0]+1), 0, 0]) {
     extrude(fBase) translate([-fSideOX-stretchX/2, fGridY*b-fHornY]) rect([fWall2+stretchX/2, fGridY*(t-b)+fHornY*2]);
     extrude(fSideZ) translate([-fSideOX, fGridY*b-fHornY]) rect([fWall2, fGridY*(t-b)+fHornY*2]);
-    if (fillStretch) {
+    if (stretchXFill) {
       ltHookFill(t);
       lbHookFill(b);
     }
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       lHooks();
-      if (fillStretch && i<t) lHookFill();
+      if (stretchXFill && i<t) lHookFill();
       translate([-fSideIX, 0, 0]) {
         rB = [-fBulgeWall-fWall2, fHornY*2-claspW*2-hookLR*2+fWall2*2+lPC*2+lWS*2];
         rL = rB - [-fWall2, fWall2*2+lWS*2];
@@ -1076,6 +1101,7 @@ module rSide(x=[0], z=1, trim=false) {
       }
     }
   }
+  if (tPH>0) condColor(trim) render() rTrim(x, z, print=false);
 }
 
 
@@ -1108,14 +1134,13 @@ module cornerMask(r, offset, align) translate([(fGridX-offset.x)*align.x, (fGrid
 
 // CORNERS
 
-module tlSide(x=1, z=[0], trim=false) {
-  if (trim && tPH>0) tTrim(x, z, print=false);
+module tlSide(x=1, z=[0], trim=false, color=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) {
+  if (l<=r) condColor(color) {
     tPHAdj = tPH>0 ? 0 : fWallGrid;
     fillet = fWall2 + tClearance + tPHAdj;
     rise = claspD - fWall2 + fSlopXY - tPHAdj;
@@ -1156,16 +1181,16 @@ module tlSide(x=1, z=[0], trim=false) {
       }
     }
   }
+  if (tPH>0) condColor(trim) render() tlTrim(x, [z[0], z[0]], print=false);
 }
 
-module trSide(x=1, z=[0], trim=false) {
-  if (trim && tPH>0) tTrim(x, z, print=false);
+module trSide(x=1, z=[0], trim=false, color=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) {
+  if (l<=r) condColor(color) {
     tPHAdj = tPH>0 ? 0 : fWallGrid;
     fillet = fWall2 + tClearance + tPHAdj;
     rise = claspD - fWall2 + fSlopXY - tPHAdj;
@@ -1206,16 +1231,16 @@ module trSide(x=1, z=[0], trim=false) {
       }
     }
   }
+  if (tPH>0) condColor(trim) render() trTrim(x, [z[0], z[0]], print=false);
 }
 
-module blSide(x=1, z=[0], trim=false) {
-  if (trim && tPH>0) bTrim(x, z, print=false);
+module blSide(x=1, z=[0], trim=false, color=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) {
+  if (l<=r) condColor(color) {
     fillet = claspD;
     edge = fGridX/2 - claspD/2 + fWallGrid + stretchX/2;
     align = [1, 1];
@@ -1250,16 +1275,16 @@ module blSide(x=1, z=[0], trim=false) {
       }
     }
   }
+  if (tPH>0) condColor(trim) render() blTrim(x, [z[0], z[0]], print=false);
 }
 
-module brSide(x=1, z=[0], trim=false) {
-  if (trim && tPH>0) bTrim(x, z, print=false);
+module brSide(x=1, z=[0], trim=false, color=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) {
+  if (l<=r) condColor(color) {
     fillet = claspD;
     edge = fGridX/2 - claspD/2 + fWallGrid + stretchX/2;
     align = [-1, 1];
@@ -1294,6 +1319,7 @@ module brSide(x=1, z=[0], trim=false) {
       }
     }
   }
+  if (tPH>0) condColor(trim) render() brTrim(x, [z[0], z[0]], print=false);
 }
 
 
@@ -1509,13 +1535,13 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
   }
 
   module lFrame(b=0, t=0) {
-    if (fillStretch) {
+    if (stretchXFill) {
       ltHookFill(t);
       lbHookFill(b);
     }
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       if (drawSides) lHooks();
-      if (fillStretch && i<t) lHookFill();
+      if (stretchXFill && i<t) lHookFill();
       lBulge(top=i==t);
       // fill hole caused by locks (if used)
       flipY() translate([-fBulgeOX, fBulgeIY, fGridZ]) hull() {
@@ -1533,7 +1559,7 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
   module rFrame(b=0, t=0) {
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       if (drawSides) rHooks();
-      if (fillStretch) rHookFill();
+      if (stretchXFill) rHookFill();
       rBulge(top=i==t);
       if (i<t) extrude(fGridZ) translate([fSideOX, fBulgeIY]) rect([fWall2, fGridY-fBulgeIY*2], [-1,1]);
     }
@@ -1831,25 +1857,22 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
   if (l<=r && h>=1) hl(!binDrawersEnabled && !divided) translate([fGridX*(r+l)/2, dubWall?-gap:0, 0]) {
     difference() {
       union() {
+        // main body
         box([w, bodyY, bodyZ], [0,0,1]);
-        // bulges
         translate([0, -drawerY/2+(dubWall?gap:0), bulgeZ]) {
+          // bulges
           for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0)) translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
             box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
             box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
           }
-          translate([0, drawerY-fudge, -bulgeMidH/2]) {
-            box([w, fBulgeWall/2+fudge, bulgeMidH/2-bulgeZ], [0,1,1]);
-            hull() {
-              box([w, fBulgeWall/2+fudge, bulgeMidH/2-bulgeZ+fLayerH0], [0,1,1]);
-              box([w, fBulgeWall+fudge, bulgeMidH/2-bulgeZ+fLayerH0+fBulgeWall/2], [0,1,1]);
-            }
-          }
+          // bottom front corner
           translate([0, drawerY-fudge, -(h==1?stopH/2:0)]) hull() {
             translate([0, 0, -fBulgeWall/2]) box([w, fBulgeWall+fudge, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
             box([w+fBulgeWall*2, fBulgeWall+fudge, bulgeMidH-(h==1?stopH:0)], [0,1,0]);
           }
         }
+        // bottom front corner
+        translate([0, drawerY/2+(dubWall?gap:0)-fudge, 0]) box([w, fBulgeWall+fudge, bulgeZ-bulgeMidH/2], [0,1,1]);
         // stops
         if (dStopLines>0) hl(bulgeMidH<stopH) translate([0, bodyY/2+fBulgeWall, stopZ]) for (i=[0:dStopLines-1])
           translate([0, -(dWall2+gap)*sqrt(2)*i, 0]) extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=4) polygon(
@@ -1877,6 +1900,8 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         eSliceX(braceTop, rL-[dWall2*2, dWall2], centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
         eSliceY(braceTop, [rL.x-dWall2*2, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
       }
+      // bottom front chamfer
+      translate([0, drawerY/2+(dubWall?gap:0)+fBulgeWall-dChamfer, 0]) rotate([-45]) box([w+fudge2, dChamfer*sqrt(2)/2+fudge, dChamfer*sqrt(2)], [0,1,1]);
       // cavity
       if (dubWall) translate([0, drawerY/2+gap-dWall2, dBase]) {
         if (divided) translate([0, fudge, 0])
@@ -1899,8 +1924,8 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
       if (bPH>0) for (i=[l:r]) translate([fGridX*i-fGridX*(r+l)/2, dFloat, 0])
         flipX() translate([fSideIX-fSlopXY-claspW-hookTB-dSlopXY, 0, 0]) hull() {
           translate([0, -drawerY/2+dTravel+bIL+bFL+bPL+bBL-(dSlopZ*bBL/bPH)-(dubWall?0:gap), 0]) {
-            box([bW+dSlopXY*2, -bodyY, -fudge]);
-            translate([0, -bBL*(bSH/bPH), 0]) box([bW+dSlopXY*2, -bodyY, bSH]);
+            box([bPW+dSlopXY*2, -bodyY, -fudge]);
+            translate([0, -bBL*(bSH/bPH), 0]) box([bPW+dSlopXY*2, -bodyY, bSH]);
           }
         }
     }
@@ -2012,6 +2037,7 @@ module bin(x=1, y=1, h=1) {
   d = bGridXY*(b-f) + binXY;
   z = bFloorZ(fGridY*(h-1) + binZ);
   bulge = binR*sqrt(2)/2;
+
   if (!binDrawersEnabled) {
     echo("Bins are disabled. Possible fixes:");
     echo("    ∙ enable bin drawer compensation");
@@ -2064,15 +2090,21 @@ module hookInsert() render() {
 
 
 module demoHooks() {
-  translate([     0,       0, 0]) color([0.6,0.6,0.6,1   ]) tHooks();
-  translate([     0,  fGridY, 0]) color([0.6,0.6,0.6,0.25]) bHooks();
+  innerColor = [0.9, 0.5, 0.1, 1.0];
+  outerColor = [0.2, 0.5, 0.9, 0.3];
 
-  translate([     0,       0, 0]) color([0.6,0.6,0.6,1   ]) rHooks();
-  translate([fGridX,       0, 0]) color([0.6,0.6,0.6,0.25]) lHooks();
+  translate([      0,  fGridY, 0]) color(innerColor) blHook();
+  translate([      0,  fGridY, 0]) color(innerColor) brHook();
+  translate([      0,       0, 0]) color(outerColor) tHooks();
 
-  translate([     0, -fGridY, 0]) color([0.6,0.6,0.6,1   ]) tHooks();
-  translate([     0,       0, 0]) color([0.6,0.6,0.6,0.25]) blHook();
-  translate([     0,       0, 0]) color([0.6,0.6,0.6,0.25]) brHook();
+  translate([      0, -fGridY, 0]) color(innerColor) tHooks();
+  translate([      0,       0, 0]) color(outerColor) bHooks();
+
+  translate([-fGridX,       0, 0]) color(innerColor) rHooks();
+  translate([      0,       0, 0]) color(outerColor) lHooks();
+
+  translate([ fGridX,       0, 0]) color(innerColor) lHooks();
+  translate([      0,       0, 0]) color(outerColor) rHooks();
 }
 
 module demoFill(w) {
@@ -2080,9 +2112,9 @@ module demoFill(w) {
   echo(flush=1, fillWalls=fillWalls(w, 1, fWall2), fillResidue=fillResidue(w, 1, fWall2), fillResidueShare=fillResidueShare(w, 1, fWall2));
   echo(flush=0, fillWalls=fillWalls(w, 0, fWall2), fillResidue=fillResidue(w, 0, fWall2), fillResidueShare=fillResidueShare(w, 0, fWall2));
   baseColor = [0.0, 0.2, 0.4];
-  gapColor = [0.4, 0.2, 0.0];
+  gapColor  = [0.4, 0.2, 0.0];
   lineColor = [0.8, 0.5, 0.0];
-  cutColor = [0.5, 0.5, 0.5, 0.5];
+  cutColor  = [0.5, 0.5, 0.5, 0.5];
   baseH = -0.25;
   gapH = 0.1;
   lineH = 0.1;
@@ -2231,12 +2263,15 @@ module demoSliceY(r, translate
   }
 
 module demoSides(trim=true) {
-  lSide(x=[ 0.8], z=5, trim=trim);
-  rSide(x=[-0.8], z=5, trim=trim);
-  tlSide([-2, -1], [-0.8], trim=trim);
-  trSide([ 1,  2], [-0.8], trim=trim);
-  blSide([-2, -1], [ 0.8], trim=trim);
-  brSide([ 1,  2], [ 0.8], trim=trim);
+  sideColor = [0.9, 0.5, 0.1, 1.0];
+  trimColor = [0.2, 0.5, 0.9, 0.3];
+
+  lSide(x=[ 0.8], z=5, trim=trimColor, color=sideColor);
+  rSide(x=[-0.8], z=5, trim=trimColor, color=sideColor);
+  tlSide([-2, -1], [-0.8], trim=trimColor, color=sideColor);
+  trSide([ 1,  2], [-0.8], trim=trimColor, color=sideColor);
+  blSide([-2, -1], [ 0.8], trim=trimColor, color=sideColor);
+  brSide([ 1,  2], [ 0.8], trim=trimColor, color=sideColor);
 }
 
 module demoPerimeter(x=2, z=2, cornerSize=1, trim=true) {
@@ -2248,14 +2283,14 @@ module demoPerimeter(x=2, z=2, cornerSize=1, trim=true) {
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   assert(t-b>=cornerSize);
   assert(r-l>=cornerSize);
-  tSide([l+cornerSize, r-cornerSize], [t], trim=false);
-  bSide([l+cornerSize, r-cornerSize], [b], trim=false);
-  lSide([l], [b, t], trim=false);
-  rSide([r], [b, t], trim=false);
-  tlSide([l, l+cornerSize-1], [t], trim=false);
-  trSide([r, r-cornerSize+1], [t], trim=false);
-  blSide([l, l+cornerSize-1], [b], trim=false);
-  brSide([r, r-cornerSize+1], [b], trim=false);
+  tSide([l+cornerSize, r-cornerSize], [t]);
+  bSide([l+cornerSize, r-cornerSize], [b]);
+  lSide([l], [b, t]);
+  rSide([r], [b, t]);
+  tlSide([l, l+cornerSize-1], [t]);
+  trSide([r, r-cornerSize+1], [t]);
+  blSide([l, l+cornerSize-1], [b]);
+  brSide([r, r-cornerSize+1], [b]);
   if (trim) {
     tTrim([l+cornerSize, r-cornerSize], [t], print=false);
     bTrim([l+cornerSize, r-cornerSize], [b], print=false);
@@ -2427,7 +2462,7 @@ if (Active_model=="fills") demoFills();
 
 if (Active_model=="sides") demoSides(trim=Show_trim_in_assembly_demos);
 
-if (Active_model=="perimeter") color([0.5,0.5,0.5,1]) demoPerimeter();
+if (Active_model=="perimeter") demoPerimeter();
 
 if (Active_model=="hooks") demoHooks();
 
