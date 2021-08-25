@@ -113,7 +113,7 @@ Add_lip_behind_face_of_double_wall_drawers = true;
 /* [Demos] */
 
 Show_drawers_in_assembly_demos = false;
-Show_trim_in_assembly_demos = false;
+Show_trim_in_assembly_demos = true;
 // Improves preview performance by removing all the thin alternating cuts.
 Simple_preview = true;
 
@@ -471,9 +471,18 @@ if (fStopTop<0) {
 ///////////////////
 
 
+solidBlue   = [0.00, 0.20, 0.40, 1.00];
+solidBrown  = [0.40, 0.20, 0.00, 1.00];
+solidOrange = [0.85, 0.55, 0.02, 1.00];
+solidGrey   = [0.60, 0.60, 0.60, 1.00];
+transBlue   = [0.05, 0.40, 0.90, 0.30];
+transGrey   = [0.50, 0.50, 0.50, 0.50];
+
+errorColor  = [0.90, 0.05, 0.05, 1.00];
+
 // highlight errors
 module hl(e) {
-  if (e) color([0.9, 0.1, 0.1]) children();
+  if (e) color(errorColor) children();
   else children();
 }
 
@@ -481,6 +490,12 @@ module hl(e) {
 module condColor(c) {
   if (is_list(c)) color(c) children();
   else if (c) children();
+}
+
+// conditional render
+module condRender() {
+  if (Simple_preview) children();
+  else render() children();
 }
 
 
@@ -998,7 +1013,7 @@ module bSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
 
 // SIDES
 
-module tSide(x=1, z=[0], trim=false, color=true) {
+module tSide(x=1, z=[0], color=true, trimColor=undef) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1011,10 +1026,10 @@ module tSide(x=1, z=[0], trim=false, color=true) {
     trSeamFill(r);
     tSideBase(l, r);
   }
-  if (tPH>0) condColor(trim) render() tTrim(x, z, print=false);
+  if (tPH>0) condColor(trimColor) condRender() tTrim(x, z, print=false);
 }
 
-module bSide(x=1, z=[0], trim=false, color=true) {
+module bSide(x=1, z=[0], color=true, trimColor=undef) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1027,10 +1042,10 @@ module bSide(x=1, z=[0], trim=false, color=true) {
     brSeamFill(r);
     bSideBase(l, r);
   }
-  if (tPH>0) condColor(trim) render() bTrim(x, z, print=false);
+  if (tPH>0) condColor(trimColor) condRender() bTrim(x, z, print=false);
 }
 
-module lSide(x=[0], z=1, trim=false, color=true) {
+module lSide(x=[0], z=1, color=true, trimColor=undef) {
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
@@ -1064,10 +1079,10 @@ module lSide(x=[0], z=1, trim=false, color=true) {
       }
     }
   }
-  if (tPH>0) condColor(trim) render() lTrim(x, z, print=false);
+  if (tPH>0) condColor(trimColor) condRender() lTrim(x, z, print=false);
 }
 
-module rSide(x=[0], z=1, trim=false, color=true) {
+module rSide(x=[0], z=1, color=true, trimColor=undef) {
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
@@ -1101,7 +1116,7 @@ module rSide(x=[0], z=1, trim=false, color=true) {
       }
     }
   }
-  if (tPH>0) condColor(trim) render() rTrim(x, z, print=false);
+  if (tPH>0) condColor(trimColor) condRender() rTrim(x, z, print=false);
 }
 
 
@@ -1134,7 +1149,7 @@ module cornerMask(r, offset, align) translate([(fGridX-offset.x)*align.x, (fGrid
 
 // CORNERS
 
-module tlSide(x=1, z=[0], trim=false, color=true) {
+module tlSide(x=1, z=[0], color=true, trimColor=undef) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1181,10 +1196,10 @@ module tlSide(x=1, z=[0], trim=false, color=true) {
       }
     }
   }
-  if (tPH>0) condColor(trim) render() tlTrim(x, [z[0], z[0]], print=false);
+  if (tPH>0) condColor(trimColor) condRender() tlTrim(x, [z[0], z[0]], print=false);
 }
 
-module trSide(x=1, z=[0], trim=false, color=true) {
+module trSide(x=1, z=[0], color=true, trimColor=undef) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1231,10 +1246,10 @@ module trSide(x=1, z=[0], trim=false, color=true) {
       }
     }
   }
-  if (tPH>0) condColor(trim) render() trTrim(x, [z[0], z[0]], print=false);
+  if (tPH>0) condColor(trimColor) condRender() trTrim(x, [z[0], z[0]], print=false);
 }
 
-module blSide(x=1, z=[0], trim=false, color=true) {
+module blSide(x=1, z=[0], color=true, trimColor=undef) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1275,10 +1290,10 @@ module blSide(x=1, z=[0], trim=false, color=true) {
       }
     }
   }
-  if (tPH>0) condColor(trim) render() blTrim(x, [z[0], z[0]], print=false);
+  if (tPH>0) condColor(trimColor) condRender() blTrim(x, [z[0], z[0]], print=false);
 }
 
-module brSide(x=1, z=[0], trim=false, color=true) {
+module brSide(x=1, z=[0], color=true, trimColor=undef) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1319,7 +1334,7 @@ module brSide(x=1, z=[0], trim=false, color=true) {
       }
     }
   }
-  if (tPH>0) condColor(trim) render() brTrim(x, [z[0], z[0]], print=false);
+  if (tPH>0) condColor(trimColor) condRender() brTrim(x, [z[0], z[0]], print=false);
 }
 
 
@@ -1339,38 +1354,38 @@ module bTrimBase(l, r) for (i=[l:r]) translate([fGridX*i, fHornY-claspD+fWallGri
 }
 
 module tTrim(x=1, z=[0], print=true) {
-  assert(tPH > 0);
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) rotate([0, print?180:0, 0]) translate([0, fGridY*(y+1), print?0:fGridZ+tBase+tFloat]) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (l<=r) hl(tPH==0) rotate([0, print?180:0, 0]) translate([0, fGridY*(y+1), print?0:fGridZ+tBase+tFloat]) {
     extrude(-tBase) translate([fGridX*l-fBulgeOX, fBHookY]) rect([fGridX*(r-l)+fBulgeOX*2, tClearance-fSlopXY]);
     tTrimBase(l, r);
   }
 }
 
 module bTrim(x=1, z=[0], print=true) {
-  assert(tPH > 0);
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (l<=r) rotate([0, print?180:0, 0]) translate([0, fGridY*(y-1), print?0:fGridZ+tBase+tFloat]) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (l<=r) hl(tPH==0) rotate([0, print?180:0, 0]) translate([0, fGridY*(y-1), print?0:fGridZ+tBase+tFloat]) {
     extrude(-tBase) translate([fGridX*l-fBulgeOX, fTHookY+fSlopXY]) rect([fGridX*(r-l)+fBulgeOX*2, claspD]);
     bTrimBase(l, r);
   }
 }
 
 module lTrim(x=[0], z=1, print=true) {
-  assert(tPH > 0);
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
-  if (t>=b) rotate([0, print?180:0, 0]) translate([fGridX*(x[0]-1)+fSideIX+fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (t>=b) hl(tPH==0) rotate([0, print?180:0, 0]) translate([fGridX*(x[0]-1)+fSideIX+fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
     extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fBulgeWall-fSlopXY, fGridY*(t-b)+fHornY*2]);
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       extrude(-trimZ) rect([fBulgeWall-fSlopXY, fBulgeOY*2-fWallGrid*2-tPH*2], [1,0]);
@@ -1380,12 +1395,12 @@ module lTrim(x=[0], z=1, print=true) {
 }
 
 module rTrim(x=[0], z=1, print=true) {
-  assert(tPH > 0);
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
-  if (t>=b) rotate([0, print?180:0, 0]) translate([fGridX*(x[0]+1)-fSideIX-fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (t>=b) hl(tPH==0) rotate([0, print?180:0, 0]) translate([fGridX*(x[0]+1)-fSideIX-fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
     extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fSlopXY-fBulgeWall, fGridY*(t-b)+fHornY*2]);
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       extrude(-trimZ) rect([fSlopXY-fBulgeWall, fHornY*2-claspW*2-hookLR*2+lPC*2-tPH*2-fSlopXY*2], [1,0]);
@@ -1395,14 +1410,14 @@ module rTrim(x=[0], z=1, print=true) {
 }
 
 module tlTrim(x=1, z=1, print=true) {
-  assert(tPH > 0);
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (t>=b && l<=r) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (t>=b && l<=r) hl(tPH==0) {
     fillet = tClearance - fSlopXY;
     rise = fWallGrid + fSlopXY;
     edge = fSideOX + claspD + stretchX - tClearance + fSlopXY*2;
@@ -1419,14 +1434,14 @@ module tlTrim(x=1, z=1, print=true) {
 }
 
 module trTrim(x=1, z=1, print=true) {
-  assert(tPH > 0);
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (t>=b && l<=r) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (t>=b && l<=r) hl(tPH==0) {
     fillet = tClearance - fSlopXY;
     rise = fWallGrid + fSlopXY;
     edge = fSideOX + claspD + stretchX - tClearance + fSlopXY*2;
@@ -1443,14 +1458,14 @@ module trTrim(x=1, z=1, print=true) {
 }
 
 module blTrim(x=1, z=1, print=true) {
-  assert(tPH > 0);
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (t>=b && l<=r) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (t>=b && l<=r) hl(tPH==0) {
     fillet = claspD - fWallGrid;
     edge = fGridX/2 - claspD/2 + stretchX/2 + fWallGrid;
     lTrim([l], z, print);
@@ -1466,14 +1481,14 @@ module blTrim(x=1, z=1, print=true) {
 }
 
 module brTrim(x=1, z=1, print=true) {
-  assert(tPH > 0);
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (t>=b && l<=r) {
+  if (tPH==0) echo("Trim is diabled. Enable trim.");
+  if (t>=b && l<=r) hl(tPH==0) {
     fillet = claspD - fWallGrid;
     edge = fGridX/2 - claspD/2 + stretchX/2 + fWallGrid;
     rTrim([r], z, print);
@@ -2090,31 +2105,24 @@ module hookInsert() render() {
 
 
 module demoHooks() {
-  innerColor = [0.9, 0.5, 0.1, 1.0];
-  outerColor = [0.2, 0.5, 0.9, 0.3];
+  translate([      0,  fGridY, 0]) color(solidOrange) blHook();
+  translate([      0,  fGridY, 0]) color(solidOrange) brHook();
+  translate([      0,       0, 0]) color(transBlue)   tHooks();
 
-  translate([      0,  fGridY, 0]) color(innerColor) blHook();
-  translate([      0,  fGridY, 0]) color(innerColor) brHook();
-  translate([      0,       0, 0]) color(outerColor) tHooks();
+  translate([      0, -fGridY, 0]) color(solidOrange) tHooks();
+  translate([      0,       0, 0]) color(transBlue)   bHooks();
 
-  translate([      0, -fGridY, 0]) color(innerColor) tHooks();
-  translate([      0,       0, 0]) color(outerColor) bHooks();
+  translate([-fGridX,       0, 0]) color(solidOrange) rHooks();
+  translate([      0,       0, 0]) color(transBlue)   lHooks();
 
-  translate([-fGridX,       0, 0]) color(innerColor) rHooks();
-  translate([      0,       0, 0]) color(outerColor) lHooks();
-
-  translate([ fGridX,       0, 0]) color(innerColor) lHooks();
-  translate([      0,       0, 0]) color(outerColor) rHooks();
+  translate([ fGridX,       0, 0]) color(solidOrange) lHooks();
+  translate([      0,       0, 0]) color(transBlue)   rHooks();
 }
 
 module demoFill(w) {
   echo(flush=2, fillWalls=fillWalls(w, 2, fWall2), fillResidue=fillResidue(w, 2, fWall2), fillResidueShare=fillResidueShare(w, 2, fWall2));
   echo(flush=1, fillWalls=fillWalls(w, 1, fWall2), fillResidue=fillResidue(w, 1, fWall2), fillResidueShare=fillResidueShare(w, 1, fWall2));
   echo(flush=0, fillWalls=fillWalls(w, 0, fWall2), fillResidue=fillResidue(w, 0, fWall2), fillResidueShare=fillResidueShare(w, 0, fWall2));
-  baseColor = [0.0, 0.2, 0.4];
-  gapColor  = [0.4, 0.2, 0.0];
-  lineColor = [0.8, 0.5, 0.0];
-  cutColor  = [0.5, 0.5, 0.5, 0.5];
   baseH = -0.25;
   gapH = 0.1;
   lineH = 0.1;
@@ -2122,12 +2130,12 @@ module demoFill(w) {
   // normal, tightly packed
   translate([0, 0]) {
     fillWalls = div(w-gap+fudge, fWall2+gap);
-    color(baseColor) extrude(baseH) rect([w, 1]);
+    color(solidBlue) extrude(baseH) rect([w, 1]);
     if (fillWalls > 0) {
-      color(gapColor) extrude(gapH) rect([gap, 1]);
+      color(solidBrown) extrude(gapH) rect([gap, 1]);
       for (i=[0:fillWalls-1]) translate([i*(fWall2+gap)+gap, 0]) {
-        color(lineColor) extrude(lineH) rect([fWall2, 1]);
-        color(gapColor) extrude(gapH) translate([fWall2, 0]) rect([gap, 1]);
+        color(solidOrange) extrude(lineH) rect([fWall2, 1]);
+        color(solidBrown) extrude(gapH) translate([fWall2, 0]) rect([gap, 1]);
       }
     }
   }
@@ -2137,20 +2145,20 @@ module demoFill(w) {
     fillWall  = fillWall (w, 0, fWall2);
     fillGap   = fillGap  (w, 0, fWall2);
     fillGrid  = fillGrid (w, 0, fWall2);
-    color(baseColor) extrude(baseH) rect([w, 1]);
+    color(solidBlue) extrude(baseH) rect([w, 1]);
     if (fillWalls > 0) {
-      color(gapColor) extrude(gapH) rect([gap/2, 1]);
-      color(gapColor) extrude(gapH) translate([fillGap-gap/2, 0]) rect([gap/2, 1]);
+      color(solidBrown) extrude(gapH) rect([gap/2, 1]);
+      color(solidBrown) extrude(gapH) translate([fillGap-gap/2, 0]) rect([gap/2, 1]);
       for (i=[0:fillWalls-1]) translate([i*fillGrid+fillGap, 0]) {
-        color(lineColor) extrude(lineH) rect([fWall2/2, 1]);
-        color(lineColor) extrude(lineH) translate([fillWall-fWall2/2, 0]) rect([fWall2/2, 1]);
-        color(gapColor) extrude(gapH) translate([fillWall, 0]) rect([gap/2, 1]);
-        color(gapColor) extrude(gapH) translate([fillGrid-gap/2, 0]) rect([gap/2, 1]);
+        color(solidOrange) extrude(lineH) rect([fWall2/2, 1]);
+        color(solidOrange) extrude(lineH) translate([fillWall-fWall2/2, 0]) rect([fWall2/2, 1]);
+        color(solidBrown) extrude(gapH) translate([fillWall, 0]) rect([gap/2, 1]);
+        color(solidBrown) extrude(gapH) translate([fillGrid-gap/2, 0]) rect([gap/2, 1]);
       }
       for (i=[0:fillWalls-1]) translate([i*fillGrid+fillGap, 0])
-        color(cutColor) extrude(cutH) translate([fillWall, 0]) rect([fillGap, 1]);
+        color(transGrey) extrude(cutH) translate([fillWall, 0]) rect([fillGap, 1]);
     }
-    color(cutColor) extrude(cutH) rect([fillGap, 1]);
+    color(transGrey) extrude(cutH) rect([fillGap, 1]);
   }
   // flush to end
   translate([0, 3]) {
@@ -2158,18 +2166,18 @@ module demoFill(w) {
     fillWall  = fillWall (w, 1, fWall2);
     fillGap   = fillGap  (w, 1, fWall2);
     fillGrid  = fillGrid (w, 1, fWall2);
-    color(baseColor) extrude(baseH) rect([w, 1]);
+    color(solidBlue) extrude(baseH) rect([w, 1]);
     if (fillWalls > 0) {
       for (i=[0:fillWalls-1]) translate([i*fillGrid, 0]) {
-        color(lineColor) extrude(lineH) translate([fillGap, 0]) rect([fWall2/2, 1]);
-        color(lineColor) extrude(lineH) translate([fillGrid-fWall2/2, 0]) rect([fWall2/2, 1]);
-        color(gapColor) extrude(gapH) rect([gap/2, 1]);
-        color(gapColor) extrude(gapH) translate([fillGap-gap/2, 0]) rect([gap/2, 1]);
+        color(solidOrange) extrude(lineH) translate([fillGap, 0]) rect([fWall2/2, 1]);
+        color(solidOrange) extrude(lineH) translate([fillGrid-fWall2/2, 0]) rect([fWall2/2, 1]);
+        color(solidBrown) extrude(gapH) rect([gap/2, 1]);
+        color(solidBrown) extrude(gapH) translate([fillGap-gap/2, 0]) rect([gap/2, 1]);
       }
       for (i=[0:fillWalls-1]) translate([i*fillGrid, 0])
-        color(cutColor) extrude(cutH) rect([fillGap, 1]);
+        color(transGrey) extrude(cutH) rect([fillGap, 1]);
     }
-    else color(cutColor) extrude(cutH) rect([w, 1]);
+    else color(transGrey) extrude(cutH) rect([w, 1]);
   }
   // flush to start
   translate([0, 4.5]) {
@@ -2177,18 +2185,18 @@ module demoFill(w) {
     fillWall  = fillWall (w, 1, fWall2);
     fillGap   = fillGap  (w, 1, fWall2);
     fillGrid  = fillGrid (w, 1, fWall2);
-    color(baseColor) extrude(baseH) rect([w, 1]);
+    color(solidBlue) extrude(baseH) rect([w, 1]);
     if (fillWalls > 0) {
       for (i=[0:fillWalls-1]) translate([i*fillGrid, 0]) {
-        color(lineColor) extrude(lineH) rect([fWall2/2, 1]);
-        color(lineColor) extrude(lineH) translate([fillWall-fWall2/2, 0]) rect([fWall2/2, 1]);
-        color(gapColor) extrude(gapH) translate([fillWall, 0]) rect([gap/2, 1]);
-        color(gapColor) extrude(gapH) translate([fillGrid-gap/2, 0]) rect([gap/2, 1]);
+        color(solidOrange) extrude(lineH) rect([fWall2/2, 1]);
+        color(solidOrange) extrude(lineH) translate([fillWall-fWall2/2, 0]) rect([fWall2/2, 1]);
+        color(solidBrown) extrude(gapH) translate([fillWall, 0]) rect([gap/2, 1]);
+        color(solidBrown) extrude(gapH) translate([fillGrid-gap/2, 0]) rect([gap/2, 1]);
       }
       for (i=[0:fillWalls-1]) translate([i*fillGrid, 0])
-        color(cutColor) extrude(cutH) translate([fillWall, 0]) rect([fillGap, 1]);
+        color(transGrey) extrude(cutH) translate([fillWall, 0]) rect([fillGap, 1]);
     }
-    else color(cutColor) extrude(cutH) rect([w, 1]);
+    else color(transGrey) extrude(cutH) rect([w, 1]);
   }
   // flush to start and end
   translate([0, 6]) {
@@ -2196,18 +2204,18 @@ module demoFill(w) {
     fillWall  = fillWall (w, 2, fWall2);
     fillGap   = fillGap  (w, 2, fWall2);
     fillGrid  = fillGrid (w, 2, fWall2);
-    color(baseColor) extrude(baseH) rect([w, 1]);
+    color(solidBlue) extrude(baseH) rect([w, 1]);
     if (fillWalls > 0) {
       for (i=[0:fillWalls-1]) translate([i*fillGrid-fillGap, 0]) {
-        if (i>0) color(gapColor) extrude(gapH) rect([gap/2, 1]);
-        if (i>0) color(gapColor) extrude(gapH) translate([fillGap-gap/2, 0]) rect([gap/2, 1]);
-        color(lineColor) extrude(lineH) translate([fillGap, 0]) rect([fWall2/2, 1]);
-        color(lineColor) extrude(lineH) translate([fillGrid-fWall2/2, 0]) rect([fWall2/2, 1]);
+        if (i>0) color(solidBrown) extrude(gapH) rect([gap/2, 1]);
+        if (i>0) color(solidBrown) extrude(gapH) translate([fillGap-gap/2, 0]) rect([gap/2, 1]);
+        color(solidOrange) extrude(lineH) translate([fillGap, 0]) rect([fWall2/2, 1]);
+        color(solidOrange) extrude(lineH) translate([fillGrid-fWall2/2, 0]) rect([fWall2/2, 1]);
       }
       for (i=[0:fillWalls-1]) translate([i*fillGrid-fillGap, 0])
-        if (i>0) color(cutColor) extrude(cutH) rect([fillGap, 1]);
+        if (i>0) color(transGrey) extrude(cutH) rect([fillGap, 1]);
     }
-    else color(cutColor) extrude(cutH) rect([w, 1]);
+    else color(transGrey) extrude(cutH) rect([w, 1]);
   }
   echo();
 }
@@ -2262,19 +2270,17 @@ module demoSliceY(r, translate
       else rect(r*4, [0,0]);
   }
 
-module demoSides(trim=true) {
-  sideColor = [0.9, 0.5, 0.1, 1.0];
-  trimColor = [0.2, 0.5, 0.9, 0.3];
-
-  lSide(x=[ 0.8], z=5, trim=trimColor, color=sideColor);
-  rSide(x=[-0.8], z=5, trim=trimColor, color=sideColor);
-  tlSide([-2, -1], [-0.8], trim=trimColor, color=sideColor);
-  trSide([ 1,  2], [-0.8], trim=trimColor, color=sideColor);
-  blSide([-2, -1], [ 0.8], trim=trimColor, color=sideColor);
-  brSide([ 1,  2], [ 0.8], trim=trimColor, color=sideColor);
+module demoSides(drawTrim=true) {
+  trimColor = drawTrim ? transBlue : undef;
+  lSide(x=[ 0.8], z=5, color=solidOrange, trimColor=trimColor);
+  rSide(x=[-0.8], z=5, color=solidOrange, trimColor=trimColor);
+  tlSide([-2, -1], [-0.8], color=solidOrange, trimColor=trimColor);
+  trSide([ 1,  2], [-0.8], color=solidOrange, trimColor=trimColor);
+  blSide([-2, -1], [ 0.8], color=solidOrange, trimColor=trimColor);
+  brSide([ 1,  2], [ 0.8], color=solidOrange, trimColor=trimColor);
 }
 
-module demoPerimeter(x=2, z=2, cornerSize=1, trim=true) {
+module demoPerimeter(x=2, z=2, cornerSize=1, color=true, trimColor=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
@@ -2283,15 +2289,17 @@ module demoPerimeter(x=2, z=2, cornerSize=1, trim=true) {
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   assert(t-b>=cornerSize);
   assert(r-l>=cornerSize);
-  tSide([l+cornerSize, r-cornerSize], [t]);
-  bSide([l+cornerSize, r-cornerSize], [b]);
-  lSide([l], [b, t]);
-  rSide([r], [b, t]);
-  tlSide([l, l+cornerSize-1], [t]);
-  trSide([r, r-cornerSize+1], [t]);
-  blSide([l, l+cornerSize-1], [b]);
-  brSide([r, r-cornerSize+1], [b]);
-  if (trim) {
+  condColor(color) {
+    tSide([l+cornerSize, r-cornerSize], [t]);
+    bSide([l+cornerSize, r-cornerSize], [b]);
+    lSide([l], [b, t]);
+    rSide([r], [b, t]);
+    tlSide([l, l+cornerSize-1], [t]);
+    trSide([r, r-cornerSize+1], [t]);
+    blSide([l, l+cornerSize-1], [b]);
+    brSide([r, r-cornerSize+1], [b]);
+  }
+  if (tPH>0) condColor(trimColor) condRender() {
     tTrim([l+cornerSize, r-cornerSize], [t], print=false);
     bTrim([l+cornerSize, r-cornerSize], [b], print=false);
     lTrim([l], [b+cornerSize, t-cornerSize], print=false);
@@ -2303,8 +2311,8 @@ module demoPerimeter(x=2, z=2, cornerSize=1, trim=true) {
   }
 }
 
-module demoFrameSmall(drawers=true, trim=true) {
-  color([0.6,0.6,0.6,1])
+module demoFrameSmall(drawers=true, drawTrim=true) {
+  color(solidGrey)
     rotate([90]) {
       translate([-fGridX*3/2, -fGridY*3/2, 0]) {
         frame([0,0], [3,3], hookInserts=true, drawer=drawers);
@@ -2320,14 +2328,14 @@ module demoFrameSmall(drawers=true, trim=true) {
         frame([3,3], [0,0], hookInserts=true, drawer=drawers);
       }
     }
-  color([0.85,0.6,0.0,1])
+  color(solidOrange)
     rotate([90]) {
-      demoPerimeter(4, 4, trim=trim);
+      demoPerimeter(4, 4, trimColor=drawTrim);
   }
 }
 
-module demoFrameSmall2(drawers=true, trim=true) {
-  color([0.6,0.6,0.6,1])
+module demoFrameSmall2(drawers=true, drawTrim=true) {
+  color(solidGrey)
     rotate([90]) {
       translate([-fGridX*3, -fGridY*3, 0]) {
         frame([0,1], [5,6], hookInserts=true, drawer=drawers);
@@ -2343,14 +2351,14 @@ module demoFrameSmall2(drawers=true, trim=true) {
         frame([5,6], [0,1], hookInserts=true, drawer=drawers);
       }
     }
-  color([0.85,0.6,0.0,1])
+  color(solidOrange)
     rotate([90]) {
-      demoPerimeter(7, 7, trim=trim);
+      demoPerimeter(7, 7, trimColor=drawTrim);
   }
 }
 
-module demoFrameLarge(drawers=true, trim=true) {
-  color([0.6,0.6,0.6,1])
+module demoFrameLarge(drawers=true, drawTrim=true) {
+  color(solidGrey)
     rotate([90]) {
       frame([-4, -3], [ 2,  2], hookInserts=true, drawer=drawers? 0.0:false);
       frame([-4, -3], [ 1,  1], hookInserts=true, drawer=drawers? 5.0:false);
@@ -2379,14 +2387,14 @@ module demoFrameLarge(drawers=true, trim=true) {
       frame([ 4,  3], [ 0,  0], hookInserts=true, drawer=drawers?10.0:false);
       frame([ 4,  3], [-1, -2], hookInserts=true, drawer=drawers? 2.5:false);
     }
-  color([0.85,0.6,0.0,1])
+  color(solidOrange)
     rotate([90]) {
-      demoPerimeter(9, 5, cornerSize=2, trim=trim);
+      demoPerimeter(9, 5, cornerSize=2, trimColor=drawTrim);
   }
 }
 
-module demoFrameLarge2(drawers=true, trim=true) {
-  color([0.6,0.6,0.6,1])
+module demoFrameLarge2(drawers=true, drawTrim=true) {
+  color(solidGrey)
     rotate([90]) {
       frame([-8, -7], [ 3,  4], hookInserts=true, drawer=drawers);
       frame([-6, -5], [ 3,  4], hookInserts=true, drawer=drawers);
@@ -2413,9 +2421,9 @@ module demoFrameLarge2(drawers=true, trim=true) {
       frame([ 5,  8], [-1,  0], hookInserts=true, drawer=drawers);
       frame([ 6,  8], [-4, -2], hookInserts=true, drawer=drawers);
     }
-  color([0.85,0.6,0.0,1])
+  color(solidOrange)
     rotate([90]) {
-      demoPerimeter(17, 9, cornerSize=2, trim=trim);
+      demoPerimeter(17, 9, cornerSize=2, trimColor=drawTrim);
   }
 }
 
@@ -2460,16 +2468,16 @@ module demoDrawerBinAlignment(x=1, h=1, divisions=undef) {
 
 if (Active_model=="fills") demoFills();
 
-if (Active_model=="sides") demoSides(trim=Show_trim_in_assembly_demos);
+if (Active_model=="sides") demoSides(drawTrim=Show_trim_in_assembly_demos);
 
-if (Active_model=="perimeter") demoPerimeter();
+if (Active_model=="perimeter") demoPerimeter(color=solidOrange, trimColor=Show_trim_in_assembly_demos?transBlue:undef);
 
 if (Active_model=="hooks") demoHooks();
 
-if (Active_model=="small assembly")       demoFrameSmall (drawers=Show_drawers_in_assembly_demos, trim=Show_trim_in_assembly_demos);
-if (Active_model=="small assembly - h>1") demoFrameSmall2(drawers=Show_drawers_in_assembly_demos, trim=Show_trim_in_assembly_demos);
-if (Active_model=="large assembly")       demoFrameLarge (drawers=Show_drawers_in_assembly_demos, trim=Show_trim_in_assembly_demos);
-if (Active_model=="large assembly - h>1") demoFrameLarge2(drawers=Show_drawers_in_assembly_demos, trim=Show_trim_in_assembly_demos);
+if (Active_model=="small assembly")       demoFrameSmall (drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
+if (Active_model=="small assembly - h>1") demoFrameSmall2(drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
+if (Active_model=="large assembly")       demoFrameLarge (drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
+if (Active_model=="large assembly - h>1") demoFrameLarge2(drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
 
 if (Active_model=="bump alignment - drawer shut") demoDrawerBumpAlignment(x=Frame_width, h=Frame_height, drawer=0);
 if (Active_model=="bump alignment - drawer open") demoDrawerBumpAlignment(x=Frame_width, h=Frame_height, drawer=dTravel);
@@ -2520,21 +2528,3 @@ translate([0, 0, -1]) {
   // , cutL=false, cutR=false, cutMid=false, cutAlt=1
   // );
 }
-
-
-// difference() {
-//   drawer(x=3, h=2);
-//   // translate([0,0,5.1]) box([100,200, 40], [0,0,1]);
-// }
-
-// Side = "top";  // [top, top left, left, bottom left, bottom, bottom right, right, top right]
-
-
-// color([.5,.5,.5,.125]) slice(dLayerH0, dLayerHN, minH=0, maxH=fGridY*3-dSlopZ, bounds=[25, 80, 0.01]);
-
-// box([212, 1, 1], [0,0,0]);
-
-// rect([33, 33], [0,0]);
-
-// #translate([0, fBulgeIY, fGridZ]) box([1,1,1], [0,1,0]);
-// #translate([0, -34, fBotIY]) box([1,1,1], [0,0,1]);
