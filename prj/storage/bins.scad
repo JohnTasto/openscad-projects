@@ -5,12 +5,12 @@ Features
   - secure storage for small parts
     - detents hold drawers closed and prevent pulling drawers out too far
     - frame completely surrounds the drawer opening when closed
-    - roof over drawers is flat - nothing for contents to get caught on
+    - roof over drawers is flat, so there is nothing for contents to get caught on
     - bins are slightly rounded at the bottom to aid removal of contents with one finger
   - parametric
     - two types of drawers that can be used interchangeably
       - bin drawers hold rearrangeable bins
-      - fixed divider drawers have configurable walls built in
+      - fixed divider drawers have configurable divider walls built in
     - adjustable line width, layer height, and slop to accommodate various printer setups
     - several available drawer handle styles
     - drawer grid size is configurable to match 25mm or 1" pegboard spacing, etc
@@ -49,9 +49,18 @@ Tips
 
 Possible future improvements
   [ ] carry handle
+  [ ] pegboard hooks
+    - should clip into mounting holes - there is a bit of room behind the drawers between bulges
   [ ] label holder
-  [ ] ribs/buttresses in voids behind radii of fixed divider drawers
-  [ ] support ribs along length of side edges (requires adjusting fills)
+  [ ] warn and highlight additional invalid states
+  [ ] trim side bumps with shallow slopes (or warn)
+  [ ] additional bump rails on tall drawers
+    - should be optional (might be too stiff)
+  [ ] support ribs along length of side edges
+    - requires adjusting fills
+    - benefit is mostly visual since it will close up the gaps caused by abrupt u-turns
+  [ ] buttresses in voids behind radii of fixed divider drawers
+    - automated solution may be very difficult
   [ ] use better sweep method for drawer handles to reduce polygon count by half
   [ ] either change `sliceN` API to use `align` or change `rect` and `box` to use `centerN`
   [ ] fix other naming inconsistencies
@@ -66,41 +75,187 @@ Possible future improvements
       then splitting the remainder evenly. `fillResidueShare` would need to be split in two
 */
 
+/* [Instructions] */
+// Start with the bottommost section and work up.
+Overview = false;
+// Main settings select individual components from a larger system of compatible parts, as well as several demo and cutaway scenes used to check part alignment. Check the demo scenes for highlighted features and the console for error messages before printing parts.
+Main = false;
+// Preview settings offer demo scene options and affect preview quality.
+Preview = false;
+// <local> settingss do not affect compatibility.
+local = false;
+// <side> settings affect all side and trim parts, but no others.
+side = false;
+// <global> settings have system-wide effects, so assumed changing any of these settings will cause all new parts to be incompatible with any old parts. Dial these settings in before starting a production run by printing test pieces until satisfied. Detents work the same across all sizes, so choose a small test size to save time and material.
+global = false;
 
 /* [Main] */
-
 Active_model = "small assembly - h>1";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // Active_model = "bump alignment - drawer shut";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // Active_model = "bump alignment - drawer open";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // Active_model = "z alignment";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
 // Active_model = "bin alignment";  // [--PRINT--, frame, drawer, bin, side, trim, hook insert,  , --ALIGNMENT--, bump alignment - drawer shut, bump alignment - drawer open, z alignment, bin alignment,  , --LARGE DEMOS--, small assembly, small assembly - h>1, large assembly, large assembly - h>1,  , --SMALL DEMOS--, hooks, perimeter, sides, fills]
-// specify which side ifif side or trim is selected above
+// specify which side if side or trim is selected above
 Side = "top";  // [top, top left, left, bottom left, bottom, bottom right, right, top right]
 // Fixed divider drawers are double walled and have configurable built in dividers, but bins will not fit. They may take a while to render.
 Fixed_divider_drawer = false;
 // in frame units
-Frame_drawer_side_and_trim_width = 3;  // [1:1:8]
+Part_width = 3;  // [1:1:8]
 // in frame units
-Frame_drawer_side_and_trim_height = 2;  // [1:1:8]
+Part_height = 2;  // [1:1:8]
 // in bin units
 Bin_width = 2;  // [1:1:16]
 // in bin units
 Bin_depth = 2;  // [1:1:16]
-// in frame units
-Bin_height = 2;  // [1:1:8]
 
+/* [Preview] */
+Full_resolution_corners = false;
+Draw_cuts = false;
+Render_transparent_parts = false;
+Expose_bottom_trim_bumps = false;
+Show_trim_in_demos = true;
+Show_drawers_in_demos = false;
 
-/* [Grid Spacing] */
+/* [Dividers] */
+// in relative sizes, ordered front to back. Any number of division is possible, but the number that can be subdivided has to be hard coded in the customizer. The zeros can be deleted; they are there because 4 element vectors become spinboxes in the customizer. Deeply nested subdivisions are possible by directly editing the file.
+Divisions = [ 3, 4, 3, 0, 0 ];
+Row_1_subdivisions = [4, 9, 0, 0, 0 ];
+Row_2_subdivisions = [4, 5, 4, 0, 0 ];
+Row_3_subdivisions = [9, 4, 0, 0, 0 ];
+Row_4_subdivisions = [0, 0, 0, 0, 0 ];
+Row_5_subdivisions = [0, 0, 0, 0, 0 ];
+Row_6_subdivisions = [0, 0, 0, 0, 0 ];
+Row_7_subdivisions = [0, 0, 0, 0, 0 ];
+Row_8_subdivisions = [0, 0, 0, 0, 0 ];
 
-// Widens frame sides and narrows drawers as needed to align to bin grid, but wastes horizontal space and narrows the drawer side rails.
+/* [<local> Bins] */
+// in mm. Applies to both bins and divider drawers.
+Bin_radius = 15; // [0:1:50]
+// Number of segments along rounded bin sections.
+Bin_segments = 16;  // [1:1:64]
+
+/* [<local> Drawers] */
+// in mm. Length from drawer face to the tip of the handle.
+Handle_length = 20;  // [0.0:0.5:100.0]
+// in mm. Diameter of the handle bar.
+Handle_circumference_diameter = 5;  // [2.5:0.5:25.0]
+// Number of segments in the curved sections around the handle bar.
+Handle_circumference_segments = 12;  // [4:4:64]
+// Draw an elliptical handle instead of a rectangular one.
+Elliptical_handle = false;
+// in mm. Radius of the corners of rectangular handles. No effect on elliptical handles.
+Handle_bend_radius = 5; // [0.0:0.5:25.0]
+// Number of segments in the curved sections along the length of the handle.
+Handle_bend_segments = 24;  // [8:2:128]
+// Extend drawer base into the handle
+Tray_handle = false;
+// in mm. Makes it easier to insert drawers.
+Back_bottom_chamfer = 1;  // [0.000:0.125:5.000]
+
+/* [<local> Frames] */
+// Holes align with frame units.
+Enable_mounting_holes = true;
+// in mm. Set to 0 to disable.
+Mounting_hole_diameter = 4;  // [2.0:0.1:10.0]
+// Number of segments around mounting holes.
+Mounting_hole_segments = 16;  // [8:4:64]
+// Add squiggles to fill gaps caused by bin drawer compensation. This may increase print time more than expected due to acceleration.
+Fill_horizontal_gaps = false;
+// Thicken frame drawer roof along sides to compensate for drawer height layer quantization. Too many lines will increase print time.
+Drawer_layer_compensation_lines = 2;  // [0:1:5]
+// in frame layers.
+Fill_top_thickness = 3;  // [0:1:10]
+
+/* [<side> Sides and Trim] */
+// Add mount points to sides to accept trim. Increases height of top trim parts.
+Enable_trim = true;
+// in mm. Add lip around the front rim. Thickens the fragile trim pieces for extra strength. Pieces with different lip settings should fit together, but will not be flush.
+Front_lip = 2;  // [0.0:0.1:10.0]
+// Number of segments along side corners.
+Side_corner_segments = 8;  // [2:1:32]
+// in horizontal frame slop units
+Trim_bump_height = 1.75;  // [0.000:0.125:4.000]
+// in horizontal frame slop units.  Should be a bit looser.
+Trim_bottom_bump_height = 1.25;  // [0.000:0.125:4.000]
+// in frame layers
+Trim_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Trim_bump_latch_slope = 0.50;  // [0.025:0.025:1.000]
+Trim_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
+// in frame layers
+Trim_Z_slop = -0.25;  // [-5.000:0.125:5.000]
+// in frame layers.  How far the trim is expected to stick out due to rough mating surfaces.
+Trim_float = 0.5;  // [0.000:0.125:1.000]
+
+/* [<global> Drawer Detents] */
+// Drawer detents are much tighter when neighbor frame pieces are attached, so a good test configuration is 3 across by 2 high. The 4 neighboring frame parts can often be used across many drawer tests since the frame rail detents don't change much when changing drawer detents.
+
+// in frame double walls
+Frame_stop_lines_for_single_unit_high_parts = 2;  // [0:1:10]
+// in frame double walls
+Frame_stop_lines_for_multi_unit_high_parts = 3;  // [0:1:15]
+// in drawer double walls
+Drawer_stop_lines = 2;  // [0:1:5]
+// in horizontal drawer slop units.  How far a fully closed drawer still sticks out due to rough mating surfaces.
+Drawer_float = 0.5;  // [0.000:0.125:1.000]
+// in drawer layers
+Drawer_spring_width = 4.0;  // [0.0:0.5:10.0]
+// in horizontal drawer slop units
+Drawer_bump_height = 0.0;  // [-2.000:0.125:2.000]
+// in frame layers
+Drawer_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Drawer_bump_front_slope = 1.000;  // [0.025:0.025:1.000]
+Drawer_bump_back_slope = 0.250;  // [0.025:0.025:1.000]
+// in horizontal drawer slop units
+Cushion_height = 1.0;  // [-2.000:0.125:2.000]
+// in horizontal drawer slop units
+Catch_bump_height = -0.25;  // [-2.000:0.125:2.000]
+// in frame layers
+Catch_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Catch_bump_ramp_slope = 0.125;  // [0.025:0.025:1.000]
+// in horizontal drawer slop units
+Hold_bump_height = 0.0;  // [-2.000:0.125:2.000]
+// in frame layers
+Hold_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Hold_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
+// in horizontal drawer slop units
+Keep_bump_height = 0.25;  // [-2.000:0.125:2.000]
+// in frame layers
+Keep_bump_peak_length = 1.5;  // [0.0:0.5:5.0]
+Keep_bump_ramp_slope = 1.000;  // [0.025:0.025:1.000]
+// in absolute drawer layers. Must be even if using spiralize in Cura.
+Bottom_slot_height = 3;  // [0:1:10]
+// in absolute drawer layers. Add a little extra to overcome filament dragging.
+Bottom_bump_height = 3.5;  // [0.00:0.25:12.00]
+// in frame layers
+Bottom_bump_peak_length = 2.5;  // [0.0:0.5:5.0]
+// in frame double walls. Must leave room for trim clip if trim is enabled.
+Bottom_bump_width = 2;  // [1.00:0.25:5.00]
+Bottom_bump_ramp_slope = 1.000;  // [0.025:0.025:1.000]
+
+/* [<global> Frame Detents] */
+// in mm
+Left_and_right_hook_size = 1.25;  // [0.50:0.25:10.00]
+// in mm
+Top_and_bottom_hook_size = 2.5;  // [0.50:0.25:10.00]
+// in horizontal frame slop units
+Hook_bump_height = 1.75;  // [0.000:0.125:4.000]
+// in frame layers
+Hook_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Hook_bump_latch_slope = 0.500;  // [0.025:0.025:1.000]
+Hook_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
+// in frame layers
+Hook_Z_slop = -0.5;  // [-5.000:0.125:5.000]
+
+/* [<global> Grid] */
+// Widen frame sides and narrows drawers as needed to align to bin grid. Wastes horizontal space and narrows the drawer side rails.
 Bin_drawer_compensation = true;
 // Align frame units to an external grid. If bin drawers are compensated (above), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
 Frame_unit_width_in_mm = 16.65;  // [10.00:0.05:50.00]
-// If greater than zero, overrides the above two settings to enable bin drawers with no wasted horizontal space.
+// If greater than zero, override the above two settings to enable bin drawers with no wasted horizontal space.
 Frame_unit_width_in_bin_units = 0;  // [0:1:12]
 // Depth from back of frame to front of drawer face, not including extra lip on sides and trim. If bin drawers are compensated, the number of bin units that fit a drawer is calculated to minimize wasted space behind drawers.
 Frame_depth_in_mm = 100;  // [10.00:0.05:500.00]
-// If greater than zero and either bin drawers are compensated or frame unit width is specified in bin units, overrides the above setting for no wasted space behind drawers. A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
+// If greater than zero and either bin drawers are compensated or frame unit width is specified in bin units, override the above setting for no wasted space behind drawers. A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
 Frame_depth_in_bin_units = 12;  // [0:1:60]
 // Check the console to ensure there is adequate space for bumps.
 Frame_unit_height_in_mm = 15;  // [10.00:0.05:50.00]
@@ -109,19 +264,42 @@ Double_bin_drawer_walls = false;
 // If enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
 Add_lip_behind_face_of_double_wall_drawers = true;
 
+/* [<global> Printer Config] */
+// in mm. Minimum distance between walls. By empirical testing, Cura needs a 0.03mm gap to prevent merging parts, plus leeway for curve approximations.
+Gap = 0.04;  // [0.0000:0.0025:0.1000]
 
-/* [Demos] */
+Frame_line_width = 0.4;  // [0.05:0.01:1.50]
+Frame_horizontal_slop = 0.125;  // [0.010:0.005:1.000]
+Frame_layer_height = 0.2;  // [0.01:0.01:1.00]
+Frame_first_layer_height = 0.32;  // [0.01:0.01:1.00]
+// in absolute frame layers
+Frame_base_layers = 7;  // [1:1:25]
+// in frame layers
+Frame_vertical_slop = -1.25;  // [-5.000:0.125:5.000]
 
-Show_drawers_in_assembly_demos = false;
-Show_trim_in_assembly_demos = true;
-// Improves preview performance by removing all the thin alternating cuts.
-Simple_preview = true;
+Drawer_line_width = 0.4;   // [0.05:0.01:1.50]
+Drawer_horizontal_slop = 0.25;  // [0.010:0.005:1.000]
+Drawer_layer_height = 0.2;  // [0.01:0.01:1.00]
+Drawer_first_layer_height = 0.32;  // [0.01:0.01:1.00]
+// in absolute drawer layers
+Drawer_base_layers = 6;  // [1:1:25]
+// in drawer layers
+Drawer_vertical_slop = 1.0;  // [-5.000:0.125:5.000]
+
+Bin_line_width = 0.4;  // [0.05:0.01:1.50]
+Bin_horizontal_slop = 0.15;  // [0.010:0.005:1.000]
+Bin_layer_height = 0.2;  // [0.01:0.01:1.00]
+Bin_first_layer_height = 0.32;  // [0.01:0.01:1.00]
+// in absolute bin layers
+Bin_base_layers = 5;  // [1:1:25]
+// in bin layers
+Bin_vertical_slop = 1.0;  // [-5.000:0.125:5.000]
 
 
 /* [Hidden] */
 
-Frame_width = Frame_drawer_side_and_trim_width;
-Frame_height = Frame_drawer_side_and_trim_height;
+if (version_num()<20210100) echo("OpenSCAD version 2021.01 or newer is required.");
+assert(version_num()>=20210100);
 
 fWmm = Frame_unit_width_in_mm;
 fWbu = Frame_unit_width_in_bin_units;
@@ -134,15 +312,11 @@ binDrawersEnabled = Bin_drawer_compensation || Frame_unit_width_in_bin_units;
 dubWallBinDrawers = Double_bin_drawer_walls;
 dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
 
-drawCuts = !$preview || !Simple_preview;
-
-
-$fn = 16;
-
 
 fudge  = 0.01;
 fudge2 = 0.02;
-gap    = 0.04;  // by empirical testing, Cura needs a 0.03mm gap to prevent merging parts, plus leeway for curve approximations
+
+gap = Gap;
 
 
 // An effort has been made to use:
@@ -151,25 +325,26 @@ gap    = 0.04;  // by empirical testing, Cura needs a 0.03mm gap to prevent merg
 // but there are some exceptions and ambiguous cases
 //
 // Prefixes:
-//   b - bin
-//   d - drawer
-//   f - frame
+//   d - Drawer
+
+//   b - Bin
+//   f - Frame
 
 
-bWall = 0.4;
+bWall = Bin_line_width;
 bWall2 = bWall*2;
-bLayerH0 = 0.32;
-bLayerHN = 0.2;
+bLayerHN = Bin_layer_height;
+bLayerH0 = Bin_first_layer_height;
 
-dWall = 0.4;
+dWall = Drawer_line_width;
 dWall2 = dWall*2;
-dLayerH0 = 0.32;
-dLayerHN = 0.2;
+dLayerHN = Drawer_layer_height;
+dLayerH0 = Drawer_first_layer_height;
 
-fWall = 0.4;
+fWall = Frame_line_width;
 fWall2 = fWall*2;
-fLayerH0 = 0.32;
-fLayerHN = 0.2;
+fLayerHN = Frame_layer_height;
+fLayerH0 = Frame_first_layer_height;
 
 function bH(l) = bLayerHN*l;
 function dH(l) = dLayerHN*l;
@@ -178,20 +353,20 @@ function bZ(l) = l<=0 ? 0 : l<=1 ? bLayerH0*l : bLayerH0 + bH(l-1);
 function dZ(l) = l<=0 ? 0 : l<=1 ? dLayerH0*l : dLayerH0 + dH(l-1);
 function fZ(l) = l<=0 ? 0 : l<=1 ? fLayerH0*l : fLayerH0 + fH(l-1);
 
-bSlopXY = 0.15;
-bSlopZ  = bH(1);
+bSlopXY = Bin_horizontal_slop;
+bSlopZ  = bH(Bin_vertical_slop);
 
-dSlopXY = 0.25;
-dSlopZ  = dH(1);
+dSlopXY = Drawer_horizontal_slop;
+dSlopZ  = dH(Drawer_vertical_slop);
 dSlop45 = max(0, dSlopZ - dSlopXY);
 
-fSlopXY = 0.15;//0.2;
-fSlopZ  = -fH(1.25);  // hook overhang
+fSlopXY = Frame_horizontal_slop;
+fSlopZ  = fH(Frame_vertical_slop);  // hook overhang
 
-bBase = bZ(5);
-dBase = dZ(6);
-fBase = fZ(7);
-fTop = fH(3);
+bBase = bZ(Bin_base_layers);
+dBase = dZ(Drawer_base_layers);
+fBase = fZ(Frame_base_layers);
+fTop = fH(Fill_top_thickness);
 
 function bFloorH(h) = div(h, bLayerHN)*bLayerHN;
 function bFloorZ(z) = max(0, div(z-bLayerH0, bLayerHN)*bLayerHN + bLayerH0);
@@ -214,38 +389,36 @@ function fCeilZ(z) = fFloorZ(z) + (mod(z-fLayerH0, fLayerHN)==0 ? 0 : (z<fLayerH
 function fRoundH(h) = let (f=fFloorH(h), c=fCeilH(h)) h-f < c-h ? f : c;
 function fRoundZ(z) = let (f=fFloorZ(z), c=fCeilZ(z)) z-f < c-z ? f : c;
 
-// l - lock
+// l - Lock
 // Disabled because it makes frame segments almost impossible to separate, but it should work if
 // that is something you want. Note it also takes up a lot of space, and will likely require
 // increasing the frame unit width and height.
-lRS = 16;                     // ramp slope
-lPH = 0;//fWall*1.5;          // peak height
-lPC = max(0, lPH-fSlopXY*2);  // peak extra clearance (in addition to normal slop)
-lWS = 0;//fWall/2;            // wall seperation (makes the latch a bit more springy)
-lLL = fH(2);                  // latch length (at peak)
-lSL = fH(8);                  // strike length (at peak)
-lRL = lPH*lRS;                // ramp length
-lIL = fTop;                   // inset length
-lSlop = -fH(0.5);             // slop
+lRS = 16;                                                   // ramp slope
+lPH = 0;//fWall*1.5;                                        // peak height
+lPC = max(0, lPH-fSlopXY*2);                                // peak extra clearance (in addition to normal slop)
+lWS = 0;//fWall/2;                                          // wall seperation (makes the latch a bit more springy)
+lLL = fH(2);                                                // latch length (at peak)
+lSL = fH(8);                                                // strike length (at peak)
+lRL = lPH*lRS;                                              // ramp length
+lIL = fH(0.5);                                              // inset length
+lSlop = -fH(0.5);                                           // slop
 
-// s - snap
-sLS = 2;                      // latch slope
-sRS = 6;                      // ramp slope
-sPH = fSlopXY*7/4;            // peak height
-sPL = fH(2);                  // peak length
-sLL = sPH*sLS;                // latch length
-sRL = sPH*sRS;                // ramp length
-sFI = fH(0.5);                // front inset length
-sBI = 0;                      // back inset length
-sSlop = -fH(0.5);             // slop
+// s - Snap
+sLS = 1/Hook_bump_latch_slope;                              // latch slope
+sRS = 1/Hook_bump_ramp_slope;                               // ramp slope
+sPH = fSlopXY*Hook_bump_height;                             // peak height
+sPL = fH(Hook_bump_peak_length);                            // peak length
+sLL = sPH*sLS;                                              // latch length
+sRL = sPH*sRS;                                              // ramp length
+sFI = fH(0.5);                                              // front inset length
+sBI = 0;                                                    // back inset length
+sSlop = fH(Hook_Z_slop);                                    // slop
 
-
-hookLR = 1.25;
-hookTB = 2.5;
+hookLR = Left_and_right_hook_size;
+hookTB = Top_and_bottom_hook_size;
 claspW = fWall2*2 + fSlopXY + lPH + lPC + lWS;
 claspD = fWall2*2 + fSlopXY + sPH;
 hookD = claspD + fSlopXY;
-
 
 fGridY = fHmm;
 drawerZ = fGridY - fWall2 - hookD - dSlopZ*2;
@@ -262,11 +435,10 @@ drawerX  = bGridXY*binsX + bSlopXY + dWallsX + (!fWUseBU && !Bin_drawer_compensa
 fGridX   = fWUseBU ? bGridXY*(binsX+1) : fWmm;
 stretchX = !fWUseBU && Bin_drawer_compensation ? bGridXY-bMinGridXY : 0;
 
-stretchXFill = false;  // Adds squiggles to fill holes. This may increase print time more than expected due to acceleration.
+stretchXFill = Fill_horizontal_gaps;
 
-
-// O - outer
-// I - inner
+// O - Outer
+// I - Inner
 fWallGrid = fWall2 + fSlopXY;
 fWall4 = fWallGrid + fWall2;
 
@@ -284,77 +456,67 @@ fBulgeWall = fBulgeOX - fSideOX;
 fTHookY = fTopOY;
 fBHookY = -fHornY + fWallGrid;
 
-
 railD = fBulgeWall/2 - stretchX/4;
 
-// these are actually reciprocals of slopes
-dFS = 1;                      // drawer front slope
-dBS = 4;                      // drawer back slope
-cRS = 8;                      // catch ramp slope
-hRS = 6;                      // hold ramp slope
-kRS = 1;                      // keep ramp slope
-bRS = 1;                      // bottom ramp slope
+dFS = 1/Drawer_bump_front_slope;                            // drawer front slope
+dBS = 1/Drawer_bump_back_slope;                             // drawer back slope
+cRS = 1/Catch_bump_ramp_slope;                              // catch ramp slope
+hRS = 1/Hold_bump_ramp_slope;                               // hold ramp slope
+kRS = 1/Keep_bump_ramp_slope;                               // keep ramp slope
+bRS = 1/Bottom_bump_ramp_slope;                             // bottom ramp slope
 
-// drawer
-// dPH = railD;                  // drawer peak height
-dPH = railD+dSlopXY/4;        // drawer peak height
-dPL = fH(2);                  // drawer peak length
-dFL = dPH*dFS;                // drawer front length
-dBL = dPH*dBS;                // drawer back length
-dSW = dH(4);                  // drawer spring width
+// d - Drawer
+dPH = railD + dSlopXY*Drawer_bump_height;                   // drawer peak height
+dPL = fH(Drawer_bump_peak_length);                          // drawer peak length
+dFL = dPH*dFS;                                              // drawer front length
+dBL = dPH*dBS;                                              // drawer back length
+dSW = dH(Drawer_spring_width);                              // drawer spring width
 
-// catch: back, holds drawer shut
-// cPH = railD*3/4;              // catch peak height
-cPH = railD;                  // catch peak height
-cPL = fH(2);                  // catch peak length
-cFL = cPH*cRS;                // catch front length
-cBL = cPH*dFS;                // catch back length
-cIL = 0;                      // catch inset length (acts only on itself)
-cCH = dSlopXY-dSlopXY/4;      // catch cushion height
-// cCH = dSlopXY;                // catch cushion height
+// c - Catch: back, holds drawer shut
+cPH = railD + dSlopXY*Catch_bump_height;                    // catch peak height
+cPL = fH(Catch_bump_peak_length);                           // catch peak length
+cFL = cPH*cRS;                                              // catch front length
+cBL = cPH*dFS;                                              // catch back length
+cIL = 0;                                                    // catch inset length (acts only on itself)
+cCH = dSlopXY*Cushion_height - dSlopXY*Drawer_bump_height;  // catch cushion height
 
-// hold: front, holds drawer open
-// hPH = railD;                  // hold peak height
-hPH = railD+dSlopXY/4;        // hold peak height
-hPL = fH(2);                  // hold peak length
-hFL = hPH*dBS;                // hold front length
-hBL = hPH*hRS;                // hold back length
-hIL = 0;                      // hold inset length (acts only on itself)
+// h - Hold: front, holds drawer open
+hPH = railD + dSlopXY*Hold_bump_height;                     // hold peak height
+hPL = fH(Hold_bump_peak_length);                            // hold peak length
+hFL = hPH*dBS;                                              // hold front length
+hBL = hPH*hRS;                                              // hold back length
+hIL = 0;                                                    // hold inset length (acts only on itself)
 
-// keep: front, holds drawer in
-// kPH = railD*9/8;              // keep peak height
-kPH = railD+dSlopXY/2;        // keep peak height
-kPL = fH(1.5);                // keep peak length
-kFL = kPH*kRS;                // keep front length
-kBL = kPH*dFS;                // keep back length
-kIL = fH(0.5);                // keep inset length (also pulls hold and front drawer bump with it)
+// k - Keep: front, holds drawer in
+kPH = railD + dSlopXY*Keep_bump_height;                     // keep peak height
+kPL = fH(Keep_bump_peak_length);                            // keep peak length
+kFL = kPH*kRS;                                              // keep front length
+kBL = kPH*dFS;                                              // keep back length
+kIL = fH(0.5);                                              // keep inset length (also pulls hold and front drawer bump with it)
 
-// bottom: bottom, holds drawer in
-// bPH = dZ(2.5);                // bottom peak height (never as tall as it should be due to filament dragging)
-// bSH = dZ(2);                  // bottom slot height (must be even if using spiralize in Cura)
-bPH = dZ(3.5);                // bottom peak height (never as tall as it should be due to filament dragging)
-bSH = dZ(3);                  // bottom slot height (must be even if using spiralize in Cura)
-bPL = fH(2.5);                // bottom peak length
-bFL = bPH*bRS;                // bottom front length
-bBL = bPH*bRS;                // bottom back length
-bIL = fH(0.5);                // bottom inset length
-bPW = fWall4;                 // bottom peak width
+// b - Bottom: bottom, holds drawer in
+bSH = dZ(Bottom_slot_height);                               // bottom slot height
+bPH = dZ(Bottom_bump_height);                               // bottom peak height
+bPL = fH(Bottom_bump_peak_length);                          // bottom peak length
+bFL = bPH*bRS;                                              // bottom front length
+bBL = bPH*bRS;                                              // bottom back length
+bIL = fH(0.5);                                              // bottom inset length
+bPW = fWall2*Bottom_bump_width;                             // bottom peak width
 
 peakWN = fBulgeIY*2 - dSlop45*2 - dPH*2 - railD*2 - stretchX - dSW*2;
 
 // calculate rail width so the steepest peak overhang is 45°
 railWN = peakWN + max(dPH*2, cPH*2-railD*2+dSlop45*2, hPH*2-railD*2+dSlop45*2, kPH*2-railD*2+dSlop45*2);
 
-fStopLines0 = 2;
-fStopLinesN = 3;
-dStopLines  = 2;
+fStopLines0 = Frame_stop_lines_for_single_unit_high_parts;
+fStopLinesN = Frame_stop_lines_for_multi_unit_high_parts;
+dStopLines = Drawer_stop_lines;
 
 peakW1 = peakWN - (fWall2 + gap)*fStopLines0
        + dFloorZ(fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2)
        - (fGridY - claspW - hookLR - fWallGrid*2 - dSlopZ*2);
 
-
-dFloat = dSlopXY/2;  // how far a fully closed drawer still sticks out due to rough mating surfaces
+dFloat = dSlopXY*Drawer_float;
 dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
 dWallsY = dubWallBinDrawers ? (dubWallFaceLip ? dWall2*2 : dWall2-gap) : dWall*2;
 
@@ -376,92 +538,97 @@ dTravel = drawerY + fBulgeWall - dInset - dFL - dPL - dBL;
 drawerYFrameZAlign = fBase + fGridZError + dFloat + fBulgeWall + drawerY/2;
 drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
 
-fStopTop = drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY - (dWall2+gap)*sqrt(2)*(dStopLines-1);
+trim = Enable_trim;
 
-// t - trim
-tLS = 2;                      // latch slope
-tRS = 6;                      // ramp slope
-tPH = fSlopXY*7/4;            // peak height (set to 0 to disable trim - affects top sides some)
-tPL = fH(2);                  // peak length
-tLL = tPH*tLS;                // latch length
-tRL = tPH*tRS;                // ramp length
-tIL = fH(0.5);                // inset length
-tSlop = -fH(0.25);            // slop
+// t - Trim
+// m - triM (bottom - should be a bit looser)
+tLS = 1/Trim_bump_latch_slope;                              // latch slope
+tRS = 1/Trim_bump_ramp_slope;                               // ramp slope
+tPH = fSlopXY*Trim_bump_height;                             // peak height
+mPH = fSlopXY*Trim_bottom_bump_height;                      // peak height
+tPL = fH(Trim_bump_peak_length);                            // peak length
+tLL = tPH*tLS;                                              // latch length
+mLL = mPH*tLS;                                              // latch length
+tRL = tPH*tRS;                                              // ramp length
+mRL = mPH*tRS;                                              // ramp length
+tIL = fH(0.5);                                              // inset length
+tSlop = fH(Trim_Z_slop);                                    // slop
 
-tLip = 2;  // extra trim thickness around front rim - important for giving trim pieces extra strength
-tFloat = fSlopXY/2;  // how far the trim is expected to stick out due to rough mating surfaces
+tLip = Front_lip;
+tFloat = fH(Trim_float);
 tBase = fFloorZ(dFaceD - tFloat + tLip);
-tInsert = tPH > 0 ? fCeilH(tFloat + tIL - fSlopXY*tLS + tSlop + tRL + tPL*2 + tLL*2) : 0;
-trimZ = tBase + tInsert;
-tClearance = (tPH > 0 ? fWallGrid : 0) + bPH;
+tInsert = trim ? fCeilH(tFloat + tIL - fSlopXY*tLS + tSlop + tRL + tPL*2 + tLL*2) : 0;
+mInsert = trim ? fCeilH(tFloat + tIL - fSlopXY*tLS + tSlop + mRL + tPL*2 + mLL*2) : 0;
+tClearance = (trim ? fWallGrid : 0) + bPH;
 
 fSideZ = fCeilZ(fGridZ + dFaceD + tLip);
 
+fDrawerLayerCompLines = Drawer_layer_compensation_lines;
 
-fDrawerLayerCompLines = 2;  // thicken drawer roof along edges to compensate for drawer height layer quantization
+fullFn = !$preview || Full_resolution_corners;
 
-mountingHoleD = 4;  // set to 0 to disable
+mountingHoleD = Enable_mounting_holes ? Mounting_hole_diameter : 0;
+mountingHoleFn = fullFn ? Mounting_hole_segments : 8;
+cornerFn = fullFn ? Side_corner_segments*4 : 8;
 
-binR = binXY*4;
+binR = Bin_radius;
+binFn = fullFn ? Bin_segments*8 : 8;
 
-divisions = [ [2, [1,1]], [3, [1,1]] ];
+divisions = [ for (i=[0:len(Divisions)-1]) if (Divisions[i]!=0) (
+  if (i==0) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_1_subdivisions)) ] else
+  if (i==1) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_2_subdivisions)) ] else
+  if (i==2) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_3_subdivisions)) ] else
+  if (i==3) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_4_subdivisions)) ] else
+  if (i==4) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_5_subdivisions)) ] else
+  if (i==5) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_6_subdivisions)) ] else
+  if (i==6) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_7_subdivisions)) ] else
+  if (i==7) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_8_subdivisions)) ] else
+  abs(Divisions[i])
+) ];
+// divisions = [ [2, [1,1]], [3, [1,1]] ];
 // divisions =
 // [ [2, [1,1]]
 // , [4, [[2, [1,1]], 4, [2, [1,1]]]]
 // , [3, [1,1,1]]
 // ];
 
-dChamfer = dBase;
+dChamfer = Back_bottom_chamfer;
 
-handleElliptical = false;
-handleReach = 20;
-handleLip = 5;
-handleR = 5;  // only applies to "rectangle" handle
-handleTray = false;
+handleL = Handle_length;
+handleD = Handle_circumference_diameter;
+handleDFn = fullFn ? Handle_circumference_segments*2 : 8;
+handleElliptical = Elliptical_handle;
+handleR = Handle_bend_radius;
+handleRFn = fullFn ? Handle_bend_segments*2 : 8;
+handleTray = Tray_handle;
+
+drawCuts = !$preview || Draw_cuts;
 
 
 echo("Frame unit size:");
 echo(str("    width:  \t", fGridX, " mm"));
 echo(str("    height: \t", fGridY, " mm"));
 if (binDrawersEnabled) {
-  echo("Bin unit size:");
   echo(str("    sides:  \t", bGridXY, " mm"));
-  echo("Bins units per frame unit:");
   echo(str("    width:  \t", binsX, " bin unit", binsX==1 ? "" : "s"));
+  echo("Bin unit size:");
+  echo("Bins units per frame unit:");
   echo(str("    height: \t", binsY, " bin unit", binsY==1 ? "" : "s"));
 }
 echo("Depths:")
-echo(str("    frame: \t", fGridZ, " mm"));
 echo(str("    sides: \t", fSideZ, " mm"));
 echo(str("    face (closed):   \t", fGridZ+dFaceD , " mm"));
+echo(str("    frame: \t", fGridZ, " mm"));
+echo(str("    drawer travel:   \t", dTravel, " mm"));
 echo(str("    face (open):     \t", fGridZ+dFaceD+dTravel , " mm"));
-echo(str("    handle (closed): \t", fGridZ+dFaceD+handleReach, " mm"));
-echo(str("    handle (open):   \t", fGridZ+dFaceD+handleReach+dTravel, " mm"));
+echo(str("    handle (closed): \t", fGridZ+dFaceD+handleL, " mm"));
+echo(str("    handle (open):   \t", fGridZ+dFaceD+handleL+dTravel, " mm"));
 echo("Bump peak width:")
 echo(str("    part height = 1: \t", peakW1, " mm"));
 echo(str("    part height > 1: \t", peakWN, " mm"));
 if (peakW1<0) {
-  if (peakWN<0) {
-    echo("Inadequate space for bumps on all parts. Possible fixes:");
-    echo("    ∙ increase frame unit height");
-    echo("    ∙ disable bin drawer compensation");
-    echo("    ∙ adjust frame unit width");
-    echo("    ∙ toggle double bin drawer walls");
-    echo("    ∙ reduce bump height");
-    echo("    ∙ reduce spring width");
-  }
-  else {
-    echo("Inadequate space for bumps on single unit high parts.");
-    echo("Multiple unit high drawers are ok.");
-  }
-}
-  echo(fStopTop, fBulgeWall);
-if (fStopTop<0) {
-  echo("Inadequate space for frame stops. Possible fixes:");
-  echo("    ∙ reduce drawer stop lines");
-  echo("    ∙ disable bin drawer compensation");
-  echo("    ∙ adjust frame unit width");
-  echo("    ∙ toggle double bin drawer walls");
+  if (peakWN<0) echo("WARNING: Inadequate space for bumps.");
+  else echo("WARNING: Inadequate space for bumps on single unit high parts. Multiple unit high drawers are ok.");
 }
 
 
@@ -478,24 +645,28 @@ solidGrey   = [0.60, 0.60, 0.60, 1.00];
 transBlue   = [0.05, 0.40, 0.90, 0.30];
 transGrey   = [0.50, 0.50, 0.50, 0.50];
 
-errorColor  = [0.90, 0.05, 0.05, 1.00];
+errorColor  = [1.00, 0.33, 0.33, 0.50];
 
 // highlight errors
-module hl(e) {
-  if (e) color(errorColor) children();
+module hl(e, msg) {
+  if (e) {
+    if (is_string(msg)) echo(str("ERROR: ", msg));
+    #children();
+  }
   else children();
 }
 
 // conditional color
 module condColor(c) {
-  if (is_list(c)) color(c) children();
+  if (is_list(c)) {
+    assert(len(c)==3 || len(c)==4);
+    if (len(c)==4 && c[3]<1) color(c) {
+      if ($preview && Render_transparent_parts) render() children();
+      else children();
+    }
+    else color(c) children();
+  }
   else if (c) children();
-}
-
-// conditional render
-module condRender() {
-  if (Simple_preview) children();
-  else render() children();
 }
 
 
@@ -606,13 +777,14 @@ module hook(dir, hook, stem, hang=fudge, overlap=fSlopXY-fSlopZ, stop=undef) ren
 }
 
 
-module tHooks(drawHooks=true) flipX() translate([fSideIX-fSlopXY-claspW/2-hookTB/2, fTHookY, 0]) {
-  translate([-claspW/2-hookTB/2, hookD, fGridZ-bIL-bFL]) hull() {
-    translate([0, 0, bFL]) box([bPW, -fudge, -bFL-bPL-bBL]);
-    box([bPW, bPH, -bPL]);
-  };
-  if (drawHooks) hook(1, hookTB, hookD, stop=claspD-fWall2);
-}
+module tHooks(drawHooks=true) hl(fSideIX-fSlopXY-claspW-hookTB<gap/2, "Top hooks are too close.")
+  flipX() translate([fSideIX-fSlopXY-claspW/2-hookTB/2, fTHookY, 0]) {
+    hl(bPW<fWall2, "Bottom bumps are not wide enough.") translate([-claspW/2-hookTB/2, hookD, fGridZ-bIL-bFL]) hull() {
+      translate([0, 0, bFL]) box([bPW, -fudge, -bFL-bPL-bBL]);
+      box([bPW, bPH, -bPL]);
+    };
+    if (drawHooks) hook(1, hookTB, hookD, stop=claspD-fWall2);
+  }
 module bHooks() rotate(180) flipX() translate([fSideIX-fSlopXY-claspW/2-hookTB/2-lPC, -fBHookY, 0]) hook(-1, hookTB, hookD,            hang=tClearance+fudge);
 module lHooks() rotate( 90) flipX() translate([         fHornY-claspW/2-hookLR/2+lPC,  fSideOX, 0]) hook( 1, hookLR, hookD+stretchX/2);
 module rHooks() rotate(270) flipX() translate([         fHornY-claspW/2-hookLR/2    ,  fSideOX, 0]) hook(-1, hookLR, hookD+stretchX/2, stop=claspD/2+fSlopXY/2);
@@ -820,14 +992,15 @@ module trSeamFill(r) translate([fGridX*r+fBulgeOX, -fHornY+tClearance+fWall4, 0]
 module bFill(wall=0) translate([0, fHornY-claspD, 0]) {
   rB = [fSideOX*2-claspW*2-hookTB*2-fSlopXY*2, hookD+fWall2];
   rL = rB - [fWall2*2, fWall2];
-  // #extrude(fBase) rect(rB, [0,1]);
-  translate([0, 0, fGridZ-wall-fTop]) difference() {
+  // #extrude(fGridZ+1) rect(rB, [0,1]);
+  // TODO: switch to an alternate fill instead of simply disabling
+  if (rB.x>fWall2*3+gap*2) translate([0, 0, fGridZ-wall-fTop]) difference() {
     union() {
       hull() {
         extrude(fTop) rect(rB, [0,1]);
         extrude(-rL.y) rect([rB.x, fWall2], [0,1]);
       }
-      translate([0, rB.y, 0]) extrude(fTop+wall) rect([rB.x, -fWall2], [0,1]);
+      if (!$preview || !Expose_bottom_trim_bumps) translate([0, rB.y, 0]) extrude(fTop+wall) rect([rB.x, -fWall2], [0,1]);
     }
     translate([0, fWall2, 0]) {
       eSliceX(-rL.y, rL, centerX=true);
@@ -930,7 +1103,7 @@ module lHookFill() {
 
 // BUMPS
 
-module sideBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0]) extrude(size.y) polygon(
+module trimFBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0]) extrude(size.y) polygon(
   [ [fudge,        0               ]
   , [    0,        0               ]
   , [    0, max(0, tIL            )]
@@ -941,7 +1114,7 @@ module sideBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0
   , [fudge,        tInsert         ]
   ]);
 
-module trimBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0]) extrude(size.y) polygon(
+module trimMBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0]) extrude(size.y) polygon(
   [ [-fudge,        0                                            ]
   , [     0,        0                                            ]
   , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+tRL+tPL        )]
@@ -950,6 +1123,28 @@ module trimBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0])
   , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+tRL+tPL*2+tLL*2)]
   , [     0,        tInsert                                      ]
   , [-fudge,        tInsert                                      ]
+  ]);
+
+module mirtFBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0]) extrude(size.y) polygon(
+  [ [fudge,        0               ]
+  , [    0,        0               ]
+  , [    0, max(0, tIL            )]
+  , [ -mPH, max(0, tIL+mRL        )]
+  , [ -mPH, max(0, tIL+mRL+tPL    )]
+  , [    0, max(0, tIL+mRL+tPL+mLL)]
+  , [    0,        mInsert         ]
+  , [fudge,        mInsert         ]
+  ]);
+
+module mirtMBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0]) extrude(size.y) polygon(
+  [ [-fudge,        0                                            ]
+  , [     0,        0                                            ]
+  , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+mRL+tPL        )]
+  , [   mPH, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+mRL+tPL  +mLL  )]
+  , [   mPH, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+mRL+tPL*2+mLL  )]
+  , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tSlop+mRL+tPL*2+mLL*2)]
+  , [     0,        mInsert                                      ]
+  , [-fudge,        mInsert                                      ]
   ]);
 
 
@@ -961,7 +1156,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
   translate([0, -fHornY+tClearance+fWall4, fGridZ-tInsert-fTop]) {
     rB = [fSideOX*2-fSlopXY*4-claspW*2-hookTB*2-fWall2*2, -fWall2-tClearance];
     rL = rB - [0, -fWall2];
-    difference() {
+    if (rB[0]>fWall2) difference() {
       hull() {
         extrude(fTop) rect(rB, [0,1]);
         extrude(rL.y) rect([rB.x, -fWall2], [0,1]);
@@ -970,10 +1165,10 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
     }
   }
   // beside bottom bumps
-  flipX() translate([fSideOX-claspW-hookTB, -fHornY+tClearance+fWall4, fGridZ-tInsert-fTop]) {
-    rB = [fWall2+hookTB+lPH, -fWall2-tClearance];
+  flipX() translate([fSideOX-claspW-hookTB+bPW-fWall2, -fHornY+tClearance+fWall4, fGridZ-tInsert-fTop]) {
+    rB = [fWall2*2+hookTB+lPH-bPW, -fWall2-tClearance];
     rL = rB - [fWall2, -fWall2];
-    difference() {
+    if (rB[0]>fWall2*2+gap) difference() {
       hull() {
         extrude(fTop) rect(rB);
         extrude(rL.y) rect([rB.x, -fWall2]);
@@ -981,7 +1176,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
       translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, hFudge=fudge);
     }
   }
-  if (tPH>0) translate([0, -fHornY+tClearance+fWall4, 0]) sideBumps([fSideOX*2-claspW*2+lPH*2, -fWall2-tClearance]);
+  if (trim) translate([0, -fHornY+tClearance+fWall4, 0]) trimFBumps([fSideOX*2-claspW*2+lPH*2, -fWall2-tClearance]);
   // seam
   if (i<r) translate([fGridX/2, -fHornY+tClearance+fWall4, 0]) {
     rB = [claspD+stretchX+fWall4*2+fSlopXY*2+lPC*2+lWS*2, -tClearance-fWall4];
@@ -1006,46 +1201,45 @@ module bSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
   extrude(fGridZ) flipX() translate([fGridX/2-claspD/2-stretchX/2-fSlopXY, fGridY/2-fSlopXY/2]) rect([-fWall2, -claspD]);
   tHooks();
   if (i<r) bSeamFill();
-  bFill(tInsert);
-  if (tPH>0) translate([0, fHornY-claspD, 0]) rotate(180) sideBumps([fSideOX*2-claspW*2-hookTB*2-fSlopXY*2-fWall2*2, gap-hookD]);
+  bFill(mInsert);
+  if (trim) translate([0, fHornY-claspD, 0]) rotate(180) mirtFBumps([fSideOX*2-claspW*2-hookTB*2-fSlopXY*2-fWall2*2, gap-hookD]);
 }
 
 
 // SIDES
 
-module tSide(x=1, z=[0], color=true, trimColor=undef) {
+module tSide(x=1, z=[0], color=true, trimColor=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
   if (l<=r) condColor(color) translate([0, fGridY*(y+1), 0]) {
-    if (tPH>0) extrude(fBase) translate([fGridX*l-fBulgeOX, fBHookY+bPH]) rect([fGridX*(r-l)+fBulgeOX*2, tClearance-bPH+fWall2]);
+    if (trim) extrude(fBase) translate([fGridX*l-fBulgeOX, fBHookY+bPH]) rect([fGridX*(r-l)+fBulgeOX*2, tClearance-bPH+fWall2]);
     extrude(fSideZ) translate([fGridX*l-fBulgeOX, fBHookY+tClearance]) rect([fGridX*(r-l)+fBulgeOX*2, fWall2]);
     tlSeamFill(l);
     trSeamFill(r);
     tSideBase(l, r);
   }
-  if (tPH>0) condColor(trimColor) condRender() tTrim(x, z, print=false);
+  if (trim) condColor(trimColor) tTrim(x, z, print=false);
 }
 
-module bSide(x=1, z=[0], color=true, trimColor=undef) {
+module bSide(x=1, z=[0], color=true, trimColor=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
   if (l<=r) condColor(color) translate([0, fGridY*(y-1), 0]) {
-    // extrude(fBase) translate([fGridX*l-fBulgeOX, fHornY]) rect([fGridX*(r-l)+fBulgeOX*2, -fWall4]);
     extrude(fSideZ) translate([fGridX*l-fBulgeOX, fTHookY]) rect([fGridX*(r-l)+fBulgeOX*2, -fWall2]);
     blSeamFill(l);
     brSeamFill(r);
     bSideBase(l, r);
   }
-  if (tPH>0) condColor(trimColor) condRender() bTrim(x, z, print=false);
+  if (trim) condColor(trimColor) bTrim(x, z, print=false);
 }
 
-module lSide(x=[0], z=1, color=true, trimColor=undef) {
+module lSide(x=[0], z=1, color=true, trimColor=false) {
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
@@ -1075,14 +1269,14 @@ module lSide(x=[0], z=1, color=true, trimColor=undef) {
             eSliceX(fTop, [fWall2, rL.y], translate=[rL.x-fWall2, 0], flushL=true, flushR=true, centerY=true, cutAlt=true, hFudge=fudge);
           }
         }
-        if (tPH>0) rotate(90) sideBumps([rL.y, -rB.x]);
+        if (trim) rotate(90) trimFBumps([rL.y, -rB.x]);
       }
     }
   }
-  if (tPH>0) condColor(trimColor) condRender() lTrim(x, z, print=false);
+  if (trim) condColor(trimColor) lTrim(x, z, print=false);
 }
 
-module rSide(x=[0], z=1, color=true, trimColor=undef) {
+module rSide(x=[0], z=1, color=true, trimColor=false) {
   assert(             is_list(x) && len(x)==1);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
@@ -1112,19 +1306,19 @@ module rSide(x=[0], z=1, color=true, trimColor=undef) {
             eSliceX(fTop, [-fWall2, rL.y], translate=[rL.x+fWall2, 0], flushL=true, flushR=true, centerY=true, cutAlt=true, hFudge=fudge);
           }
         }
-        if (tPH>0) rotate(270) sideBumps([rL.y, rB.x]);
+        if (trim) rotate(270) trimFBumps([rL.y, rB.x]);
       }
     }
   }
-  if (tPH>0) condColor(trimColor) condRender() rTrim(x, z, print=false);
+  if (trim) condColor(trimColor) rTrim(x, z, print=false);
 }
 
 
 // CORNER HELPERS
 
-module cornerWall(r, offset, align, trim=undef, wall=fWall2) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) difference() {
-  circle(r=r);
-  circle(r=r-min(r, wall));
+module cornerWall(r, offset, align, trim=false, wall=fWall2) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) difference() {
+  circle(r=r, $fn=cornerFn);
+  circle(r=r-min(r, wall), $fn=cornerFn);
   translate([0, -(r-wall)*align.y]) rect([(r+fudge)*align.x, (r*2-wall+fudge)*align.y]);
   translate([-(r-wall)*align.x, 0]) rect([(r*2-wall+fudge)*align.x, (r+fudge)*align.y]);
   if (is_list(trim) && len(trim)==2) {
@@ -1136,12 +1330,12 @@ module cornerWall(r, offset, align, trim=undef, wall=fWall2) translate([(fGridX-
 // translate([0,0,100]) cornerWall(5, [1,0], [1,-1], trim=[1, -2]);
 
 module cornerSquare(r, offset, align, wall=[fWall2, fWall2]) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) difference() {
-  circle(r=r);
+  circle(r=r, $fn=cornerFn);
   translate([-(r-wall.x)*align.x, -(r-wall.y)*align.y]) rect([(r*2-wall.x+fudge)*align.x, (r*2-wall.y+fudge)*align.y]);
 }
 
 module cornerMask(r, offset, align) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) {
-  circle(r=r);
+  circle(r=r, $fn=cornerFn);
   translate([0, -align.y*r]) rect([(fGridX/2+offset.x)*align.x, (fGridY/2+offset.y+r)*align.y]);
   translate([-align.x*r, 0]) rect([(fGridX/2+offset.x+r)*align.x, (fGridY/2+offset.y)*align.y]);
 }
@@ -1149,25 +1343,25 @@ module cornerMask(r, offset, align) translate([(fGridX-offset.x)*align.x, (fGrid
 
 // CORNERS
 
-module tlSide(x=1, z=[0], color=true, trimColor=undef) {
+module tlSide(x=1, z=[0], color=true, trimColor=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
   if (l<=r) condColor(color) {
-    tPHAdj = tPH>0 ? 0 : fWallGrid;
+    tPHAdj = trim ? 0 : fWallGrid;
     fillet = fWall2 + tClearance + tPHAdj;
     rise = claspD - fWall2 + fSlopXY - tPHAdj;
     edge = fSideOX + claspD + stretchX - tClearance + fSlopXY*2 - tPHAdj;
     align = [1, -1];
     translate([fGridX*(l-1), fGridY*(y+1), 0]) {
       tSideBase(1, r-l+1);
-      if (tPH>0) extrude(fBase) translate([fGridX-edge, fBHookY+bPH]) rect([fGridX*(r-l)+fBulgeOX+edge, tClearance-bPH+fWall2]);
+      if (trim) extrude(fBase) translate([fGridX-edge, fBHookY+bPH]) rect([fGridX*(r-l)+fBulgeOX+edge, tClearance-bPH+fWall2]);
       extrude(fSideZ) {
         translate([fGridX-edge, fBHookY+tClearance]) rect([fGridX*(r-l)+fBulgeOX+edge, fWall2]);
-        cornerWall(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align, trim=[undef, rise-claspD+fWall2*2]);
-        if (tPH>0) translate([fGridX-edge-fillet, fBHookY]) rect([fWall2, -rise+claspD-fWall2*2]);
+        cornerWall(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align, trim=[false, rise-claspD+fWall2*2]);
+        if (trim) translate([fGridX-edge-fillet, fBHookY]) rect([fWall2, -rise+claspD-fWall2*2]);
       }
       trSeamFill(r-l+1);
       rB = [claspD+stretchX+fWallGrid*3+lPC+lWS, -rise-fillet+claspD-fWall2*2];
@@ -1196,28 +1390,28 @@ module tlSide(x=1, z=[0], color=true, trimColor=undef) {
       }
     }
   }
-  if (tPH>0) condColor(trimColor) condRender() tlTrim(x, [z[0], z[0]], print=false);
+  if (trim) condColor(trimColor) tlTrim(x, [z[0], z[0]], print=false);
 }
 
-module trSide(x=1, z=[0], color=true, trimColor=undef) {
+module trSide(x=1, z=[0], color=true, trimColor=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
   if (l<=r) condColor(color) {
-    tPHAdj = tPH>0 ? 0 : fWallGrid;
+    tPHAdj = trim ? 0 : fWallGrid;
     fillet = fWall2 + tClearance + tPHAdj;
     rise = claspD - fWall2 + fSlopXY - tPHAdj;
     edge = fSideOX + claspD + stretchX - tClearance + fSlopXY*2 - tPHAdj;
     align = [-1, -1];
     translate([fGridX*(r+1), fGridY*(y+1), 0]) {
       tSideBase(l-r-1, -1);
-      if (tPH>0) extrude(fBase) translate([edge-fGridX, fBHookY+bPH]) rect([fGridX*(l-r)-fBulgeOX-edge, tClearance-bPH+fWall2]);
+      if (trim) extrude(fBase) translate([edge-fGridX, fBHookY+bPH]) rect([fGridX*(l-r)-fBulgeOX-edge, tClearance-bPH+fWall2]);
       extrude(fSideZ) {
         translate([edge-fGridX, fBHookY+tClearance]) rect([fGridX*(l-r)-fBulgeOX-edge, fWall2]);
-        cornerWall(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align, trim=[undef, rise-claspD+fWall2*2]);
-        if (tPH>0) translate([edge-fGridX+fillet, fBHookY]) rect([-fWall2, -rise+claspD-fWall2*2]);
+        cornerWall(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align, trim=[false, rise-claspD+fWall2*2]);
+        if (trim) translate([edge-fGridX+fillet, fBHookY]) rect([-fWall2, -rise+claspD-fWall2*2]);
       }
       tlSeamFill(l-r-1);
       rB = [-claspD-stretchX-fWallGrid*3-lPC-lWS, -rise-fillet+claspD-fWall2*2];
@@ -1246,10 +1440,10 @@ module trSide(x=1, z=[0], color=true, trimColor=undef) {
       }
     }
   }
-  if (tPH>0) condColor(trimColor) condRender() trTrim(x, [z[0], z[0]], print=false);
+  if (trim) condColor(trimColor) trTrim(x, [z[0], z[0]], print=false);
 }
 
-module blSide(x=1, z=[0], color=true, trimColor=undef) {
+module blSide(x=1, z=[0], color=true, trimColor=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1263,7 +1457,7 @@ module blSide(x=1, z=[0], color=true, trimColor=undef) {
       bSideBase(1, r-l+1);
       extrude(fSideZ) {
         translate([fGridX-edge, fTHookY]) rect([fGridX*(r-l)+fBulgeOX+edge, -fWall2]);
-        cornerWall(fillet, [edge, fHornY+fSlopXY], align, trim=[undef, 0]);
+        cornerWall(fillet, [edge, fHornY+fSlopXY], align, trim=[false, 0]);
       }
       brSeamFill(r-l+1);
       rB = [claspD+fWallGrid*2+stretchX, fillet];
@@ -1290,10 +1484,10 @@ module blSide(x=1, z=[0], color=true, trimColor=undef) {
       }
     }
   }
-  if (tPH>0) condColor(trimColor) condRender() blTrim(x, [z[0], z[0]], print=false);
+  if (trim) condColor(trimColor) blTrim(x, [z[0], z[0]], print=false);
 }
 
-module brSide(x=1, z=[0], color=true, trimColor=undef) {
+module brSide(x=1, z=[0], color=true, trimColor=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(             is_list(z) && len(z)==1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1307,7 +1501,7 @@ module brSide(x=1, z=[0], color=true, trimColor=undef) {
       bSideBase(l-r-1, -1);
       extrude(fSideZ) {
         translate([edge-fGridX, fTHookY]) rect([fGridX*(l-r)-fBulgeOX-edge, -fWall2]);
-        cornerWall(fillet, [edge, fHornY+fSlopXY], align, trim=[undef, 0]);
+        cornerWall(fillet, [edge, fHornY+fSlopXY], align, trim=[false, 0]);
       }
       blSeamFill(l-r-1);
       rB = [-claspD-fWallGrid*2-stretchX, fillet];
@@ -1334,23 +1528,29 @@ module brSide(x=1, z=[0], color=true, trimColor=undef) {
       }
     }
   }
-  if (tPH>0) condColor(trimColor) condRender() brTrim(x, [z[0], z[0]], print=false);
+  if (trim) condColor(trimColor) brTrim(x, [z[0], z[0]], print=false);
 }
 
 
 // TRIM
 
 module tTrimBase(l, r) for (i=[l:r]) translate([fGridX*i, -fHornY+fWall2+tClearance, 0]) {
-  extrude(-trimZ) {
-    flipX() translate([fSideOX-claspW-hookTB, 0, 0]) rect([hookTB+lPH-tPH-fSlopXY, -tClearance+fSlopXY]);
-    rect([fSideOX*2-claspW*2+lPH*2-tPH*2-fSlopXY*2, -tClearance+bPH+fSlopXY], [0,1]);
+  w = hookTB-bPW+fWall2+lPH-tPH-fSlopXY;
+  hl(w<fWall2, "Inadequate space for top trim clip.") {
+    extrude(-tBase-tInsert) {
+      flipX() translate([fSideOX-claspW-hookTB+bPW-fWall2, 0, 0]) rect([w, -tClearance+fSlopXY]);
+      rect([fSideOX*2-claspW*2+lPH*2-tPH*2-fSlopXY*2, -tClearance+bPH+fSlopXY], [0,1]);
+    }
+    trimMBumps([fSideOX*2-claspW*2+lPH*2-tPH*2-fSlopXY*2, -tClearance+fSlopXY]);
   }
-  trimBumps([fSideOX*2-claspW*2+lPH*2-tPH*2-fSlopXY*2, -tClearance+fSlopXY]);
 }
 
 module bTrimBase(l, r) for (i=[l:r]) translate([fGridX*i, fHornY-claspD+fWallGrid, 0]) {
-  extrude(-trimZ) rect([fSideIX*2-claspW*2-hookTB*2-tPH*2-fSlopXY*4, hookD-fWall2-fSlopXY*2], [0,1]);
-  rotate(180) trimBumps([fSideIX*2-claspW*2-hookTB*2-tPH*2-fSlopXY*4, -hookD+fWall2+fSlopXY*2]);
+  w = fSideIX*2-claspW*2-hookTB*2-mPH*2-fSlopXY*4;
+  hl(w<fWall2, "Inadequate space for bottom trim clip.") {
+    extrude((-tBase-mInsert)*(w<fWall2?2:1), center=w<fWall2?true:false) rect([w, hookD-fWall2-fSlopXY*2], [0,1]);
+    rotate(180) mirtMBumps([w, -hookD+fWall2+fSlopXY*2]);
+  }
 }
 
 module tTrim(x=1, z=[0], print=true) {
@@ -1359,8 +1559,7 @@ module tTrim(x=1, z=[0], print=true) {
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (l<=r) hl(tPH==0) rotate([0, print?180:0, 0]) translate([0, fGridY*(y+1), print?0:fGridZ+tBase+tFloat]) {
+  if (l<=r) hl(!trim, "Trim is disabled.") rotate([0, print?180:0, 0]) translate([0, fGridY*(y+1), print?0:fGridZ+tBase+tFloat]) {
     extrude(-tBase) translate([fGridX*l-fBulgeOX, fBHookY]) rect([fGridX*(r-l)+fBulgeOX*2, tClearance-fSlopXY]);
     tTrimBase(l, r);
   }
@@ -1372,8 +1571,7 @@ module bTrim(x=1, z=[0], print=true) {
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
   y = z[0];
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (l<=r) hl(tPH==0) rotate([0, print?180:0, 0]) translate([0, fGridY*(y-1), print?0:fGridZ+tBase+tFloat]) {
+  if (l<=r) hl(!trim, "Trim is disabled.") rotate([0, print?180:0, 0]) translate([0, fGridY*(y-1), print?0:fGridZ+tBase+tFloat]) {
     extrude(-tBase) translate([fGridX*l-fBulgeOX, fTHookY+fSlopXY]) rect([fGridX*(r-l)+fBulgeOX*2, claspD]);
     bTrimBase(l, r);
   }
@@ -1384,14 +1582,14 @@ module lTrim(x=[0], z=1, print=true) {
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (t>=b) hl(tPH==0) rotate([0, print?180:0, 0]) translate([fGridX*(x[0]-1)+fSideIX+fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
-    extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fBulgeWall-fSlopXY, fGridY*(t-b)+fHornY*2]);
-    for (i=[b:t]) translate([0, fGridY*i, 0]) {
-      extrude(-trimZ) rect([fBulgeWall-fSlopXY, fBulgeOY*2-fWallGrid*2-tPH*2], [1,0]);
-      rotate(90) trimBumps([fBulgeOY*2-fWallGrid*2-tPH*2, fSlopXY-fBulgeWall]);
+  if (t>=b) hl(!trim, "Trim is disabled.") rotate([0, print?180:0, 0])
+    translate([fGridX*(x[0]-1)+fSideIX+fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
+      extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fBulgeWall-fSlopXY, fGridY*(t-b)+fHornY*2]);
+      for (i=[b:t]) translate([0, fGridY*i, 0]) {
+        extrude(-tBase-tInsert) rect([fBulgeWall-fSlopXY, fBulgeOY*2-fWallGrid*2-tPH*2], [1,0]);
+        rotate(90) trimMBumps([fBulgeOY*2-fWallGrid*2-tPH*2, fSlopXY-fBulgeWall]);
+      }
     }
-  }
 }
 
 module rTrim(x=[0], z=1, print=true) {
@@ -1399,14 +1597,14 @@ module rTrim(x=[0], z=1, print=true) {
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (t>=b) hl(tPH==0) rotate([0, print?180:0, 0]) translate([fGridX*(x[0]+1)-fSideIX-fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
-    extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fSlopXY-fBulgeWall, fGridY*(t-b)+fHornY*2]);
-    for (i=[b:t]) translate([0, fGridY*i, 0]) {
-      extrude(-trimZ) rect([fSlopXY-fBulgeWall, fHornY*2-claspW*2-hookLR*2+lPC*2-tPH*2-fSlopXY*2], [1,0]);
-      rotate(270) trimBumps([fHornY*2-claspW*2-hookLR*2+lPC*2-tPH*2-fSlopXY*2, fSlopXY-fBulgeWall]);
+  if (t>=b) hl(!trim, "Trim is disabled.") rotate([0, print?180:0, 0])
+    translate([fGridX*(x[0]+1)-fSideIX-fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
+      extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fSlopXY-fBulgeWall, fGridY*(t-b)+fHornY*2]);
+      for (i=[b:t]) translate([0, fGridY*i, 0]) {
+        extrude(-tBase-tInsert) rect([fSlopXY-fBulgeWall, fHornY*2-claspW*2-hookLR*2+lPC*2-tPH*2-fSlopXY*2], [1,0]);
+        rotate(270) trimMBumps([fHornY*2-claspW*2-hookLR*2+lPC*2-tPH*2-fSlopXY*2, fSlopXY-fBulgeWall]);
+      }
     }
-  }
 }
 
 module tlTrim(x=1, z=1, print=true) {
@@ -1416,8 +1614,7 @@ module tlTrim(x=1, z=1, print=true) {
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (t>=b && l<=r) hl(tPH==0) {
+  if (t>=b && l<=r) hl(!trim, "Trim is disabled.") {
     fillet = tClearance - fSlopXY;
     rise = fWallGrid + fSlopXY;
     edge = fSideOX + claspD + stretchX - tClearance + fSlopXY*2;
@@ -1440,8 +1637,7 @@ module trTrim(x=1, z=1, print=true) {
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (t>=b && l<=r) hl(tPH==0) {
+  if (t>=b && l<=r) hl(!trim, "Trim is disabled.") {
     fillet = tClearance - fSlopXY;
     rise = fWallGrid + fSlopXY;
     edge = fSideOX + claspD + stretchX - tClearance + fSlopXY*2;
@@ -1464,8 +1660,7 @@ module blTrim(x=1, z=1, print=true) {
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (t>=b && l<=r) hl(tPH==0) {
+  if (t>=b && l<=r) hl(!trim, "Trim is disabled.") {
     fillet = claspD - fWallGrid;
     edge = fGridX/2 - claspD/2 + stretchX/2 + fWallGrid;
     lTrim([l], z, print);
@@ -1473,7 +1668,8 @@ module blTrim(x=1, z=1, print=true) {
       bTrimBase(1, r-l+1);
       extrude(-tBase) {
         translate([fGridX-edge, fTHookY+fSlopXY]) rect([fGridX*(r-l)+fBulgeOX+edge, claspD]);
-        if (claspD-fillet>0) translate([fGridX-edge-fillet, fTHookY+fSlopXY+fillet]) rect([fGridX*(r-l)+fBulgeOX+edge+fillet, claspD-fillet]);
+        if (claspD-fillet>0) translate([fGridX-edge-fillet, fTHookY+fSlopXY+fillet])
+          rect([fGridX*(r-l)+fBulgeOX+edge+fillet, claspD-fillet]);
         cornerSquare(fillet, [edge, fHornY+fSlopXY], [1, 1], [fBulgeWall-fSlopXY, claspD]);
       }
     }
@@ -1487,8 +1683,7 @@ module brTrim(x=1, z=1, print=true) {
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
   r = is_list(x) ? max(x[0], x[1]) :  (abs(x)-1)/2;
-  if (tPH==0) echo("Trim is diabled. Enable trim.");
-  if (t>=b && l<=r) hl(tPH==0) {
+  if (t>=b && l<=r) hl(!trim, "Trim is disabled.") {
     fillet = claspD - fWallGrid;
     edge = fGridX/2 - claspD/2 + stretchX/2 + fWallGrid;
     rTrim([r], z, print);
@@ -1496,7 +1691,8 @@ module brTrim(x=1, z=1, print=true) {
       bTrimBase(l-r-1, -1);
       extrude(-tBase) {
         translate([edge-fGridX, fTHookY+fSlopXY]) rect([fGridX*(l-r)-fBulgeOX-edge, claspD]);
-        if (claspD-fillet>0) translate([edge-fGridX+fillet, fTHookY+fSlopXY+fillet]) rect([fGridX*(l-r)-fBulgeOX-edge-fillet, claspD-fillet]);
+        if (claspD-fillet>0) translate([edge-fGridX+fillet, fTHookY+fSlopXY+fillet])
+          rect([fGridX*(l-r)-fBulgeOX-edge-fillet, claspD-fillet]);
         cornerSquare(fillet, [edge, fHornY+fSlopXY], [-1, 1], [fBulgeWall-fSlopXY, claspD]);
       }
     }
@@ -1510,7 +1706,7 @@ module brTrim(x=1, z=1, print=true) {
 ///////////
 
 
-module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFace=true, drawTop=true, drawFloor=true, drawSides=true) {
+module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFace=true, drawTop=true, drawFloor=true, drawSides=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(z) || is_list(z) && len(z)==2);
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
@@ -1536,8 +1732,10 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
     for (i=[l:r]) translate([fGridX*i, 0, 0]) {
       tHooks(drawHooks=drawTop);
       extrude(fGridZ) flipX() translate([fGridX/2-claspD/2-stretchX/2-fSlopXY, fHornY]) rect([-fWall2, -fWall4]);
+      if (drawTop) bFill();
     }
     if (drawTop) extrude(fGridZ) translate([fGridX*r+fSideOX, fTHookY]) rect([fGridX*(l-r)-fSideOX*2, -fWall2]);
+    for (i=[l:r]) if (i<r) translate([fGridX*i, 0, 0]) bSeamFill();
   }
 
   module bFrame(l=0, r=0) {
@@ -1591,15 +1789,16 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
     translate([fGridX*r, 0, 0]) rFrame(b, t);
 
     translate([fGridX*(r+l)/2, 0, 0]) flipX() {
-      fStopLines = t-b==0 ? fStopLines0 : fStopLinesN;
-      stopHIdeal = (fWall2 + gap)*fStopLines;
+      stopLines = t-b==0 ? fStopLines0 : fStopLinesN;
+      stopTop = drawerY + gap - dFloat - dTravel - dWall2*sqrt(2)/2 + dSlopXY - (dWall2+gap)*sqrt(2)*(dStopLines-1);
+      stopHIdeal = (fWall2 + gap)*stopLines;
       stopH = stopHIdeal - stopZError;
       railW = (railWN - ((t-b)==0 ? stopH : 0) + railD*2 - dSlop45*2) / (drawSides ? 1 : 2);
       peakW = (peakWN - ((t-b)==0 ? stopH : 0)) / (drawSides ? 1 : 2);
       railZ = fGridY*b - ((t-b)==0 ? stopH/2 : 0);
 
       // drawer rail bumps
-      hl(peakW<0) translate([fGridX*(r-l)/2+fBulgeIX, railZ, 0]) {
+      hl(peakW<0, "Inadequate space for frame side bumps.") translate([fGridX*(r-l)/2+fBulgeIX, railZ, 0]) {
         // cushion
         hull() {
           box([fWall2, -railW, cInset+cBL+cPL], [1,drawSides?0:1,1]);
@@ -1622,64 +1821,61 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
         }
       }
       // drawer stops
-      if (fStopLines>0) hl(fStopTop<0) translate([fGridX*(r-l)/2+fBulgeIX, fGridY*t+fBulgeIY+stopZError, fGridZ]) {
-        difference() {
-          for (i=[0:fStopLines-1]) translate([fWall2, -fWall2*i-gap*(i+1), 0]) {
-            hull() {
-              box([-fBulgeWall-fWall2, -fWall2, -fStopTop], [1,1,1]);
-              box([-fWall2, -fWall2, -fStopTop-fBulgeWall], [1,1,1]);
+      if (stopLines>0) hl(stopTop<0, "Inadequate space for frame stops.")
+        translate([fGridX*(r-l)/2+fBulgeIX, fGridY*t+fBulgeIY+stopZError, fGridZ]) {
+          difference() {
+            for (i=[0:stopLines-1]) translate([fWall2, -fWall2*i-gap*(i+1), 0]) {
+              hull() {
+                box([-fBulgeWall-fWall2, -fWall2, -stopTop], [1,1,1]);
+                box([-fWall2, -fWall2, -stopTop-fBulgeWall], [1,1,1]);
+              }
             }
+            if (stopTop>=fLayerHN && drawCuts) for (i=[0:2:fFloorH(stopTop)/fLayerHN-1])
+              translate([0, 0, -i*fLayerHN+(i==0?fudge:0)])
+                box([-fBulgeWall/2+fWall2/2, -(fWall2+gap)*stopLines-fudge, -fLayerHN-(i==0?fudge:0)]);
           }
-          if (fStopTop>=fLayerHN && drawCuts) for (i=[0:2:fFloorH(fStopTop)/fLayerHN-1])
-            translate([0, 0, -i*fLayerHN+(i==0?fudge:0)])
-              box([-fBulgeWall/2+fWall2/2, -(fWall2+gap)*fStopLines-fudge, -fLayerHN-(i==0?fudge:0)]);
+          if (stopTop>=fLayerHN) for (i=[0:2:fFloorH(stopTop)/fLayerHN-1])
+            translate([-fBulgeWall/2+fWall2/2, fWall2-stopZError, -i*fLayerHN])
+              box([-fBulgeWall/2-fWall2/2, -(fWall2+gap)*stopLines-fWall2+stopZError, -fLayerHN]);
         }
-        if (fStopTop>=fLayerHN) for (i=[0:2:fFloorH(fStopTop)/fLayerHN-1])
-          translate([-fBulgeWall/2+fWall2/2, fWall2-stopZError, -i*fLayerHN])
-            box([-fBulgeWall/2-fWall2/2, -(fWall2+gap)*fStopLines-fWall2+stopZError, -fLayerHN]);
-      }
       // drawerZError compensation
-      if (fDrawerLayerCompLines>=1) for (i=[1:fDrawerLayerCompLines]) translate([fGridX*(r-l)/2+fSideOX-fWall2*i-gap*i, fGridY*t+fTopOY, 0])
-        box([-fWall2, -fWall2+drawerZError, fGridZ]);
+      if (fDrawerLayerCompLines>=1) for (i=[1:fDrawerLayerCompLines])
+        translate([fGridX*(r-l)/2+fSideOX-fWall2*i-gap*i, fGridY*t+fTopOY, 0]) box([-fWall2, -fWall2+drawerZError, fGridZ]);
     }
 
-    if (drawFloor)
-      difference() {
-        extrude(fBase) {
-          translate([fGridX*r+fSideOX+stretchX/2, fGridY*t+fTopOY]) rect([fGridX*(l-r)-fSideOX*2-stretchX/2, fGridY*(b-t-1)+claspD+fSlopXY*2+bPH]);
-          // upper left
-          translate([fGridX*l-fSideOX, fGridY*t+fHornY]) rect([fWall2+lPC, -fWall4]);
-          // lower corners (also needed in case bPH is large)
-          translate([fGridX*l-fSideOX, fGridY*b-fHornY]) rect([ fWall4+lPC+lWS, hookD+bPH]);
-          translate([fGridX*r+fSideOX, fGridY*b-fHornY]) rect([-fWall4-lPC-lWS, hookD+bPH]);
-          // right seam
-          for (i=[b:t]) if (i>b) translate([fGridX*(r+0.5)+claspD/2, fGridY*(i-0.5)]) rect([-claspD-stretchX/2-fWallGrid, -fWall4], [1,0]);
-          // upper right hook
-          for (i=[b:t]) translate([fGridX*r+fSideIX-lPC, fGridY*i+fHornY]) rect([claspD+stretchX/2+fWallGrid+lPC, -claspW-hookLR+fWallGrid+lPC+lWS]);
-          // lower right hook
-          for (i=[b:t]) translate([fGridX*r+fSideIX-fWallGrid-lPC-lWS, fGridY*i-fHornY]) rect([claspD+stretchX/2+fWallGrid*2+lPC+lWS, claspW+hookLR-fWallGrid-lPC-lWS]);
-          // left bulge
-          for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+lPC*2+fWallGrid*2+lWS*2], [1,0]);
-          // right bulge
-          for (i=[b:t]) translate([fGridX*r+fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2+lPC*2], [1,0]);
-          // top hooks
-          for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD]) rect([fSideOX*2-fWallGrid*4-lPC*2-lWS*2, claspD+fWallGrid+bPH], [0,1]);
-          // top seam  (is this necessary?)
-          // #for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*t+fHornY]) rect([claspD+stretchX+fWallGrid*2+lPC*2, -fWall4], [0,1]);
-          // bottom seam
-          for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD+stretchX+fWallGrid*4+lPC*2+lWS*2, hookD+bPH], [0,1]);
-          // bottom seam hooks
-          for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)+claspD/2+stretchX/2+fWall2+fSlopXY*2+lPC, fGridY*b-fHornY-claspD+fWall2]) rect([ fWall2+lWS, claspD]);
-          for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)-claspD/2-stretchX/2-fWall2-fSlopXY*2-lPC, fGridY*b-fHornY-claspD+fWall2]) rect([-fWall2-lWS, claspD]);
-          // left hook fill
-          translate([fGridX*l-fSideOX-stretchX/2, fGridY*b-fHornY]) rect([fWall2+stretchX/2, fGridY*(t-b)+fHornY*2]);
-        }
-        if (mountingHoleD>0 && t-b>0) for (i=[l:r]) for (j=[b:t-1]) translate([fGridX*i, fGridY*(j+0.5), -fudge])
-          rod(fBase+fudge2, r=circumgoncircumradius(d=mountingHoleD, $fn=$fn/2)+fSlopXY, $fn=$fn/2);
+    if (drawFloor) difference() {
+      extrude(fBase, convexity=2) {
+        translate([fGridX*r+fSideOX+stretchX/2, fGridY*t+fTopOY]) rect([fGridX*(l-r)-fSideOX*2-stretchX/2, fGridY*(b-t-1)+claspD+fSlopXY*2+bPH]);
+        // upper left
+        translate([fGridX*l-fSideOX, fGridY*t+fHornY]) rect([fWall2+lPC, -fWall4]);
+        // lower corners (also needed in case bPH is large)
+        translate([fGridX*l-fSideOX, fGridY*b-fHornY]) rect([ fWall4+lPC+lWS, hookD+bPH]);
+        translate([fGridX*r+fSideOX, fGridY*b-fHornY]) rect([-fWall4-lPC-lWS, hookD+bPH]);
+        // right seam
+        for (i=[b:t]) if (i>b) translate([fGridX*(r+0.5)+claspD/2, fGridY*(i-0.5)]) rect([-claspD-stretchX/2-fWallGrid, -fWall4], [1,0]);
+        // upper right hook
+        for (i=[b:t]) translate([fGridX*r+fSideIX-lPC, fGridY*i+fHornY]) rect([claspD+stretchX/2+fWallGrid+lPC, -claspW-hookLR+fWallGrid+lPC+lWS]);
+        // lower right hook
+        for (i=[b:t]) translate([fGridX*r+fSideIX-fWallGrid-lPC-lWS, fGridY*i-fHornY]) rect([claspD+stretchX/2+fWallGrid*2+lPC+lWS, claspW+hookLR-fWallGrid-lPC-lWS]);
+        // left bulge
+        for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+lPC*2+fWallGrid*2+lWS*2], [1,0]);
+        // right bulge
+        for (i=[b:t]) translate([fGridX*r+fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2+lPC*2], [1,0]);
+        // top hooks
+        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD]) rect([fSideOX*2-fWallGrid*4-lPC*2-lWS*2, claspD+fWallGrid+bPH], [0,1]);
+        // top seam  (is this necessary?)
+        // #for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*t+fHornY]) rect([claspD+stretchX+fWallGrid*2+lPC*2, -fWall4], [0,1]);
+        // bottom seam
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD+stretchX+fWallGrid*4+lPC*2+lWS*2, hookD+bPH], [0,1]);
+        // bottom seam hooks
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)+claspD/2+stretchX/2+fWall2+fSlopXY*2+lPC, fGridY*b-fHornY-claspD+fWall2]) rect([ fWall2+lWS, claspD]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)-claspD/2-stretchX/2-fWall2-fSlopXY*2-lPC, fGridY*b-fHornY-claspD+fWall2]) rect([-fWall2-lWS, claspD]);
+        // left hook fill
+        translate([fGridX*l-fSideOX-stretchX/2, fGridY*b-fHornY]) rect([fWall2+stretchX/2, fGridY*(t-b)+fHornY*2]);
       }
-
-    for (i=[l:r]) if (i<r) translate([fGridX*i, fGridY*t]) bSeamFill();
-    if (drawTop) for (i=[l:r]) translate([fGridX*i, fGridY*t]) bFill();
+      if (mountingHoleD>0 && t-b>0) for (i=[l:r]) for (j=[b:t-1]) translate([fGridX*i, fGridY*(j+0.5), -fudge])
+        rod(fBase+fudge2, r=circumgoncircumradius(d=mountingHoleD, $fn=mountingHoleFn)+fSlopXY, $fn=mountingHoleFn);
+    }
 
     if (drawer || is_num(drawer))
       translate([0, drawerZFrameYAlign+fGridY*b, drawerYFrameZAlign+(is_num(drawer)?drawer:0)])
@@ -1696,7 +1892,7 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=undef, drawFac
 ////////////
 
 
-module drawer(x=1, h=1, divisions=undef, drawFace=true) {
+module drawer(x=1, h=1, divisions=false, drawFace=true) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(h) && h>=1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -1721,22 +1917,6 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
   bulgeMidH = fBulgeIY*2 - dSlop45*2 - fBulgeWall*2;
   railZ = bulgeZ - (h==1 ? stopH/2 : 0);
 
-  if (bulgeMidH<stopH) {
-    echo("Drawer has overhangs over 45°. Possible fixes:");
-    echo("    ∙ reduce frame stop lines");
-    echo("    ∙ increase frame unit height");
-    echo("    ∙ disable bin drawer compensation");
-    echo("    ∙ adjust frame unit width");
-    echo("    ∙ toggle double bin drawer walls");
-  }
-
-  if (!binDrawersEnabled && !divided) {
-    echo("Bin drawers are disabled. Possible fixes:");
-    echo("    ∙ enable bin drawer compensation");
-    echo("    ∙ specify frame unit width in bin units");
-    echo("    ∙ use only divider drawers");
-  }
-
   module bump() hull() {
     box([-fudge, -dBL-dPL-dFL, railW], [1,1,0]);
     translate([0, -dBL, 0]) box([dPH, -dPL, peakW], [1,1,0]);
@@ -1749,7 +1929,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         rect([dWall2, bodyZ], [0,1]);
       }
       rect([dWall2+binR*2, dBase*2-fudge2], [0,0]);
-      flipX() translate([dWall2/2+binR, dBase+binR*sqrt(2)/2]) circle(r=binR);
+      flipX() translate([dWall2/2+binR, dBase+binR*sqrt(2)/2]) circle(r=binR, $fn=binFn);
     }
   }
 
@@ -1829,10 +2009,10 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
   }
 
   module handleProfile(r, trunc) {
-    rotate(90) teardrop_2d(r=r, truncate=trunc, $fn=$fn/2);
-    rotate(-90) teardrop_2d(r=r, truncate=r, $fn=$fn/2);
+    rotate(90) teardrop_2d(r=r, truncate=trunc, $fn=handleDFn);
+    rotate(-90) teardrop_2d(r=r, truncate=r, $fn=handleDFn);
     if (handleTray) difference() {
-      rotate(-22.5) teardrop_2d(r=r, a=67.5, $fn=$fn/2);
+      rotate(-22.5) teardrop_2d(r=r, a=67.5, $fn=handleDFn);
       rect([r*2+fudge2, -r-fudge], [0,1]);
       rotate(-45) rect([r*2+fudge2, -r-fudge], [0,1]);
     }
@@ -1865,21 +2045,22 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
     else {
       if (handleR<b) flipX() translate([a, 0, 0]) tull([0, handleR-b, 0]) rotate(90) children();
       translate([0, -b, 0]) tull([handleR*2-a*2, 0, 0], center=true) children();
-      flipX() translate([a-handleR, handleR-b]) hull_rotate_extrude(90) translate([0, -handleR, 0]) children();
+      flipX() translate([a-handleR, handleR-b]) hull_rotate_extrude(90, $fn=handleRFn) translate([0, -handleR, 0]) children();
     }
   }
 
-  if (l<=r && h>=1) hl(!binDrawersEnabled && !divided) translate([fGridX*(r+l)/2, dubWall?-gap:0, 0]) {
+  if (l<=r && h>=1) hl(!binDrawersEnabled && !divided, "Bin drawers are disabled.") translate([fGridX*(r+l)/2, dubWall?-gap:0, 0]) {
     difference() {
       union() {
         // main body
         box([w, bodyY, bodyZ], [0,0,1]);
         translate([0, -drawerY/2+(dubWall?gap:0), bulgeZ]) {
           // bulges
-          for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0)) translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
-            box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
-            box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
-          }
+          for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0), "Inadequate space for drawer rib.")
+            translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
+              box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
+              box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
+            }
           // bottom front corner
           translate([0, drawerY-fudge, -(h==1?stopH/2:0)]) hull() {
             translate([0, 0, -fBulgeWall/2]) box([w, fBulgeWall+fudge, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
@@ -1889,19 +2070,20 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         // bottom front corner
         translate([0, drawerY/2+(dubWall?gap:0)-fudge, 0]) box([w, fBulgeWall+fudge, bulgeZ-bulgeMidH/2], [0,1,1]);
         // stops
-        if (dStopLines>0) hl(bulgeMidH<stopH) translate([0, bodyY/2+fBulgeWall, stopZ]) for (i=[0:dStopLines-1])
-          translate([0, -(dWall2+gap)*sqrt(2)*i, 0]) extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=4) polygon(
-          [ [ w/2+fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
-          , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
-          , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
-          , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
-          , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
-          , [-w/2-fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
-          , [-w/2-fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
-          , [-w/2-fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
-          ]);
+        if (dStopLines>0) hl(bulgeMidH<stopH, "Drawer stop is too tall.")
+          translate([0, bodyY/2+fBulgeWall, stopZ]) for (i=[0:dStopLines-1])
+            translate([0, -(dWall2+gap)*sqrt(2)*i, 0]) extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=4) polygon(
+            [ [ w/2+fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+            , [ w/2+fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
+            , [ w/2+fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
+            , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+            , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
+            , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
+            , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+            , [-w/2-fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
+            , [-w/2-fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
+            , [-w/2-fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+            ]);
         // back brace block
         if (brace) translate([0, drawerY/2-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
       }
@@ -1916,7 +2098,8 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         eSliceY(braceTop, [rL.x-dWall2*2, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
       }
       // bottom front chamfer
-      translate([0, drawerY/2+(dubWall?gap:0)+fBulgeWall-dChamfer, 0]) rotate([-45]) box([w+fudge2, dChamfer*sqrt(2)/2+fudge, dChamfer*sqrt(2)], [0,1,1]);
+      translate([0, drawerY/2+(dubWall?gap:0)+fBulgeWall-dChamfer, 0]) rotate([-45])
+        box([w+fudge2, dChamfer*sqrt(2)/2+fudge, dChamfer*sqrt(2)], [0,1,1]);
       // cavity
       if (dubWall) translate([0, drawerY/2+gap-dWall2, dBase]) {
         if (divided) translate([0, fudge, 0])
@@ -1945,7 +2128,7 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         }
     }
     // bumps
-    hl(peakW<0) flipX() translate([w/2+fBulgeWall-railD, dubWall?gap:0, railZ]) {
+    hl(peakW<0, "Inadequate space for drawer side bumps.") flipX() translate([w/2+fBulgeWall-railD, dubWall?gap:0, railZ]) {
       translate([0, drawerY/2+fBulgeWall, 0]) render() difference() {
         bump();
         translate([-fudge*2, 0, bulgeMidH/2]) rotate([45]) box([dPH+fudge*3, fBulgeWall*sqrt(2)/2, fBulgeWall*sqrt(2)]);
@@ -1953,23 +2136,17 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
       translate([0, -drawerY/2+dFL+dPL+dBL+dInset, 0]) bump();
     }
     // dividers
-    if (divided) translate([0, -drawerY/2-dWall2/2+(dubWallFaceLip?dWall2+gap:0), 0]) {
-      bounds = [w-dWall2, drawerY+gap-(dubWallFaceLip?dWall2+gap:0)];
-      if ($preview) render() difference() {
-        intersection() {
-          dividerWalls(bounds, divisions);
-          translate([0, dubWallFaceLip?-dWall2/2:0, 0]) box([bounds.x, bounds.y+(dubWallFaceLip?dWall2/2:0), bodyZ], [0,1,1]);
+    if (divided) hl(bodyZ-dBase-dLayerHN<binR-binR*(1-sqrt(2)/2), "Bin radius is too large for drawer height.")
+      translate([0, -drawerY/2-dWall2/2+(dubWallFaceLip?dWall2+gap:0), 0]) {
+        bounds = [w-dWall2, drawerY+gap-(dubWallFaceLip?dWall2+gap:0)];
+        difference() {
+          render(convexity=len(divisions)) intersection() {
+            dividerWalls(bounds, divisions);
+            translate([0, dubWallFaceLip?-dWall2/2:0, 0]) box([bounds.x, bounds.y+(dubWallFaceLip?dWall2/2:0), bodyZ], [0,1,1]);
+          }
+          if (drawCuts) dividerCuts(bounds, divisions);
         }
-        if (drawCuts) dividerCuts(bounds, divisions);
       }
-      else difference() {
-        intersection() {
-          dividerWalls(bounds, divisions);
-          translate([0, dubWallFaceLip?-dWall2/2:0, 0]) box([bounds.x, bounds.y+(dubWallFaceLip?dWall2/2:0), bodyZ], [0,1,1]);
-        }
-        dividerCuts(bounds, divisions);
-      }
-    }
     // extra lip (bin drawers)
     if (!divided && dubWallBinDrawers && dubWallFaceLip) difference() {
       translate([0, -drawerY/2+gap, dBase-fudge]) box([w-dWall2, dWall2, bodyZ-dBase+fudge], [0,1,1]);
@@ -1977,46 +2154,47 @@ module drawer(x=1, h=1, divisions=undef, drawFace=true) {
         translate([(w-dWall2*2-gap)*(mod(i, 2)==0?1:-1)/2, 0, i*dLayerHN]) box([gap, dWall2+fudge2, dLayerHN+fudge], [0,1,1]);
     }
     // face
-    // drawFace=false;
     if (drawFace) translate([0, -drawerY/2-(dubWall?0:gap)-dWall2, 0]) {
       if (!dubWall) box([dWall2, dWall2+gap+fudge, bodyZ], [0,1,1]);
       box([faceX, dWall2, faceZ], [0,1,1]);
     }
     // handle
-    if (drawFace && handleReach>0) {
+    if (drawFace && handleL>0) {
       // h & r shaddow outer scope (above, r means right, but here, it means radius) (naming stuff is hard!)
-      h = dFloorZ(handleLip/2 + handleLip*sqrt(2)/2 - dWall2/2 + dLayerHN/2);
-      r = (h*2 + dWall2 - dLayerHN)/(2 + sqrt(2)*2);  // derived by removing `dFloorZ` from above and solving for `handleLip`
+      h = dFloorZ(handleD/2 + handleD*sqrt(2)/2 - dWall2/2 + dLayerHN/2);
+      r = (h*2 + dWall2 - dLayerHN)/(2 + sqrt(2)*2);  // derived by removing `dFloorZ` from above and solving for `handleD`
       trunc = r*sqrt(2) - dWall2/2 + dLayerHN/2;
       a = faceX/2 - r;
-      b = handleReach - r;
-      step = 360/$fn;
+      b = handleL - r;
+      step = 360/handleRFn;
       layers = dFloorH(r + trunc - dBase) / dLayerHN;
       difference() {
         translate([0, -drawerY/2-(dubWall?0:gap)-dWall2, 0]) {
           difference() {
             handleSweep(r, a, b, step) handleOuter(r, trunc);
             translate([0, dWall2, -fudge]) {
-              if (r*2-dWall2>handleReach) box([faceX+fudge2, r*2-dWall2-handleReach+fudge, h+fudge2], [0,1,1]);
+              if (r*2-dWall2>handleL) box([faceX+fudge2, r*2-dWall2-handleL+fudge, h+fudge2], [0,1,1]);
               if (!handleElliptical && handleR-dWall2>b) box([faceX+fudge2, handleR-dWall2-b+fudge, h+fudge2], [0,1,1]);
             }
-            difference() {
-              handleSweep(r, a, b, step) handleInner(r, trunc);
-              translate([0, dWall2, 0]) box([faceX, -gap-dWall2*2, r+trunc], [0,1,1]);
-            }
-            difference() {
-              handleSweep(r, a, b, step) handleCut(r, trunc);
-              if (drawCuts) translate([0, dWall2, dBase]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
-                box([(a+r+fudge)*(mod(i, 2)==0?1:-1), -gap-dWall2*2, dLayerHN+fudge]);
+            if (drawCuts) {
+              difference() {
+                handleSweep(r, a, b, step) handleInner(r, trunc);
+                translate([0, dWall2, 0]) box([faceX, -gap-dWall2*2, r+trunc], [0,1,1]);
+              }
+              difference() {
+                handleSweep(r, a, b, step) handleCut(r, trunc);
+                translate([0, dWall2, dBase]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
+                  box([(a+r+fudge)*(mod(i, 2)==0?1:-1), -gap-dWall2*2, dLayerHN+fudge]);
+              }
             }
           }
           if (handleTray) extrude(dBase) difference() {
             union() {
-              if (handleElliptical) scale([a, b]) circle();
+              if (handleElliptical) scale([a, b]) circle($fn=handleRFn);
               else {
                 rect([a*2-handleR*2, b*2], [0,0]);
                 rect([a*2, b*2-handleR*2], [0,0]);
-                flipX() translate([a-handleR, handleR-b, 0]) circle(handleR);
+                flipX() translate([a-handleR, handleR-b, 0]) circle(handleR, $fn=handleRFn);
               }
             }
             translate([0, dWall2]) rect([a*2+fudge2, b], [0,1]);
@@ -2051,33 +2229,31 @@ module bin(x=1, y=1, h=1) {
   w = bGridXY*(r-l) + binXY;
   d = bGridXY*(b-f) + binXY;
   z = bFloorZ(fGridY*(h-1) + binZ);
-  bulge = binR*sqrt(2)/2;
+  bulge = binR*(1-sqrt(2)/2);
 
-  if (!binDrawersEnabled) {
-    echo("Bins are disabled. Possible fixes:");
-    echo("    ∙ enable bin drawer compensation");
-    echo("    ∙ specify frame unit width in bin units");
-  }
-
-  if (f<=b && l<=r && h>=1) hl(!binDrawersEnabled) translate([bGridXY*(r+l)/2, bGridXY*(b+f)/2, 0]) {
-    box([w, d, bBase], [0,0,1]);
-    box([w-binR*(2-sqrt(2)), d-binR*(2-sqrt(2)), z], [0,0,1]);
-    translate([0, 0, bBase+bulge]) {
-      box([w, d, z-bBase-bulge], [0,0,1]);
-      intersection() {
-        hull() flipX() translate([w/2-binR, 0, 0]) difference() {
-          rotate([90, 0]) cylinder(d, r=binR, center=true);
-          translate([(-binR/2+bulge/2)-fudge, 0, 0]) box([binR+bulge+fudge2, d+fudge2, binR*2], [0,0,0]);
-          translate([bulge-fudge, 0, z-bBase-bulge]) box([binR-bulge+fudge2, d+fudge2, bulge*2-z+bBase+fudge], [1,0,1]);
-        }
-        hull() flipY() translate([0, d/2-binR, 0]) difference() {
-          rotate([0, 90]) cylinder(w, r=binR, center=true);
-          translate([0, -binR/2+bulge/2-fudge, 0]) box([w+fudge2, binR+bulge+fudge2, binR*2], [0,0,0]);
-          translate([0, bulge-fudge, z-bBase-bulge]) box([w+fudge2, binR-bulge+fudge2, bulge*2-z+bBase+fudge], [0,1,1]);
+  if (f<=b && l<=r && h>=1)
+    hl(!binDrawersEnabled, "Bins are disabled.")
+    hl(bulge*2>w-bWall2, "Bin radius is too large for bin width.")
+    hl(bulge*2>d-bWall2, "Bin radius is too large for bin depth.")
+      translate([bGridXY*(r+l)/2, bGridXY*(b+f)/2, 0]) {
+        box([w, d, bBase], [0,0,1]);
+        box([w-binR*(2-sqrt(2)), d-binR*(2-sqrt(2)), z], [0,0,1]);
+        translate([0, 0, bBase+binR-bulge]) {
+          hl(z-bBase-bLayerHN/2<binR-bulge, "Bin radius is too large for bin height.") box([w, d, z-bBase-binR+bulge], [0,0,1]);
+          intersection() {
+            hull() flipX() translate([w/2-binR, 0, 0]) difference() {
+              rotate([90, 0]) cylinder(d, r=binR, center=true, $fn=binFn);
+              translate([-bulge/2-fudge, 0, 0]) box([binR*2-bulge+fudge2, d+fudge2, binR*2], [0,0,0]);
+              translate([binR-bulge-fudge, 0, z-bBase-binR+bulge]) box([bulge+fudge2, d+fudge2, binR*2-bulge*2-z+bBase+fudge], [1,0,1]);
+            }
+            hull() flipY() translate([0, d/2-binR, 0]) difference() {
+              rotate([0, 90]) cylinder(w, r=binR, center=true, $fn=binFn);
+              translate([0, -bulge/2-fudge, 0]) box([w+fudge2, binR+(binR-bulge)+fudge2, binR*2], [0,0,0]);
+              translate([0, binR-bulge-fudge, z-bBase-binR+bulge]) box([w+fudge2, bulge+fudge2, binR*2-bulge*2-z+bBase+fudge], [0,1,1]);
+            }
+          }
         }
       }
-    }
-  }
 }
 
 
@@ -2271,7 +2447,7 @@ module demoSliceY(r, translate
   }
 
 module demoSides(drawTrim=true) {
-  trimColor = drawTrim ? transBlue : undef;
+  trimColor = drawTrim ? transBlue : false;
   lSide(x=[ 0.8], z=5, color=solidOrange, trimColor=trimColor);
   rSide(x=[-0.8], z=5, color=solidOrange, trimColor=trimColor);
   tlSide([-2, -1], [-0.8], color=solidOrange, trimColor=trimColor);
@@ -2290,8 +2466,10 @@ module demoPerimeter(x=2, z=2, cornerSize=1, color=true, trimColor=true) {
   assert(t-b>=cornerSize);
   assert(r-l>=cornerSize);
   condColor(color) {
-    tSide([l+cornerSize, r-cornerSize], [t]);
-    bSide([l+cornerSize, r-cornerSize], [b]);
+    if (r-cornerSize>l+cornerSize) {
+      tSide([l+cornerSize, r-cornerSize], [t]);
+      bSide([l+cornerSize, r-cornerSize], [b]);
+    }
     lSide([l], [b, t]);
     rSide([r], [b, t]);
     tlSide([l, l+cornerSize-1], [t]);
@@ -2299,11 +2477,15 @@ module demoPerimeter(x=2, z=2, cornerSize=1, color=true, trimColor=true) {
     blSide([l, l+cornerSize-1], [b]);
     brSide([r, r-cornerSize+1], [b]);
   }
-  if (tPH>0) condColor(trimColor) condRender() {
-    tTrim([l+cornerSize, r-cornerSize], [t], print=false);
-    bTrim([l+cornerSize, r-cornerSize], [b], print=false);
-    lTrim([l], [b+cornerSize, t-cornerSize], print=false);
-    rTrim([r], [b+cornerSize, t-cornerSize], print=false);
+  if (trim) condColor(trimColor) {
+    if (r-cornerSize>l+cornerSize) {
+      tTrim([l+cornerSize, r-cornerSize], [t], print=false);
+      bTrim([l+cornerSize, r-cornerSize], [b], print=false);
+    }
+    if (t-cornerSize>b+cornerSize) {
+      lTrim([l], [b+cornerSize, t-cornerSize], print=false);
+      rTrim([r], [b+cornerSize, t-cornerSize], print=false);
+    }
     tlTrim([l, l+cornerSize-1], [t, t-cornerSize+1], print=false);
     trTrim([r, r-cornerSize+1], [t, t-cornerSize+1], print=false);
     blTrim([l, l+cornerSize-1], [b, b+cornerSize-1], print=false);
@@ -2418,7 +2600,7 @@ module demoFrameLarge2(drawers=true, drawTrim=true) {
       frame([ 7,  8], [ 3,  4], hookInserts=true, drawer=drawers);
       frame([ 5,  6], [ 3,  4], hookInserts=true, drawer=drawers);
       frame([ 5,  8], [ 1,  2], hookInserts=true, drawer=drawers);
-      frame([ 5,  8], [-1,  0], hookInserts=true, drawer=drawers);
+      frame([ 5,  8], [-1,  0], hookInserts=true, drawer=drawers?dTravel:false, divisions=dividerDrawer?divisions:false);
       frame([ 6,  8], [-4, -2], hookInserts=true, drawer=drawers);
     }
   color(solidOrange)
@@ -2427,18 +2609,18 @@ module demoFrameLarge2(drawers=true, drawTrim=true) {
   }
 }
 
-module demoDrawerBumpAlignment(x=1, h=1, drawer=dTravel, divisions=undef)
+module demoDrawerBumpAlignment(x=1, h=1, drawer=dTravel, divisions=false)
   rotate([90,0,0]) translate([0, -drawerZFrameYAlign, -drawerYFrameZAlign-drawer]) {
     frame(x, [0, h-1], drawer=drawer, divisions=divisions, drawFace=true, drawFloor=false, drawSides=false);
     frame(x, [-1, -h], drawTop=false, drawFloor=false, drawSides=false);
   }
 
-module demoDrawerZAlignment(x=1, h=1, divisions=undef)
+module demoDrawerZAlignment(x=1, h=1, divisions=false)
   rotate([90,0,0]) translate([0, -drawerZFrameYAlign, -drawerYFrameZAlign])
     frame(x, [0, h-1], drawer=true, divisions=divisions, drawFace=false, drawFloor=false);
 
 
-module demoDrawerBinAlignment(x=1, h=1, divisions=undef) {
+module demoDrawerBinAlignment(x=1, h=1, divisions=false) {
   assert(is_num(x) || is_list(x) && len(x)==2);
   assert(is_num(h) && h>=1);
   l = is_list(x) ? min(x[0], x[1]) : -(abs(x)-1)/2;
@@ -2466,46 +2648,56 @@ module demoDrawerBinAlignment(x=1, h=1, divisions=undef) {
 /////////////////
 
 
+partW = Part_width;
+partH = Part_height;
+
+binW = Bin_width;
+binD = Bin_depth;
+
+showDrawers = Show_drawers_in_demos;
+showTrim = Show_trim_in_demos;
+dividerDrawer = Fixed_divider_drawer;
+
 if (Active_model=="fills") demoFills();
 
-if (Active_model=="sides") demoSides(drawTrim=Show_trim_in_assembly_demos);
+if (Active_model=="sides") demoSides(drawTrim=showTrim);
 
-if (Active_model=="perimeter") demoPerimeter(color=solidOrange, trimColor=Show_trim_in_assembly_demos?transBlue:undef);
+if (Active_model=="perimeter") demoPerimeter(color=solidOrange, trimColor=showTrim?transBlue:false);
 
 if (Active_model=="hooks") demoHooks();
 
-if (Active_model=="small assembly")       demoFrameSmall (drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
-if (Active_model=="small assembly - h>1") demoFrameSmall2(drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
-if (Active_model=="large assembly")       demoFrameLarge (drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
-if (Active_model=="large assembly - h>1") demoFrameLarge2(drawers=Show_drawers_in_assembly_demos, drawTrim=Show_trim_in_assembly_demos);
+if (Active_model=="small assembly")       demoFrameSmall (drawers=showDrawers, drawTrim=showTrim);
+if (Active_model=="small assembly - h>1") demoFrameSmall2(drawers=showDrawers, drawTrim=showTrim);
+if (Active_model=="large assembly")       demoFrameLarge (drawers=showDrawers, drawTrim=showTrim);
+if (Active_model=="large assembly - h>1") demoFrameLarge2(drawers=showDrawers, drawTrim=showTrim);
 
-if (Active_model=="bump alignment - drawer shut") demoDrawerBumpAlignment(x=Frame_width, h=Frame_height, drawer=0);
-if (Active_model=="bump alignment - drawer open") demoDrawerBumpAlignment(x=Frame_width, h=Frame_height, drawer=dTravel);
-if (Active_model=="z alignment") demoDrawerZAlignment(x=Frame_width, h=Frame_height);
-if (Active_model=="bin alignment") demoDrawerBinAlignment(x=Frame_width, h=Frame_height, divisions=Fixed_divider_drawer?divisions:undef);
+if (Active_model=="bump alignment - drawer shut") demoDrawerBumpAlignment(x=partW, h=partH, drawer=0);
+if (Active_model=="bump alignment - drawer open") demoDrawerBumpAlignment(x=partW, h=partH, drawer=dTravel);
+if (Active_model=="z alignment") demoDrawerZAlignment(x=partW, h=partH);
+if (Active_model=="bin alignment") demoDrawerBinAlignment(x=partW, h=partH, divisions=dividerDrawer?divisions:false);
 
-if (Active_model=="frame") frame(x=Frame_width, z=Frame_height);
-if (Active_model=="drawer") drawer(x=Frame_width, h=Frame_height, divisions=Fixed_divider_drawer?divisions:undef);
-if (Active_model=="bin") bin(x=Bin_width, y=Bin_depth, h=Bin_height);
+if (Active_model=="frame") frame(x=partW, z=partH);
+if (Active_model=="drawer") drawer(x=partW, h=partH, divisions=dividerDrawer?divisions:false);
+if (Active_model=="bin") bin(x=binW, y=binD, h=partH);
 if (Active_model=="side") {
-  if (Side==   "top"      )  tSide(x=Frame_width);
-  if (Side==   "top left" ) tlSide(x=Frame_width);
-  if (Side==       "left" )  lSide(z=Frame_height);
-  if (Side=="bottom left" ) blSide(x=Frame_width);
-  if (Side=="bottom"      )  bSide(x=Frame_width);
-  if (Side=="bottom right") brSide(x=Frame_width);
-  if (Side==       "right")  rSide(z=Frame_height);
-  if (Side==   "top right") trSide(x=Frame_width);
+  if (Side==   "top"      )  tSide(x=partW);
+  if (Side==   "top left" ) tlSide(x=partW);
+  if (Side==       "left" )  lSide(z=partH);
+  if (Side=="bottom left" ) blSide(x=partW);
+  if (Side=="bottom"      )  bSide(x=partW);
+  if (Side=="bottom right") brSide(x=partW);
+  if (Side==       "right")  rSide(z=partH);
+  if (Side==   "top right") trSide(x=partW);
 }
 if (Active_model=="trim") {
-  if (Side==   "top"      )  tTrim(x=Frame_width                );
-  if (Side==   "top left" ) tlTrim(x=Frame_width, z=Frame_height);
-  if (Side==       "left" )  lTrim(               z=Frame_height);
-  if (Side=="bottom left" ) blTrim(x=Frame_width, z=Frame_height);
-  if (Side=="bottom"      )  bTrim(x=Frame_width                );
-  if (Side=="bottom right") brTrim(x=Frame_width, z=Frame_height);
-  if (Side==       "right")  rTrim(               z=Frame_height);
-  if (Side==   "top right") trTrim(x=Frame_width, z=Frame_height);
+  if (Side==   "top"      )  tTrim(x=partW         );
+  if (Side==   "top left" ) tlTrim(x=partW, z=partH);
+  if (Side==       "left" )  lTrim(         z=partH);
+  if (Side=="bottom left" ) blTrim(x=partW, z=partH);
+  if (Side=="bottom"      )  bTrim(x=partW         );
+  if (Side=="bottom right") brTrim(x=partW, z=partH);
+  if (Side==       "right")  rTrim(         z=partH);
+  if (Side==   "top right") trTrim(x=partW, z=partH);
 }
 if (Active_model=="hook insert") hookInsert();
 
