@@ -43,7 +43,7 @@ Tips
     - significantly more strength with ~25% higher Outer Wall Flow since layers are smashed together
       - set Wall Count to 1
       - set Outer Wall Wipe Distance to 0
-      - set Top Thickness or Top Layers to 0
+      - set Top Surface Skin Layers and Top Layers to 1
       - set Skin Removal Width to some high number like 5
       - set Infill Density to 0
 
@@ -76,7 +76,7 @@ Possible future improvements
 */
 
 /* [Instructions] */
-// Start with the bottommost section and work up.
+// Start with the bottommost section and work up. Dial in all system settings before starting a production run by printing test pieces until satisfied. Detents may feel pretty similar between single and double wall drawers or single and multi unit heights, so choose a small test size and single wall drawers to start with to save time and material. Drawer detents are much tighter when neighbor frame pieces are attached though, so a good test configuration is three across by two high. Only the top middle frame needs to be reprinted if only the drawer detents have changed between tests.
 Overview = false;
 // Main settings select individual components from a larger system of compatible parts, as well as several demo and cutaway scenes used to check part alignment. Check the demo scenes for highlighted features and the console for error messages before printing parts.
 Main = false;
@@ -84,9 +84,9 @@ Main = false;
 Preview = false;
 // <local> settingss do not affect compatibility.
 local = false;
-// <side> settings affect all side and trim parts, but no others.
+// <sides> settings affect all side and trim parts, but no others.
 side = false;
-// <global> settings have system-wide effects, so assumed changing any of these settings will cause all new parts to be incompatible with any old parts. Dial these settings in before starting a production run by printing test pieces until satisfied. Detents work the same across all sizes, so choose a small test size to save time and material.
+// <global> settings have system-wide effects, and changing any of these settings causes all new parts to be incompatible with any old parts.
 global = false;
 
 /* [Main] */
@@ -117,7 +117,7 @@ Show_trim_in_demos = true;
 Show_drawers_in_demos = false;
 
 /* [Dividers] */
-// in relative sizes, ordered front to back. Any number of division is possible, but the number that can be subdivided has to be hard coded in the customizer. The zeros can be deleted; they are there because 4 element vectors become spinboxes in the customizer. Deeply nested subdivisions are possible by directly editing the file.
+// in relative sizes, ordered front to back. While five are shown here, any number of divisions is possible. The first eight rows can be subdivided further below. In fact, any number of rows can be subdivided, and those subdivisions subdivided, and so on, but the customizer is extremely limited so any fancy arrangements must be specified as a nested array in code.
 Divisions = [ 3, 4, 3, 0, 0 ];
 Row_1_subdivisions = [4, 9, 0, 0, 0 ];
 Row_2_subdivisions = [4, 5, 4, 0, 0 ];
@@ -136,9 +136,9 @@ Bin_segments = 16;  // [1:1:64]
 
 /* [<local> Drawers] */
 // in mm. Length from drawer face to the tip of the handle.
-Handle_length = 20;  // [0.0:0.5:100.0]
+Handle_length = 15;//20;  // [0.0:0.5:100.0]
 // in mm. Diameter of the handle bar.
-Handle_circumference_diameter = 5;  // [2.5:0.5:25.0]
+Handle_circumference_diameter = 3;//5;  // [2.5:0.5:25.0]
 // Number of segments in the curved sections around the handle bar.
 Handle_circumference_segments = 12;  // [4:4:64]
 // Draw an elliptical handle instead of a rectangular one.
@@ -166,13 +166,7 @@ Drawer_layer_compensation_lines = 2;  // [0:1:5]
 // in frame layers.
 Fill_top_thickness = 3;  // [0:1:10]
 
-/* [<side> Sides and Trim] */
-// Add mount points to sides to accept trim. Increases height of top trim parts.
-Enable_trim = true;
-// in mm. Add lip around the front rim. Thickens the fragile trim pieces for extra strength. Pieces with different lip settings should fit together, but will not be flush.
-Front_lip = 2;  // [0.0:0.1:10.0]
-// Number of segments along side corners.
-Side_corner_segments = 8;  // [2:1:32]
+/* [<sides> Detents - Trim] */
 // in horizontal frame slop units
 Trim_bump_height = 1.75;  // [0.000:0.125:4.000]
 // in horizontal frame slop units.  Should be a bit looser.
@@ -183,61 +177,73 @@ Trim_bump_latch_slope = 0.50;  // [0.025:0.025:1.000]
 Trim_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
 // in frame layers
 Trim_Z_slop = -0.25;  // [-5.000:0.125:5.000]
-// in frame layers.  How far the trim is expected to stick out due to rough mating surfaces.
+// in frame layers.  How far trim pieces stick out due to rough mating surfaces.
 Trim_float = 0.5;  // [0.000:0.125:1.000]
 
-/* [<global> Drawer Detents] */
-// Drawer detents are much tighter when neighbor frame pieces are attached, so a good test configuration is 3 across by 2 high. The 4 neighboring frame parts can often be used across many drawer tests since the frame rail detents don't change much when changing drawer detents.
+/* [<sides> Sides and Trim] */
+// Add mount points to sides to accept trim. Increases height of top trim parts.
+Enable_trim = true;
+// in mm. Add lip around the front rim. Thickens the fragile trim pieces for extra strength. Pieces with different lip settings should fit together, but will not be flush.
+Front_lip = 2;  // [0.0:0.1:10.0]
+// Number of segments along side corners.
+Side_corner_segments = 8;  // [2:1:32]
 
+/* [<global> Detents - Drawers] */
+// in horizontal drawer slop units. The bumps on the sides of drawers.
+Drawer_bump_height = 0.0;  // [-2.000:0.125:2.000]
+// in frame layers
+Drawer_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Drawer_bump_front_slope = 1.000;  // [0.025:0.025:1.000]
+Drawer_bump_back_slope = 0.250;  // [0.025:0.025:1.000]
+// in drawer layers
+Drawer_bump_spring_width = 2.0;  // [0.0:0.5:10.0]
+// in horizontal drawer slop units.  How far fully closed drawers still stick out due to rough mating surfaces.
+Drawer_float = 0.5;  // [0.000:0.125:1.000]
+
+/* [<global> Detents - Drawer Catches] */
+// in horizontal drawer slop units. The bumps in the back of frames that catch on drawers when closed.
+Catch_bump_height = -0.25;  // [-2.000:0.125:2.000]
+// in frame layers
+Catch_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Catch_bump_ramp_slope = 0.125;  // [0.025:0.025:1.000]
+// in horizontal drawer slop units
+Catch_cushion_height = 1.0;  // [-2.000:0.125:2.000]
+
+/* [<global> Detents - Drawer Holds] */
+// in horizontal drawer slop units. The bumps in the front of frames that hold drawers open.
+Hold_bump_height = 0.0;  // [-2.000:0.125:2.000]
+// in frame layers
+Hold_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
+Hold_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
+
+/* [<global> Detents - Drawer Keeps] */
+// in horizontal drawer slop units. The bumps in the front of frames that keep drawers from falling out too easily.
+Keep_bump_height = 0.25;  // [-2.000:0.125:2.000]
+// in frame layers
+Keep_bump_peak_length = 1.5;  // [0.0:0.5:5.0]
+Keep_bump_ramp_slope = 1.000;  // [0.025:0.025:1.000]
+
+/* [<global> Drawer Bottom Slots] */
+// in absolute drawer layers. The slots in the drawer bottoms. Must be even if using spiralize in Cura.
+Bottom_slot_height = 3;  // [0:1:10]
+// in absolute drawer layers. The bumps on the top frame hooks that keep drawers from falling out too easily. Add a little extra over the slot height to overcome filament dragging.
+Bottom_bump_height = 3.5;  // [0.00:0.25:12.00]
+// in frame layers
+Bottom_bump_peak_length = 2.5;  // [0.0:0.5:5.0]
+// in frame double walls. Must leave room for trim clip if trim is enabled.
+Bottom_bump_width = 2.5;  // [1.00:0.25:5.00]
+Bottom_bump_ramp_slope = 1.000;  // [0.025:0.025:1.000]
+
+/* [<global> Drawer Stops] */
 // in frame double walls
 Frame_stop_lines_for_single_unit_high_parts = 2;  // [0:1:10]
 // in frame double walls
 Frame_stop_lines_for_multi_unit_high_parts = 3;  // [0:1:15]
 // in drawer double walls
 Drawer_stop_lines = 2;  // [0:1:5]
-// in horizontal drawer slop units.  How far a fully closed drawer still sticks out due to rough mating surfaces.
-Drawer_float = 0.5;  // [0.000:0.125:1.000]
-// in drawer layers
-Drawer_spring_width = 4.0;  // [0.0:0.5:10.0]
-// in horizontal drawer slop units
-Drawer_bump_height = 0.0;  // [-2.000:0.125:2.000]
-// in frame layers
-Drawer_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
-Drawer_bump_front_slope = 1.000;  // [0.025:0.025:1.000]
-Drawer_bump_back_slope = 0.250;  // [0.025:0.025:1.000]
-// in horizontal drawer slop units
-Cushion_height = 1.0;  // [-2.000:0.125:2.000]
-// in horizontal drawer slop units
-Catch_bump_height = -0.25;  // [-2.000:0.125:2.000]
-// in frame layers
-Catch_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
-Catch_bump_ramp_slope = 0.125;  // [0.025:0.025:1.000]
-// in horizontal drawer slop units
-Hold_bump_height = 0.0;  // [-2.000:0.125:2.000]
-// in frame layers
-Hold_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
-Hold_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
-// in horizontal drawer slop units
-Keep_bump_height = 0.25;  // [-2.000:0.125:2.000]
-// in frame layers
-Keep_bump_peak_length = 1.5;  // [0.0:0.5:5.0]
-Keep_bump_ramp_slope = 1.000;  // [0.025:0.025:1.000]
-// in absolute drawer layers. Must be even if using spiralize in Cura.
-Bottom_slot_height = 3;  // [0:1:10]
-// in absolute drawer layers. Add a little extra to overcome filament dragging.
-Bottom_bump_height = 3.5;  // [0.00:0.25:12.00]
-// in frame layers
-Bottom_bump_peak_length = 2.5;  // [0.0:0.5:5.0]
-// in frame double walls. Must leave room for trim clip if trim is enabled.
-Bottom_bump_width = 2;  // [1.00:0.25:5.00]
-Bottom_bump_ramp_slope = 1.000;  // [0.025:0.025:1.000]
 
-/* [<global> Frame Detents] */
-// in mm
-Left_and_right_hook_size = 1.25;  // [0.50:0.25:10.00]
-// in mm
-Top_and_bottom_hook_size = 2.5;  // [0.50:0.25:10.00]
-// in horizontal frame slop units
+/* [<global> Detents - Frame Hooks] */
+// in horizontal frame slop units. There is a constant one unit of horizontal frame slop between a peak and its opposing hook wall, so increasing the peak height increases the minimum bin unit size by the same amount.
 Hook_bump_height = 1.75;  // [0.000:0.125:4.000]
 // in frame layers
 Hook_bump_peak_length = 2.0;  // [0.0:0.5:5.0]
@@ -246,11 +252,17 @@ Hook_bump_ramp_slope = 0.175;  // [0.025:0.025:1.000]
 // in frame layers
 Hook_Z_slop = -0.5;  // [-5.000:0.125:5.000]
 
+/* [<global> Frame Hooks] */
+// in mm
+Left_and_right_hook_size = 1.25;  // [0.50:0.25:10.00]
+// in mm
+Top_and_bottom_hook_size = 3.2;  // [0.50:0.25:10.00]
+
 /* [<global> Grid] */
 // Widen frame sides and narrows drawers as needed to align to bin grid. Wastes horizontal space and narrows the drawer side rails.
 Bin_drawer_compensation = true;
 // Align frame units to an external grid. If bin drawers are compensated (above), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
-Frame_unit_width_in_mm = 16.65;  // [10.00:0.05:50.00]
+Frame_unit_width_in_mm = 18.75;  // [10.00:0.05:50.00]
 // If greater than zero, override the above two settings to enable bin drawers with no wasted horizontal space.
 Frame_unit_width_in_bin_units = 0;  // [0:1:12]
 // Depth from back of frame to front of drawer face, not including extra lip on sides and trim. If bin drawers are compensated, the number of bin units that fit a drawer is calculated to minimize wasted space behind drawers.
@@ -259,35 +271,16 @@ Frame_depth_in_mm = 100;  // [10.00:0.05:500.00]
 Frame_depth_in_bin_units = 12;  // [0:1:60]
 // Check the console to ensure there is adequate space for bumps.
 Frame_unit_height_in_mm = 15;  // [10.00:0.05:50.00]
-// Fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the bin unit size as a side effect.
-Double_bin_drawer_walls = false;
+// Fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the minimum bin unit size as a side effect.
+Double_bin_drawer_walls = true;
 // If enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
 Add_lip_behind_face_of_double_wall_drawers = true;
+// in mm. Minimum distance between walls. By empirical testing, Cura needs a 0.03 mm gap to prevent bridging cuts, plus leeway for curve approximations.
+Cut_gap = 0.04;  // [0.0000:0.0025:0.1000]
 
-/* [<global> Printer Config] */
-// in mm. Minimum distance between walls. By empirical testing, Cura needs a 0.03mm gap to prevent merging parts, plus leeway for curve approximations.
-Gap = 0.04;  // [0.0000:0.0025:0.1000]
-
-Frame_line_width = 0.4;  // [0.05:0.01:1.50]
-Frame_horizontal_slop = 0.125;  // [0.010:0.005:1.000]
-Frame_layer_height = 0.2;  // [0.01:0.01:1.00]
-Frame_first_layer_height = 0.32;  // [0.01:0.01:1.00]
-// in absolute frame layers
-Frame_base_layers = 7;  // [1:1:25]
-// in frame layers
-Frame_vertical_slop = -1.25;  // [-5.000:0.125:5.000]
-
-Drawer_line_width = 0.4;   // [0.05:0.01:1.50]
-Drawer_horizontal_slop = 0.25;  // [0.010:0.005:1.000]
-Drawer_layer_height = 0.2;  // [0.01:0.01:1.00]
-Drawer_first_layer_height = 0.32;  // [0.01:0.01:1.00]
-// in absolute drawer layers
-Drawer_base_layers = 6;  // [1:1:25]
-// in drawer layers
-Drawer_vertical_slop = 1.0;  // [-5.000:0.125:5.000]
-
-Bin_line_width = 0.4;  // [0.05:0.01:1.50]
-Bin_horizontal_slop = 0.15;  // [0.010:0.005:1.000]
+/* [<global> Printer Config - Bins] */
+Bin_line_width = 0.425;  // [0.05:0.01:1.50]
+Bin_horizontal_slop = 0.15;  // [0.000:0.025:1.000]
 Bin_layer_height = 0.2;  // [0.01:0.01:1.00]
 Bin_first_layer_height = 0.32;  // [0.01:0.01:1.00]
 // in absolute bin layers
@@ -295,6 +288,25 @@ Bin_base_layers = 5;  // [1:1:25]
 // in bin layers
 Bin_vertical_slop = 1.0;  // [-5.000:0.125:5.000]
 
+/* [<global> Printer Config - Drawers] */
+Drawer_line_width = 0.425;   // [0.05:0.01:1.50]
+Drawer_horizontal_slop = 0.2;  // [0.000:0.025:1.000]
+Drawer_layer_height = 0.2;  // [0.01:0.01:1.00]
+Drawer_first_layer_height = 0.32;  // [0.01:0.01:1.00]
+// in absolute drawer layers
+Drawer_base_layers = 6;  // [1:1:25]
+// in drawer layers
+Drawer_vertical_slop = 1.0;  // [-5.000:0.125:5.000]
+
+/* [<global> Printer Config - Frames] */
+Frame_line_width = 0.4;  // [0.05:0.01:1.50]
+Frame_horizontal_slop = 0.15;  // [0.000:0.025:1.000]
+Frame_layer_height = 0.2;  // [0.01:0.01:1.00]
+Frame_first_layer_height = 0.32;  // [0.01:0.01:1.00]
+// in absolute frame layers
+Frame_base_layers = 7;  // [1:1:25]
+// in frame layers
+Frame_vertical_slop = -1.25;  // [-5.000:0.125:5.000]
 
 /* [Hidden] */
 
@@ -316,7 +328,7 @@ dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
 fudge  = 0.01;
 fudge2 = 0.02;
 
-gap = Gap;
+gap = Cut_gap;
 
 
 // An effort has been made to use:
@@ -393,32 +405,34 @@ function fRoundZ(z) = let (f=fFloorZ(z), c=fCeilZ(z)) z-f < c-z ? f : c;
 // Disabled because it makes frame segments almost impossible to separate, but it should work if
 // that is something you want. Note it also takes up a lot of space, and will likely require
 // increasing the frame unit width and height.
-lRS = 16;                                                   // ramp slope
-lPH = 0;//fWall*1.5;                                        // peak height
-lPC = max(0, lPH-fSlopXY*2);                                // peak extra clearance (in addition to normal slop)
-lWS = 0;//fWall/2;                                          // wall seperation (makes the latch a bit more springy)
-lLL = fH(2);                                                // latch length (at peak)
-lSL = fH(8);                                                // strike length (at peak)
-lRL = lPH*lRS;                                              // ramp length
-lIL = fH(0.5);                                              // inset length
-lSlop = -fH(0.5);                                           // slop
+lRS = 16;                                                         // ramp slope
+lPH = 0;//fWall*1.5;                                              // peak height
+lPC = max(0, lPH-fSlopXY*2);                                      // peak extra clearance (in addition to normal slop)
+lWS = 0;//fWall/2;                                                // wall seperation (makes the latch a bit more springy)
+lLL = fH(2);                                                      // latch length (at peak)
+lSL = fH(8);                                                      // strike length (at peak)
+lRL = lPH*lRS;                                                    // ramp length
+lIL = fH(0.5);                                                    // inset length
+lSlop = -fH(0.5);                                                 // slop
 
 // s - Snap
-sLS = 1/Hook_bump_latch_slope;                              // latch slope
-sRS = 1/Hook_bump_ramp_slope;                               // ramp slope
-sPH = fSlopXY*Hook_bump_height;                             // peak height
-sPL = fH(Hook_bump_peak_length);                            // peak length
-sLL = sPH*sLS;                                              // latch length
-sRL = sPH*sRS;                                              // ramp length
-sFI = fH(0.5);                                              // front inset length
-sBI = 0;                                                    // back inset length
-sSlop = fH(Hook_Z_slop);                                    // slop
+sLS = 1/Hook_bump_latch_slope;                                    // latch slope
+sRS = 1/Hook_bump_ramp_slope;                                     // ramp slope
+sPH = fSlopXY*Hook_bump_height;                                   // peak height
+sPL = fH(Hook_bump_peak_length);                                  // peak length
+sLL = sPH*sLS;                                                    // latch length
+sRL = sPH*sRS;                                                    // ramp length
+sFI = fH(0.5);                                                    // front inset length
+sBI = 0;                                                          // back inset length
+sSlop = fH(Hook_Z_slop);                                          // slop
 
 hookLR = Left_and_right_hook_size;
 hookTB = Top_and_bottom_hook_size;
 claspW = fWall2*2 + fSlopXY + lPH + lPC + lWS;
 claspD = fWall2*2 + fSlopXY + sPH;
 hookD = claspD + fSlopXY;
+
+echo(sPH=sPH, fSlopXY=fSlopXY, claspD=claspD);
 
 fGridY = fHmm;
 drawerZ = fGridY - fWall2 - hookD - dSlopZ*2;
@@ -458,50 +472,50 @@ fBHookY = -fHornY + fWallGrid;
 
 railD = fBulgeWall/2 - stretchX/4;
 
-dFS = 1/Drawer_bump_front_slope;                            // drawer front slope
-dBS = 1/Drawer_bump_back_slope;                             // drawer back slope
-cRS = 1/Catch_bump_ramp_slope;                              // catch ramp slope
-hRS = 1/Hold_bump_ramp_slope;                               // hold ramp slope
-kRS = 1/Keep_bump_ramp_slope;                               // keep ramp slope
-bRS = 1/Bottom_bump_ramp_slope;                             // bottom ramp slope
+dFS = 1/Drawer_bump_front_slope;                                  // drawer front slope
+dBS = 1/Drawer_bump_back_slope;                                   // drawer back slope
+cRS = 1/Catch_bump_ramp_slope;                                    // catch ramp slope
+hRS = 1/Hold_bump_ramp_slope;                                     // hold ramp slope
+kRS = 1/Keep_bump_ramp_slope;                                     // keep ramp slope
+bRS = 1/Bottom_bump_ramp_slope;                                   // bottom ramp slope
 
 // d - Drawer
-dPH = railD + dSlopXY*Drawer_bump_height;                   // drawer peak height
-dPL = fH(Drawer_bump_peak_length);                          // drawer peak length
-dFL = dPH*dFS;                                              // drawer front length
-dBL = dPH*dBS;                                              // drawer back length
-dSW = dH(Drawer_spring_width);                              // drawer spring width
+dPH = railD + dSlopXY*Drawer_bump_height;                         // drawer peak height
+dPL = fH(Drawer_bump_peak_length);                                // drawer peak length
+dFL = dPH*dFS;                                                    // drawer front length
+dBL = dPH*dBS;                                                    // drawer back length
+dSW = dH(Drawer_bump_spring_width);                               // drawer spring width
 
 // c - Catch: back, holds drawer shut
-cPH = railD + dSlopXY*Catch_bump_height;                    // catch peak height
-cPL = fH(Catch_bump_peak_length);                           // catch peak length
-cFL = cPH*cRS;                                              // catch front length
-cBL = cPH*dFS;                                              // catch back length
-cIL = 0;                                                    // catch inset length (acts only on itself)
-cCH = dSlopXY*Cushion_height - dSlopXY*Drawer_bump_height;  // catch cushion height
+cPH = railD + dSlopXY*Catch_bump_height;                          // catch peak height
+cPL = fH(Catch_bump_peak_length);                                 // catch peak length
+cFL = cPH*cRS;                                                    // catch front length
+cBL = cPH*dFS;                                                    // catch back length
+cIL = 0;                                                          // catch inset length (acts only on itself)
+cCH = dSlopXY*Catch_cushion_height - dSlopXY*Drawer_bump_height;  // catch cushion height
 
 // h - Hold: front, holds drawer open
-hPH = railD + dSlopXY*Hold_bump_height;                     // hold peak height
-hPL = fH(Hold_bump_peak_length);                            // hold peak length
-hFL = hPH*dBS;                                              // hold front length
-hBL = hPH*hRS;                                              // hold back length
-hIL = 0;                                                    // hold inset length (acts only on itself)
+hPH = railD + dSlopXY*Hold_bump_height;                           // hold peak height
+hPL = fH(Hold_bump_peak_length);                                  // hold peak length
+hFL = hPH*dBS;                                                    // hold front length
+hBL = hPH*hRS;                                                    // hold back length
+hIL = 0;                                                          // hold inset length (acts only on itself)
 
 // k - Keep: front, holds drawer in
-kPH = railD + dSlopXY*Keep_bump_height;                     // keep peak height
-kPL = fH(Keep_bump_peak_length);                            // keep peak length
-kFL = kPH*kRS;                                              // keep front length
-kBL = kPH*dFS;                                              // keep back length
-kIL = fH(0.5);                                              // keep inset length (also pulls hold and front drawer bump with it)
+kPH = railD + dSlopXY*Keep_bump_height;                           // keep peak height
+kPL = fH(Keep_bump_peak_length);                                  // keep peak length
+kFL = kPH*kRS;                                                    // keep front length
+kBL = kPH*dFS;                                                    // keep back length
+kIL = fH(0.5);                                                    // keep inset length (also pulls hold and front drawer bump with it)
 
 // b - Bottom: bottom, holds drawer in
-bSH = dZ(Bottom_slot_height);                               // bottom slot height
-bPH = dZ(Bottom_bump_height);                               // bottom peak height
-bPL = fH(Bottom_bump_peak_length);                          // bottom peak length
-bFL = bPH*bRS;                                              // bottom front length
-bBL = bPH*bRS;                                              // bottom back length
-bIL = fH(0.5);                                              // bottom inset length
-bPW = fWall2*Bottom_bump_width;                             // bottom peak width
+bSH = dZ(Bottom_slot_height);                                     // bottom slot height
+bPH = dZ(Bottom_bump_height);                                     // bottom peak height
+bPL = fH(Bottom_bump_peak_length);                                // bottom peak length
+bFL = bPH*bRS;                                                    // bottom front length
+bBL = bPH*bRS;                                                    // bottom back length
+bIL = fH(0.5);                                                    // bottom inset length
+bPW = fWall2*Bottom_bump_width;                                   // bottom peak width
 
 peakWN = fBulgeIY*2 - dSlop45*2 - dPH*2 - railD*2 - stretchX - dSW*2;
 
@@ -542,17 +556,17 @@ trim = Enable_trim;
 
 // t - Trim
 // m - triM (bottom - should be a bit looser)
-tLS = 1/Trim_bump_latch_slope;                              // latch slope
-tRS = 1/Trim_bump_ramp_slope;                               // ramp slope
-tPH = fSlopXY*Trim_bump_height;                             // peak height
-mPH = fSlopXY*Trim_bottom_bump_height;                      // peak height
-tPL = fH(Trim_bump_peak_length);                            // peak length
-tLL = tPH*tLS;                                              // latch length
-mLL = mPH*tLS;                                              // latch length
-tRL = tPH*tRS;                                              // ramp length
-mRL = mPH*tRS;                                              // ramp length
-tIL = fH(0.5);                                              // inset length
-tSlop = fH(Trim_Z_slop);                                    // slop
+tLS = 1/Trim_bump_latch_slope;                                    // latch slope
+tRS = 1/Trim_bump_ramp_slope;                                     // ramp slope
+tPH = fSlopXY*Trim_bump_height;                                   // peak height
+mPH = fSlopXY*Trim_bottom_bump_height;                            // peak height
+tPL = fH(Trim_bump_peak_length);                                  // peak length
+tLL = tPH*tLS;                                                    // latch length
+mLL = mPH*tLS;                                                    // latch length
+tRL = tPH*tRS;                                                    // ramp length
+mRL = mPH*tRS;                                                    // ramp length
+tIL = fH(0.5);                                                    // inset length
+tSlop = fH(Trim_Z_slop);                                          // slop
 
 tLip = Front_lip;
 tFloat = fH(Trim_float);
@@ -574,7 +588,7 @@ cornerFn = fullFn ? Side_corner_segments*4 : 8;
 binR = Bin_radius;
 binFn = fullFn ? Bin_segments*8 : 8;
 
-divisions = [ for (i=[0:len(Divisions)-1]) if (Divisions[i]!=0) (
+simpleDdivisions = [ for (i=[0:len(Divisions)-1]) if (Divisions[i]!=0) (
   if (i==0) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_1_subdivisions)) ] else
   if (i==1) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_2_subdivisions)) ] else
   if (i==2) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_3_subdivisions)) ] else
@@ -585,12 +599,20 @@ divisions = [ for (i=[0:len(Divisions)-1]) if (Divisions[i]!=0) (
   if (i==7) [ abs(Divisions[i]), map(function (x) abs(x), filter(function (x) x!=0, Row_8_subdivisions)) ] else
   abs(Divisions[i])
 ) ];
-// divisions = [ [2, [1,1]], [3, [1,1]] ];
-// divisions =
-// [ [2, [1,1]]
-// , [4, [[2, [1,1]], 4, [2, [1,1]]]]
-// , [3, [1,1,1]]
-// ];
+
+// It is possible to nest subdivisions much deeper than the two levels provided in the customizer.
+// Each level rotates 90°, so the first level is front to back, level two is left to right, level
+// three is back to front, and so on.
+//
+// Divisions are specified by an array of numbers indicating their relative sizes. To subdivide
+// a division, wrap its number in another array, and add a nested array as the second element
+// to specify the subdivisions.
+//
+// Uncomment this line for an example arrangement with three levels:
+// bespokeDivisions = [  [2, [1,1]],  [4, [[2, [1,1]], 4, [2, [1,1]]]],  [3, [1,1,1]]  ];
+// // levels:             1   2 2      1    2   3 3    2   2   3 3        1   2 2 2
+
+divisions = is_undef(bespokeDivisions) ? simpleDdivisions : bespokeDivisions;
 
 dChamfer = Back_bottom_chamfer;
 
@@ -604,22 +626,23 @@ handleTray = Tray_handle;
 
 drawCuts = !$preview || Draw_cuts;
 
+compensated = Bin_drawer_compensation && !Frame_unit_width_in_bin_units;
 
 echo("Frame unit size:");
-echo(str("    width:  \t", fGridX, " mm"));
-echo(str("    height: \t", fGridY, " mm"));
+echo(str("    width: \t", fGridX, (compensated ? str(" mm, ", stretchX, " mm used for bin drawer compensation") : " mm")));
+echo(str("    height:\t", fGridY, " mm"));
 if (binDrawersEnabled) {
-  echo(str("    sides:  \t", bGridXY, " mm"));
-  echo(str("    width:  \t", binsX, " bin unit", binsX==1 ? "" : "s"));
   echo("Bin unit size:");
+  echo(str("    sides: \t", bGridXY, (compensated ? str(" mm, ", bMinGridXY, " mm minimum before compensation") : " mm")));
   echo("Bins units per frame unit:");
-  echo(str("    height: \t", binsY, " bin unit", binsY==1 ? "" : "s"));
+  echo(str("    width: \t", binsX, " bin unit", binsX==1 ? "" : "s"));
+  echo(str("    depth: \t", binsY, " bin unit", binsY==1 ? "" : "s"));
 }
 echo("Depths:")
 echo(str("    sides: \t", fSideZ, " mm"));
-echo(str("    face (closed):   \t", fGridZ+dFaceD , " mm"));
 echo(str("    frame: \t", fGridZ, " mm"));
 echo(str("    drawer travel:   \t", dTravel, " mm"));
+echo(str("    face (closed):   \t", fGridZ+dFaceD , " mm"));
 echo(str("    face (open):     \t", fGridZ+dFaceD+dTravel , " mm"));
 echo(str("    handle (closed): \t", fGridZ+dFaceD+handleL, " mm"));
 echo(str("    handle (open):   \t", fGridZ+dFaceD+handleL+dTravel, " mm"));
