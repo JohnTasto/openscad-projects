@@ -49,13 +49,17 @@ Tips
 
 Possible future improvements
   [ ] carry handle
-  [ ] pegboard hooks
-    - should clip into mounting holes - there is a bit of room behind the drawers between bulges
   [ ] label holder
+  mounting hardware
+    [ ] pegboard hooks
+    [ ] suction cups
+    [ ] specify required and calculate actual mount space behind drawers
+    [ ] allow vertical or horizontal slots in addition to simple holes
   drawer rails
-    [ ] center drawer bumps within `fBulgeWall`
+    [ ] center drawer bumps within `fBulgeWall`?
       - currently drawer rail begins at a constant `fBulgeWall/2`
       - if `dSW>0`, peaks are narrower than they could be
+      - otoh, pushing the drawer rail out makes the drawer more rigid, which was the original intention
     [ ] trim side bumps with shallow slopes (or highlight)
     [ ] additional bump rails on tall drawers
       - should be optional (might be too stiff)
@@ -167,9 +171,9 @@ Mounting_hole_segments = 16;  // [8:4:64]
 // Add squiggles to fill gaps caused by bin drawer compensation. This may increase print time more than expected due to acceleration.
 Fill_horizontal_gaps = false;
 // Thicken frame drawer roof along sides to compensate for drawer height layer quantization. Too many lines will increase print time.
-Drawer_layer_compensation_lines = 2;  // [0:1:5]
+Drawer_layer_compensation_lines = 1;  // [0:1:5]
 // in frame layers
-Top_thickness = 3;  // [0:1:10]
+Thickness_of_front_fills = 3;  // [0:1:10]
 // in mm.  Chamfer the wall on the upper left, which can be sharp.
 Horn_chamfer = 0.75;  // [0.00:0.25:10.00]
 
@@ -195,9 +199,9 @@ Front_lip = 2.0;  // [0.0:0.1:10.0]
 // Number of segments along side corners.
 Side_corner_segments = 8;  // [2:1:32]
 
-/* [<global> Drawer Detents] */
+/* [<global> Drawer Detents - Main] */
 // in mm. The bumps on the sides of drawers.
-Drawer_bump_height = 1.00;  // [0.00:0.05:5.00]
+Drawer_bump_height = 0.75;  // [0.00:0.05:5.00]
 // in frame layers
 Drawer_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Drawer_bump_front_slope = 1.000;  // [0.050:0.005:1.000]
@@ -250,28 +254,31 @@ Frame_stop_lines_for_multi_unit_high_parts = 3;  // [0:1:15]
 Drawer_stop_lines = 2;  // [0:1:5]
 
 /* [<global> Grid] */
-// Widen frame sides and narrow drawers as needed to align to the bin grid. Wastes horizontal space and narrows the drawer side rails.
-Bin_drawer_compensation = true;
-// Align frame units to an external grid. If bin drawers are compensated (above), the number of bin units that fit a drawer one unit wide is calculated to minimize wasted horizontal space.
-Frame_unit_width_in_mm = 20.00;  // [10.00:0.05:50.00]
-// If greater than zero, override the above two settings to enable bin drawers with no wasted horizontal space.
-Frame_unit_width_in_bin_units = 0;  // [0:1:12]
-// Depth from back of frame to front of drawer face, not including extra lip on sides and trim. If bin drawers are compensated, the number of bin units that fit a drawer is calculated to minimize wasted space behind drawers.
-Frame_depth_in_mm = 100.0;  // [10.0:0.5:500.0]
-// If greater than zero and either bin drawers are compensated or frame unit width is specified in bin units, override the above setting for no wasted space behind drawers. A superabundant number here like 12, 24, 36, 48, or 60 provides the most options for symmetrical bin arrangements.
-Frame_depth_in_bin_units = 12;  // [0:1:60]
-// Check the console to ensure there is adequate space for bumps.
-Frame_unit_height_in_mm = 15.00;  // [10.00:0.05:50.00]
 // Fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the minimum bin unit size as a side effect.
 Double_bin_drawer_walls = true;
 // If enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
 Add_lip_behind_face_of_double_wall_drawers = true;
+// When frame units are in mm or inches, this widens the frame sides and narrows drawers as needed to align to a calculated best fit bin grid, which wastes some horizontal space and narrows the drawer side rails. Bin drawers are only available when this option is enabled or frame units are specified in bin units..
+Bin_drawer_compensation = true;
+Frame_width_units = "inches";  // [bins:bin units, mm:mm, inches:inches]
+Frame_unit_width_in_bin_units = 2;  // [1:1:6]
+Frame_unit_width_in_mm = 20.000;  // [10.000:0.025:60.000]
+Frame_unit_width_in_inches = 0.800;  // [0.400:0.001:2.400]
+// Depth from back of frame to front of drawer face, not including extra lip on sides and trim.
+Frame_depth_units = "same";  // [same:same as width, mm:mm, inches:inches]
+Frame_depth_in_bin_units = 12;  // [4:1:60]
+Frame_depth_in_mm = 120.000;  // [40.00:0.25:600.00]
+Frame_depth_in_inches = 4.800;  // [1.60:0.01:24.00]
+// Check the console to ensure there is adequate space for bumps.
+Frame_height_units = "same";  // [same:same as width - defaults to mm if width is bin units, mm:mm, inches:inches]
+Frame_unit_height_in_mm = 20.000;  // [10.000:0.025:60.000]
+Frame_unit_height_in_inches = 0.800;  // [0.400:0.001:2.400]
 
 /* [<global> Frame Detents - Left and Right Hooks] */
 // in mm
 Horizontal_hook_size = 1.25;  // [0.50:0.25:10.00]
 // in mm
-Horizontal_hook_bump_height = 0.70;  // [0.00:0.05:5.00]
+Horizontal_hook_bump_height = 0.8;  // [0.00:0.05:5.00]
 // in frame layers
 Horizontal_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Horizontal_hook_bump_latch_slope = 0.500;  // [0.050:0.005:1.000]
@@ -291,7 +298,7 @@ Horizontal_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
 // in mm
 Vertical_hook_size = 3.25;  // [0.50:0.25:10.00]
 // in mm
-Vertical_hook_bump_height = 0.90;  // [0.00:0.05:5.00]
+Vertical_hook_bump_height = 1.0;  // [0.00:0.05:5.00]
 // in frame layers
 Vertical_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Vertical_hook_bump_latch_slope = 0.500;  // [0.050:0.005:1.000]
@@ -311,7 +318,7 @@ Vertical_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
 // in mm. Minimum distance between walls. By empirical testing, Cura needs a 0.03 mm gap to prevent bridging cuts, plus leeway for curve approximations.
 Cut_gap = 0.04;  // [0.0025:0.0025:0.1000]
 // More difficult to print first layer of frames and sides.
-Fancy_back = true;
+Fancy_back = false;
 
 /* [<global> Printer Config - Bins] */
 Bin_line_width = 0.42;  // [0.05:0.01:1.50]
@@ -348,17 +355,28 @@ Frame_vertical_slop = -1.25;  // [-5.00:0.25:5.00]
 if (version_num()<20210100) echo("OpenSCAD version 2021.01 or newer is required.");
 assert(version_num()>=20210100);
 
-fWmm = Frame_unit_width_in_mm;
 fWbu = Frame_unit_width_in_bin_units;
-fDmm = Frame_depth_in_mm;
 fDbu = Frame_depth_in_bin_units;
-fHmm = Frame_unit_height_in_mm;
 
-binDrawersEnabled = Bin_drawer_compensation || Frame_unit_width_in_bin_units;
+fWUnits = Frame_width_units;
+fDUnits = Frame_depth_units  != "same" ? Frame_depth_units  : fWUnits;
+fHUnits = Frame_height_units != "same" ? Frame_height_units : fWUnits == "bins" ? "mm" : fWUnits;
+
+fWmm = fWUnits == "mm"     ? Frame_unit_width_in_mm
+     : fWUnits == "inches" ? mm(Frame_unit_width_in_inches)
+     : 0;
+
+fDmm = fDUnits == "mm"     ? Frame_depth_in_mm
+     : fDUnits == "inches" ? mm(Frame_depth_in_inches)
+     : 0;
+
+fHmm = fHUnits == "mm"     ? Frame_unit_height_in_mm
+     :                       mm(Frame_unit_height_in_inches);
+
+binDrawersEnabled = Bin_drawer_compensation || fWUnits == "bins";
 
 dubWallBinDrawers = Double_bin_drawer_walls;
 dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
-
 
 fudge  = 0.01;
 fudge2 = 0.02;
@@ -416,7 +434,7 @@ fWall4 = fWallGrid + fWall2;
 bBase = bZ(Bin_base_layers);
 dBase = dZ(Drawer_base_layers);
 fBase = fZ(Frame_base_layers);
-fTop = fH(Top_thickness);
+fTop = fH(Thickness_of_front_fills);
 
 function bFloorH(h) = div(h, bLayerHN)*bLayerHN;
 function bFloorZ(z) = max(0, div(z-bLayerH0, bLayerHN)*bLayerHN + bLayerH0);
@@ -485,7 +503,7 @@ binZ = bFloorZ(drawerZ - dBase - bSlopZ);
 dWallsX = dubWallBinDrawers ? dWall2*2 : dWall*2;
 bMinGridXY = claspD.x + fWallGrid*2 + dWallsX + dSlopXY*2 + bSlopXY;
 
-fWUseBU = fWbu>0;
+fWUseBU = fWUnits == "bins";
 binsX    = fWUseBU ? fWbu : floor(fWmm/bMinGridXY) - 1;
 bGridXY  = fWUseBU ? bMinGridXY : fWmm/(binsX+1);
 binXY    = bGridXY - bSlopXY;
@@ -579,7 +597,7 @@ dFloat = Drawer_float;
 dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
 dWallsY = dubWallBinDrawers ? (dubWallFaceLip ? dWall2*2 : dWall2-gap) : dWall*2;
 
-fDUseBU = fDbu>0 && binDrawersEnabled;
+fDUseBU = fDUnits == "bins";
 drawerMaxY  = fDUseBU ? undef                              : fFloorZ(fDmm - dFaceD) - fBase - fBulgeWall - gap;
 binsY       = fDUseBU ? fDbu                               : floor((drawerMaxY - bSlopXY - dWallsY)/bGridXY);
 drawerY     = fDUseBU ? bGridXY*binsY + bSlopXY + dWallsY  : Bin_drawer_compensation ? bGridXY*binsY + bSlopXY + dWallsY : drawerMaxY;
@@ -2774,7 +2792,7 @@ module demoFrameLarge2(drawers=true, drawTrim=true) {
 
 module demoDrawerBumpAlignment(x=1, h=1, drawer=dTravel, divisions=false)
   rotate([90,0,0]) translate([0, -drawerZFrameYAlign, -drawerYFrameZAlign-drawer]) {
-    frame(x, [0, h-1], drawer=drawer, divisions=divisions, drawFace=true, drawFloor=false, drawSides=false);
+    frame(x, [0, h-1], drawer=drawer, divisions=divisions, drawFace=drawer==dTravel, drawFloor=false, drawSides=false);
     frame(x, [-1, -h], drawTop=false, drawFloor=false, drawSides=false);
   }
 
@@ -2820,6 +2838,7 @@ binD = Bin_depth;
 showDrawers = Show_drawers_in_demos;
 showTrim = Show_trim_in_demos;
 dividerDrawer = Fixed_divider_drawer;
+divs = dividerDrawer ? divisions : false;
 
 if (Active_model=="fills") demoFills();
 
@@ -2836,13 +2855,13 @@ if (Active_model=="small assembly - h>1") demoFrameSmall2(drawers=showDrawers, d
 if (Active_model=="large assembly")       demoFrameLarge (drawers=showDrawers, drawTrim=showTrim);
 if (Active_model=="large assembly - h>1") demoFrameLarge2(drawers=showDrawers, drawTrim=showTrim);
 
-if (Active_model=="bump alignment - drawer shut") demoDrawerBumpAlignment(x=partW, h=partH, drawer=0);
-if (Active_model=="bump alignment - drawer open") demoDrawerBumpAlignment(x=partW, h=partH, drawer=dTravel);
-if (Active_model=="z alignment") demoDrawerZAlignment(x=partW, h=partH);
-if (Active_model=="bin alignment") demoDrawerBinAlignment(x=partW, h=partH, divisions=dividerDrawer?divisions:false);
+if (Active_model=="bump alignment - drawer shut") demoDrawerBumpAlignment(x=partW, h=partH, drawer=0, divisions=divs);
+if (Active_model=="bump alignment - drawer open") demoDrawerBumpAlignment(x=partW, h=partH, drawer=dTravel, divisions=divs);
+if (Active_model=="z alignment") demoDrawerZAlignment(x=partW, h=partH, divisions=divs);
+if (Active_model=="bin alignment") demoDrawerBinAlignment(x=partW, h=partH, divisions=divs);
 
 if (Active_model=="frame") frame(x=partW, z=partH);
-if (Active_model=="drawer") drawer(x=partW, h=partH, divisions=dividerDrawer?divisions:false);
+if (Active_model=="drawer") drawer(x=partW, h=partH, divisions=divs);
 if (Active_model=="bin") bin(x=binW, y=binD, h=partH);
 if (Active_model=="side") {
   if (Side==   "top"      )  tSide(x=partW);
