@@ -50,6 +50,7 @@ Tips
 Possible future improvements
   [ ] carry handle
   [ ] label holder
+  [ ] side and trim inside corners
   mounting hardware
     [ ] pegboard hooks
     [ ] suction cups
@@ -57,35 +58,40 @@ Possible future improvements
     [ ] allow vertical or horizontal slots in addition to simple holes
   drawer rails
     [ ] center drawer bumps within `fBulgeWall`?
-      - currently drawer rail begins at a constant `fBulgeWall/2`
-      - if `dSW>0`, peaks are narrower than they could be
-      - otoh, pushing the drawer rail out makes the drawer more rigid, which was the original intention
+       -  currently drawer rail begins at a constant `fBulgeWall/2`
+       -  if `dSW>0`, peaks are narrower than they could be
+       -  otoh, pushing the drawer rail out makes the drawer more rigid, which was the original intention
     [ ] trim side bumps with shallow slopes (or highlight)
     [ ] additional bump rails on tall drawers
-      - should be optional (might be too stiff)
+       -  should be optional (might be too stiff)
   [ ] highlight additional invalid states
   [ ] support ribs along length of side edges
-    - requires adjusting fills
-    - benefit is mostly visual since it will close up the gaps caused by abrupt u-turns
+     -  requires adjusting fills
+     -  benefit is mostly visual since it will close up the gaps caused by abrupt u-turns
+     -  not possible on right sides
   [ ] buttresses in voids behind radii of fixed divider drawers
     - automated solution may be very difficult
   [ ] use better sweep method for drawer handles to reduce polygon count by half
-  [ ] fix other naming inconsistencies
+  printbed layout
+    [ ] add rotation option
+    [ ] calculate external dimensions
+    [ ] calculate Z seam position
+  [ ] make claspD and claspW consistent
   [ ] reduce complex expressions to existing or additional constants
   [ ] SLA mode (is resin even a good material for this?)
-    - align edges with pixel borders
-    - set slop to 1px
-    - remove slices
+     -  align edges with pixel borders
+     -  set slop to 1px
+     -  remove slices
   `sliceN` functions
     [ ] pull out into external library
-      - parameterize constants
-      - document
+       -  parameterize constants
+       -  document
     [ ] either change API to use `align` or change `rect` and `box` to use `centerN`
     [ ] change the fill equations so they space lines exactly even when given enough space
-      - the exterior space is one `gap` wider than the interior space, since that's how
-        it already has to be is when lines are packed at tightly as possible
-      - would require reserving the first `gap` worth of `fillResidue` per line for `fillWall`,
-        then splitting the remainder evenly. `fillResidueShare` would need to be split in two
+       -  the exterior space is one `gap` wider than the interior space, since that's how
+            it already has to be is when lines are packed at tightly as possible
+       -  would require reserving the first `gap` worth of `fillResidue` per line for `fillWall`,
+            then splitting the remainder evenly. `fillResidueShare` would need to be split in two
 */
 
 /* [Instructions] */
@@ -159,7 +165,7 @@ Handle_bend_segments = 24;  // [8:2:128]
 // Extend drawer base into the handle
 Tray_handle = false;
 // in mm. Makes it easier to insert drawers.
-Back_bottom_chamfer = 1.00;  // [0.0:0.1:5.0]
+Back_bottom_chamfer = 1.50;  // [0.0:0.1:5.0]
 
 /* [<local> Frames] */
 // Holes align with frame units.
@@ -171,7 +177,7 @@ Mounting_hole_segments = 16;  // [8:4:64]
 // Add squiggles to fill gaps caused by bin drawer compensation. This may increase print time more than expected due to acceleration.
 Fill_horizontal_gaps = false;
 // Thicken frame drawer roof along sides to compensate for drawer height layer quantization. Too many lines will increase print time.
-Drawer_layer_compensation_lines = 1;  // [0:1:5]
+Drawer_layer_compensation_lines = 2;  // [0:1:5]
 // in frame layers
 Thickness_of_front_fills = 3;  // [0:1:10]
 // in mm.  Chamfer the wall on the upper left, which can be sharp.
@@ -188,8 +194,8 @@ Trim_bump_latch_slope = 0.500;  // [0.050:0.005:1.000]
 Trim_bump_ramp_slope = 0.200;  // [0.050:0.005:1.000]
 // in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
 Trim_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
-// in frame layers. How far trim pieces stick out due to rough mating surfaces.
-Trim_float = 0.500;  // [0.0:0.1:1.0]
+// in frame layers. How far trim pieces stick out due to surface roughness.
+Trim_float = 0.15;  // [0.00:0.05:1.00]
 
 /* [<sides> Sides and Trim] */
 // Add mount points to sides to accept trim. Increases height of top trim parts.
@@ -201,15 +207,15 @@ Side_corner_segments = 8;  // [2:1:32]
 
 /* [<global> Drawer Detents - Main] */
 // in mm. The bumps on the sides of drawers.
-Drawer_bump_height = 0.75;  // [0.00:0.05:5.00]
+Drawer_bump_height = 0.50;  // [0.00:0.05:5.00]
 // in frame layers
 Drawer_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Drawer_bump_front_slope = 1.000;  // [0.050:0.005:1.000]
 Drawer_bump_back_slope = 0.250;  // [0.050:0.005:1.000]
 // in drawer layers. The size of the accordion fold above and below the drawer bumps.
-Drawer_bump_spring_width = 2.0;  // [0.0:0.5:10.0]
-// in frame layers. How far fully closed drawers still stick out due to rough mating surfaces.
-Drawer_float = 0.500;  // [0.0:0.1:1.0]
+Drawer_bump_spring_width = 4.0;  // [0.0:0.5:10.0]
+// in frame layers. How far fully closed drawers still stick out due to surface roughness.
+Drawer_float = 0.15;  // [0.00:0.05:1.00]
 
 /* [<global> Drawer Detents - Catch (back)] */
 // in mm. The bumps in the back of frames that catch on drawers when closed.
@@ -256,10 +262,11 @@ Drawer_stop_lines = 2;  // [0:1:5]
 /* [<global> Grid] */
 // Fixed divider drawers are already double walled; this setting makes bin drawers double walled as well. This also increases the minimum bin unit size as a side effect.
 Double_bin_drawer_walls = true;
-// If enabled, double wall drawers get an extra double line wall behind their face, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
+// Add an extra double line wall behind the faces of double wall drawers, creating a lip that makes it harder for parts to fall out. Single wall drawers already have a single line lip.
 Add_lip_behind_face_of_double_wall_drawers = true;
-// When frame units are in mm or inches, this widens the frame sides and narrows drawers as needed to align to a calculated best fit bin grid, which wastes some horizontal space and narrows the drawer side rails. Bin drawers are only available when this option is enabled or frame units are specified in bin units..
+// Required to enable bin drawers when frame width units are in mm or inches. This calculates the best fit bin grid and adjusts frame and drawer dimensions to work with bins, but wastes some horizontal space and narrows the drawer side rails.
 Bin_drawer_compensation = true;
+// Bin drawers are only available when frame width units are in bin units or bin drawer compensation is enabled above.
 Frame_width_units = "inches";  // [bins:bin units, mm:mm, inches:inches]
 Frame_unit_width_in_bin_units = 2;  // [1:1:6]
 Frame_unit_width_in_mm = 20.000;  // [10.000:0.025:60.000]
@@ -278,39 +285,49 @@ Frame_unit_height_in_inches = 0.800;  // [0.400:0.001:2.400]
 // in mm
 Horizontal_hook_size = 1.25;  // [0.50:0.25:10.00]
 // in mm
-Horizontal_hook_bump_height = 0.8;  // [0.00:0.05:5.00]
+Horizontal_hook_bump_height = 0.85;  // [0.00:0.05:5.00]
 // in frame layers
 Horizontal_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
-Horizontal_hook_bump_latch_slope = 0.500;  // [0.050:0.005:1.000]
+Horizontal_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
 Horizontal_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
 // in mm. Move the bumps further apart, but keep them the size.
-Horizontal_hook_gap_offset = 0.00;  // [-0.50:0.01:0.50]
+Horizontal_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
 // in mm. The margin provides room for the hooks to flex. This setting may appear to have no effect when bin drawers are
 Horizontal_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
-Horizontal_hook_bump_overlap = -0.50;  // [-5.00:0.25:5.00]
-// in mm. If there is room, an extra bend is added to the hooks which helps prevent them from derailing.
-Horizontal_hook_bump_minimum_contact_patch = 1.0;  // [0.1:0.1:10.0]
+Horizontal_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
+// in frame layers
+Horizontal_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
+// in frame layers
+Horizontal_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
+// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
+Horizontal_hook_bump_minimum_contact_patch = 0.5;  // [0.10:0.05:10.00]
 // in mm
 Horizontal_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
+// in mm
+Horizontal_stem_chamfer = 10.00;  // [0.00:0.25:10.00]
 
 /* [<global> Frame Detents - Top and Bottom Hooks] */
 // in mm
 Vertical_hook_size = 3.25;  // [0.50:0.25:10.00]
 // in mm
-Vertical_hook_bump_height = 1.0;  // [0.00:0.05:5.00]
+Vertical_hook_bump_height = 1.00;  // [0.00:0.05:5.00]
 // in frame layers
 Vertical_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
-Vertical_hook_bump_latch_slope = 0.500;  // [0.050:0.005:1.000]
+Vertical_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
 Vertical_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
 // in mm. Move the bumps further apart, but keep them the size.
-Vertical_hook_gap_offset = 0.00;  // [-0.50:0.01:0.50]
+Vertical_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
 // in mm. The margin provides room for the hooks to flex.
 Vertical_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
-Vertical_hook_bump_overlap = -0.50;  // [-5.00:0.25:5.00]
-// in mm. If there is room, an extra bend is added to the hooks which helps prevent them from derailing.
-Vertical_hook_bump_minimum_contact_patch = 1.0;  // [0.1:0.1:10.0]
+Vertical_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
+// in frame layers
+Vertical_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
+// in frame layers
+Vertical_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
+// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
+Vertical_hook_bump_minimum_contact_patch = 1.00;  // [0.10:0.05:10.00]
 // in mm
 Vertical_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
 
@@ -348,7 +365,7 @@ Frame_first_layer_height = 0.32;  // [0.02:0.04:1.00]
 // in absolute frame layers
 Frame_base_layers = 7;  // [1:1:25]
 // in frame layers
-Frame_vertical_slop = -1.25;  // [-5.00:0.25:5.00]
+Frame_vertical_slop = -0.25;  // [-5.00:0.25:5.00]
 
 /* [Hidden] */
 
@@ -457,24 +474,6 @@ function fCeilZ(z) = fFloorZ(z) + (mod(z-fLayerH0, fLayerHN)==0 ? 0 : (z<fLayerH
 function fRoundH(h) = let (f=fFloorH(h), c=fCeilH(h)) h-f < c-h ? f : c;
 function fRoundZ(z) = let (f=fFloorZ(z), c=fCeilZ(z)) z-f < c-z ? f : c;
 
-// Disabled because it makes frame segments almost impossible to separate, but it should still be
-// functional if that is something you want. Note that:
-// - it has not been tested in many iterations
-// - it may be removed in the future
-// - it takes up a lot of hook space and will likely require increasing the frame unit size
-// - there is only one set of options covering both horizontal and vertical hooks
-// - the frame horn currently cannot be chamfered until additional design is done (unlikely)
-// l - Lock: frame
-lRS = 16;                                                   // ramp slope
-lPH = 0;//fWall*1.5;                                        // peak height
-lPC = max(0, lPH-fSlopXY*2);                                // peak extra clearance (in addition to normal slop)
-lWS = 0;//fWall/2;                                          // wall seperation (makes the latch a bit more springy)
-lLL = fH(2);                                                // latch length (at peak)
-lSL = fH(8);                                                // strike length (at peak)
-lRL = lPH*lRS;                                              // ramp length
-lIL = fH(0.5);                                              // inset length
-lOL = fH(-0.5);                                             // overlap
-
 // s - Snap: frame
 sLS     = [   1/Horizontal_hook_bump_latch_slope           ,   1/Vertical_hook_bump_latch_slope           ];  // latch slope
 sRS     = [   1/Horizontal_hook_bump_ramp_slope            ,   1/Vertical_hook_bump_ramp_slope            ];  // ramp slope
@@ -482,8 +481,8 @@ sPH     = [     Horizontal_hook_bump_height/2              ,     Vertical_hook_b
 sPL     = [  fH(Horizontal_hook_bump_peak_length)          ,  fH(Vertical_hook_bump_peak_length)          ];  // peak length
 sLL     = [     sPH.x*sLS.x                                ,     sPH.y*sLS.y                              ];  // latch length
 sRL     = [     sPH.x*sRS.x                                ,     sPH.y*sRS.y                              ];  // ramp length
-sFI     = [  fH(0.5)                                       ,  fH(0.5)                                     ];  // front inset length
-sBI     = [     0                                          ,     0                                        ];  // back inset length
+sFI     = [  fH(Horizontal_hook_bump_front_inset+0.5)      ,  fH(Vertical_hook_bump_front_inset+0.5)      ];  // front inset length
+sBI     = [  fH(Horizontal_hook_bump_back_inset)           ,  fH(Vertical_hook_bump_back_inset)           ];  // back inset length
 sOL     = [  fH(Horizontal_hook_bump_overlap)              ,  fH(Vertical_hook_bump_overlap)              ];  // overlap
 
 hookGO  = [     Horizontal_hook_gap_offset                 ,     Vertical_hook_gap_offset                 ];  // gap offset
@@ -494,7 +493,7 @@ hookW   = [     Horizontal_hook_size                       ,     Vertical_hook_s
 hookG   = [     sPH.x   + hookGO.x                         ,     sPH.y   + hookGO.y                       ];  // gap
 hookM   = [     sPH.x/2 - hookGO.x/2 + hookMO.x            ,     sPH.y/2 - hookGO.y/2 + hookMO.y          ];  // margin
 claspD  = [      fWall4 + hookG.x    + hookM.x*2           ,      fWall4 + hookG.y    + hookM.y*2         ];  // clasp depth
-claspW  =        fWall4 + lPH + lPC + lWS;                                                                    // clasp width
+claspW  =        fWall4;                                                                                      // clasp width
 
 fGridY = fHmm;
 drawerZ = fGridY - claspD.y + hookM.y - fWallGrid - dSlopZ*2;
@@ -528,10 +527,10 @@ fBulgeWall = fBulgeOX - fSideOX;
 fTHookY = fTopOY;
 fBHookY = -fHornY + fWallGrid;
 
-stemD   = [ claspD.x - hookM.x + fSlopXY + stretchX/2      , claspD.y - hookM.y + fSlopXY                 ];  // stem depth
+stemD   = [    claspD.x + stretchX/2 - hookM.x + fSlopXY   ,           claspD.y - hookM.y + fSlopXY       ];  // stem depth
 hookOL  = fancy
-        ? [                                fSlopXY-fSlopZ  ,                             fSlopXY-fSlopZ   ]   // hook overlap
-        : [ -fBulgeWall+hookM.x+stretchX/2+fSlopXY-fSlopZ  ,  -claspD.y+fWall2+hookM.y*2+fSlopXY-fSlopZ   ];
+        ? [  0                                             ,  0                                           ]   // hook overlap
+        : [ -fBulgeWall + stretchX/2 + hookM.x             ,  fWall2 - claspD.y + hookM.y*2               ];
 
 railD = fBulgeWall/2;
 
@@ -679,7 +678,8 @@ divisions = is_undef(bespokeDivisions) ? simpleDdivisions : bespokeDivisions;
 
 dChamfer = Back_bottom_chamfer;
 hornC = min(Horn_chamfer, fHornY-fTopOY+fH(0.5));
-hookC = [ min(Horizontal_hook_chamfer, hookW.x+fH(0.5)) , min(Vertical_hook_chamfer, hookW.y-bPW+fWall2+fH(0.5)) ];
+stemC = [ min(Horizontal_stem_chamfer, fWallGrid+hookG.x/2+fH(0.5)), 0 ];
+hookC = [ min(Horizontal_hook_chamfer, hookW.x+(stemC.x>0?0:fH(0.5))), min(Vertical_hook_chamfer, hookW.y-bPW+fWall2+fH(0.5)) ];
 
 handleL = Handle_length;
 handleD = Handle_circumference_diameter;
@@ -772,57 +772,59 @@ module latch(h, d, p, hang=fudge) {
   hookBZ = max(0, fBase-hookOL[d]);
   hangBZ = max(0, fBase-hookOL[d]-hang-stemD[d]);
   bumpBZ = hookBZ + hookW[d];
-  bumpFZ = fGridZ - hookC[d];
+  bumpFZ = fGridZ - stemC[d] - hookC[d];
   maxBumpL = hookW[d] - fSlopXY;
-  minBumpL = maxBumpL/2 + hookMin[d]/2;
+  minBumpL = max(fWall2, maxBumpL/2+hookMin[d]/2);
   fullBumpL = maxBumpL - fWallGrid;
   bumpL = min(max(minBumpL, fullBumpL), maxBumpL);
 
-  hl(bumpL<fWall2, "Frame bumps are not wide enough.") translate([-(claspW+hookW[d])*h/2, stemD[d]]) {
-    // stem
-    rotate([90,0,-90]) extrude(-(fWall2+lWS)*h, convexity=1) polygon(
-      [ [                                    0       ,                               fGridZ  ]
-      , [                               hang+stemD[d],                               fGridZ  ]
-      , [                               hang+stemD[d], (hookOL[d]+stemD[d])<stemD[d]?hangBZ:0]
-      , [min(hang, fBase-hookOL[d]-stemD[d])+stemD[d], (hookOL[d]+stemD[d])<stemD[d]?hangBZ:0]
-      , [                                    0       , (hookOL[d]+stemD[d])<stemD[d]?hookBZ:0]
-      ]);
-    translate([lWS*h, 0, 0]) {
-      translate([(hookW[d]+fWall2)*h, 0, 0]) {
-        // bumps
-        rotate([90,0,-90]) extrude(bumpL*h, convexity=1) polygon(
-          [ [     0       , min(fGridZ, bumpFZ-sFI[d]+(hookG[d]+fSlopXY-sPH[d])*sLS[d]-sOL[d]-sRL[d]-sPL[d]           )]
-          , [fWall2       , min(fGridZ, bumpFZ-sFI[d]+(hookG[d]+fSlopXY-sPH[d])*sLS[d]-sOL[d]-sRL[d]-sPL[d]           )]
-          , [fWall2+sPH[d], min(fGridZ, bumpFZ-sFI[d]+(hookG[d]+fSlopXY-sPH[d])*sLS[d]-sOL[d]-sRL[d]-sPL[d]  -sLL[d]  )]
-          , [fWall2+sPH[d], min(fGridZ, bumpFZ-sFI[d]+(hookG[d]+fSlopXY-sPH[d])*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]  )]
-          , [fWall2       , min(fGridZ, bumpFZ-sFI[d]+(hookG[d]+fSlopXY-sPH[d])*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2)]
-          , [fWall2       , max(hookBZ, bumpBZ+sBI[d]                                               +sPL[d]  +sLL[d]*2)]
-          , [fWall2+sPH[d], max(hookBZ, bumpBZ+sBI[d]                                               +sPL[d]  +sLL[d]  )]
-          , [fWall2+sPH[d], max(hookBZ, bumpBZ+sBI[d]                                                        +sLL[d]  )]
-          , [fWall2       , max(hookBZ, bumpBZ+sBI[d]                                                                 )]
-          , [     0       , max(hookBZ, bumpBZ+sBI[d]                                                                 )]
-          ]);
-        // upstop
-        if (minBumpL<fullBumpL) translate([0, 0, bumpFZ]) hull() {
-          box([-fWall2*h, -fWall2         , bumpBZ-bumpFZ         ]);
-          box([-fWall2*h, -fWall2-hookG[d], bumpBZ-bumpFZ+hookG[d]]);
-        }
+  hl(bumpL<fWall2, "Frame hooks are not wide enough.") translate([-(claspW+hookW[d])*h/2, stemD[d], 0]) {
+    translate([(hookW[d]+fWall2)*h, -fWall2, 0]) {
+      // side stop
+      if (minBumpL<=fullBumpL) translate([0, fudge, bumpFZ]) hull() {
+        box([-fWall2*h, -fudge         , bumpBZ-bumpFZ         ]);
+        box([-fWall2*h, -fudge-hookG[d], bumpBZ-bumpFZ+hookG[d]]);
       }
-      // hook wall & latch
-      rotate([90,0,0]) extrude(fWall2, convexity=1) scale([h, 1]) polygon(
-        [ [     0                  , fGridZ                      ]
-        , [fWall2+hookW[d]-hookC[d], fGridZ                      ]
-        , [fWall2+hookW[d]         , fGridZ-hookC[d]             ]
-        , [fWall2+hookW[d]         , fGridZ                      ]
-        , [fWall2+hookW[d]         , fGridZ-lIL-lRL-lSL          ]
-        , [fWall2+hookW[d]+lPH     , fGridZ-lIL-lRL-lSL          ]
-        , [fWall2+hookW[d]+lPH     , fGridZ-lIL-lRL-lSL-lLL      ]
-        , [fWall2+hookW[d]         , fGridZ-lIL-lRL-lSL-lLL-lRL/2]
-        , [fWall2+hookW[d]         , bumpBZ                      ]
-        , [fWall2                  , hookBZ                      ]
-        , [     0                  , hookBZ                      ]
-        ]);
+      rotate([90,0,-90]) extrude(bumpL*h, convexity=1) {
+        // front bump
+        polygon(
+          [ [-fudge , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]            ]
+          , [ 0     , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]            ]
+          , [ sPH[d], bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]  -sLL[d]   ]
+          , [ sPH[d], bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]   ]
+          , [ 0     , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2 ]
+          , [-fudge , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2 ]
+          ]);
+        // back bump
+        polygon(
+          [ [-fudge , bumpBZ+sBI[d]                                         +sPL[d]  +sLL[d]*2 ]
+          , [ 0     , bumpBZ+sBI[d]                                         +sPL[d]  +sLL[d]*2 ]
+          , [ sPH[d], bumpBZ+sBI[d]                                         +sPL[d]  +sLL[d]   ]
+          , [ sPH[d], bumpBZ+sBI[d]                                                  +sLL[d]   ]
+          , [ 0     , bumpBZ+sBI[d]                                                            ]
+          , [-fudge , bumpBZ+sBI[d]                                                            ]
+          ]);
+      }
     }
+    // hook wall
+    rotate([90,0,0]) extrude(fWall2, convexity=1) scale([h, 1]) translate([fWall2, 0]) polygon(
+      [ [-fudge            , fGridZ-stemC[d]          ]
+      , [ hookW[d]-hookC[d], fGridZ-stemC[d]          ]
+      , [ hookW[d]         , fGridZ-stemC[d]-hookC[d] ]
+      , [ hookW[d]         , bumpBZ                   ]
+      , [ 0                , hookBZ                   ]
+      , [-fudge            , hookBZ                   ]
+      ]);
+    // stem
+    rotate([90,0,-90]) extrude(-fWall2*h, convexity=1) polygon(
+      [ [                           0        ,             fGridZ-stemC[d] ]
+      , [                           stemC[d] ,             fGridZ          ]
+      , [                      hang+stemD[d] ,             fGridZ          ]
+      , [                      hang+stemD[d] ,             fGridZ          ]
+      , [                      hang+stemD[d] , hookOL[d]<0?hangBZ:0        ]
+      , [ min(fBase-hookOL[d], hang+stemD[d]), hookOL[d]<0?hangBZ:0        ]
+      , [                           0        , hookOL[d]<0?hookBZ:0        ]
+      ]);
   }
 }
 
@@ -830,95 +832,86 @@ module latch(h, d, p, hang=fudge) {
 // d    - connection direction, 0 for horizontal or 1 for vertical
 // p    - position, 0 for top/left or 1 for bottom/right
 // hang - how far below the origin to sink the stem into whatever its growing out of
-// stop - width of the backstop
 module plate(h, d, p, hang=fudge, stop=undef) {
-  stem = stemD[d];
-  bumpBZ = max(0, fBase-hookOL[d]) + hookW[d];
-  bumpFZ = fGridZ - hookC[d];
+  hookBZ = max(0, fBase-hookOL[d]);
+  stopBZ = hookBZ - fSlopZ + hookW[d];
+  bumpBZ = hookBZ + hookW[d];
+  bumpFZ = fGridZ - stemC[d] - hookC[d];
   maxBumpL = hookW[d] - fSlopXY;
-  minBumpL = maxBumpL/2 + hookMin[d]/2;
+  minBumpL = max(fWall2, maxBumpL/2+hookMin[d]/2);
   fullBumpL = maxBumpL - fWallGrid;
   bumpL = min(max(minBumpL, fullBumpL), maxBumpL);
 
-  hl(bumpL<fWall2, "Frame bumps are not wide enough.") translate([-(claspW+hookW[d])*h/2, stemD[d]]) {
-    // stem
-    scale([h, 1]) rotate([90,0,0]) {
-      // strike plate
-      extrude(hang+stemD[d], convexity=1) polygon(
-        [ [     0    , fGridZ                      ]
-        , [fWall2    , fGridZ                      ]
-        , [fWall2    , fGridZ-lIL                  ]
-        , [fWall2+lPH, fGridZ-lIL-lRL              ]
-        , [fWall2+lPH, fGridZ-lIL-lRL-lSL+lPH      ]
-        , [fWall2    , fGridZ-lIL-lRL-lSL          ]
-        , [fWall2    , fGridZ-lIL-lRL-lSL-lLL      ]
-        , [fWall2+lPH, fGridZ-lIL-lRL-lSL-lLL-lRL/2]
-        , [fWall2+lPH,      0                      ]
-        , [     0    ,      0                      ]
+  hl(bumpL<fWall2, "Frame hooks are not wide enough.") translate([-(claspW+hookW[d])*h/2, stemD[d], 0]) {
+    // hook stop
+    translate([fWall2*h, hookM[d]*2-claspD[d], 0]) rotate([90,0,0]) extrude(-fWall2, convexity=1) scale([h, 1]) polygon(
+      [ [-fudge   , stopBZ+fSlopXY+fudge   ]
+      , [ hookW[d], stopBZ+fSlopXY-hookW[d]]
+      , [ hookW[d],      0                 ]
+      , [-fudge   ,      0                 ]
       ]);
-      // backstop
-      if (lPH>0) translate([claspW+hookW[d]+fWallGrid, 0, claspD[d]-hookM[d]]) extrude(fSlopXY-stop, convexity=1) polygon(
-        [ [      0    , fGridZ                    ]
-        , [-fWall2-lPC, fGridZ                    ]
-        , [-fWall2-lPC, fGridZ-lIL                ]
-        , [-fWall2    , fGridZ-lIL-lRL            ]
-        , [-fWall2    , fGridZ-lIL-lRL-lSL-lLL    ]
-        , [-fWall2-lPC, fGridZ-lIL-lRL-lSL-lLL-lRL]
-        , [-fWall2-lPC,      0                    ]
-        , [      0    ,      0                    ]
-        ]);
-    }
-    // 90° strike plate
-    if (lPH>0) translate([0, 0, fGridZ-lIL-lRL-lSL+lOL]) rotate([90,0,-90]) extrude(-(lPH+fWall2)*h, convexity=1) polygon(
-      [ [                     0            ,                   lSL-lOL          ]
-      , [                     0            , -claspD[d]+hookM[d]*2+fWall2       ]
-      , [claspD[d]-hookM[d]*2-fWall2/2     ,                       fWall2/2     ]
-      , [                     hang+stemD[d],  claspD[d]-hookM[d]*2-hang-stemD[d]]
-      , [                     hang+stemD[d],                   lSL-lOL          ]
-      ]);
-    translate([(hookW[d]+lPH+fWall2)*h, 0, 0]) {
-      // bumps
-      rotate([90,0,-90]) extrude(bumpL*h, convexity=1) polygon(
-        [ [     0       , min(fGridZ, bumpFZ-sFI[d]                                                                 )]
-        , [fWall2       , min(fGridZ, bumpFZ-sFI[d]                                                                 )]
-        , [fWall2+sPH[d], min(fGridZ, bumpFZ-sFI[d]                                        -sRL[d]                  )]
-        , [fWall2+sPH[d], min(fGridZ, bumpFZ-sFI[d]                                        -sRL[d]-sPL[d]           )]
-        , [fWall2       , min(fGridZ, bumpFZ-sFI[d]                                        -sRL[d]-sPL[d]  -sLL[d]  )]
-        , [fWall2       , max(     0, bumpBZ+sBI[d]-(hookG[d]+fSlopXY-sPH[d])*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2)]
-        , [fWall2+sPH[d], max(     0, bumpBZ+sBI[d]-(hookG[d]+fSlopXY-sPH[d])*sLS[d]+sOL[d]       +sPL[d]*2+sLL[d]*2)]
-        , [fWall2+sPH[d], max(     0, bumpBZ+sBI[d]-(hookG[d]+fSlopXY-sPH[d])*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]*2)]
-        , [fWall2       , max(     0, bumpBZ+sBI[d]-(hookG[d]+fSlopXY-sPH[d])*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]  )]
-        , [     0       , max(     0, bumpBZ+sBI[d]-(hookG[d]+fSlopXY-sPH[d])*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]  )]
-        ]);
-      // upstop
-      if (minBumpL<fullBumpL) box([-fWall2*h, -fWall2-hookG[d], bumpFZ]);
+    translate([(hookW[d]+fWall2)*h, -fWall2, 0]) {
+      // side stop
+      if (minBumpL<=fullBumpL) translate([0, fudge, 0]) box([-fWall2*h, -fudge-hookG[d], bumpFZ]);
+      rotate([90,0,-90]) {
+        // front bump
+        extrude(bumpL*h, convexity=1) polygon(
+          [ [-fudge   , bumpFZ-sFI[d]                                                            ]
+          , [ 0       , bumpFZ-sFI[d]                                                            ]
+          , [ sPH[d]  , bumpFZ-sFI[d]                                  -sRL[d]                   ]
+          , [ sPH[d]  , bumpFZ-sFI[d]                                  -sRL[d]-sPL[d]            ]
+          , [ 0       , bumpFZ-sFI[d]                                  -sRL[d]-sPL[d]  -sLL[d]   ]
+          , [-fudge   , bumpFZ-sFI[d]                                  -sRL[d]-sPL[d]  -sLL[d]   ]
+          ]);
+        // back bump
+        extrude(bumpL*h, convexity=1) polygon(
+          [ [-fudge   , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2 ]
+          , [ 0       , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2 ]
+          , [ sPH[d]  , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]*2+sLL[d]*2 ]
+          , [ sPH[d]  , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]*2 ]
+          , [ 0       , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]   ]
+          , [-fudge   , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]   ]
+          ]);
+        // back stop
+        extrude(bumpL*h, convexity=1) polygon(
+          [ [-fudge   , stopBZ+sBI[d]+(hookGO[d]+fSlopXY)*sLS[d]                       +sLL[d]   ]
+          , [ 0       , stopBZ+sBI[d]+(hookGO[d]+fSlopXY)*sLS[d]                       +sLL[d]   ]
+          , [ hookG[d], stopBZ+sBI[d]           +fSlopXY *sLS[d]                                 ]
+          , [ hookG[d],      0                                                                   ]
+          , [-fudge   ,      0                                                                   ]
+          ]);
+      }
     }
     // hook wall
-    rotate([90,0,0]) extrude(fWall2, convexity=1) scale([h, 1]) polygon(
-      [ [     0                      , fGridZ         ]
-      , [fWall2+hookW[d]+lPH-hookC[d], fGridZ         ]
-      , [fWall2+hookW[d]+lPH         , fGridZ-hookC[d]]
-      , [fWall2+hookW[d]+lPH         , fGridZ         ]
-      , [fWall2+hookW[d]+lPH         ,      0         ]
-      , [     0                      ,      0         ]
+    rotate([90,0,0]) extrude(fWall2, convexity=1) scale([h, 1]) translate([fWall2, 0]) polygon(
+      [ [-fudge            , fGridZ-stemC[d]          ]
+      , [ hookW[d]-hookC[d], fGridZ-stemC[d]          ]
+      , [ hookW[d]         , fGridZ-stemC[d]-hookC[d] ]
+      , [ hookW[d]         ,      0                   ]
+      , [-fudge            ,      0                   ]
       ]);
+    // stem
+    translate([0, -stemD[d]-hang, 0]) hull() {
+      box([fWall2*h, stemD[d]+hang, fGridZ-stemC[d]]);
+      box([fWall2*h, stemD[d]+hang-stemC[d], fGridZ]);
+    }
   }
 }
 
 module tHooks(drawHooks=true) hl(fSideIX-fSlopXY-claspW-hookW.y<gap/2, "Top hooks are too close.")
   flipX() translate([fSideIX-fSlopXY-claspW/2-hookW.y/2, fTHookY, 0]) {
+    if (drawHooks) plate(1, 1, 0, stop=claspD.y-hookM.y-fWall2);
     hl(bPW<fWall2, "Bottom bumps are not wide enough.") translate([-claspW/2-hookW.y/2, stemD.y, fGridZ-bIL-bFL]) hull() {
       translate([0, 0, bFL]) box([bPW, -fudge, -bFL-bPL-bBL]);
       box([bPW, bPH, -bPL]);
     };
-    if (drawHooks) plate(1, 1, 0, stop=claspD.y-hookM.y-fWall2);
   }
-module bHooks() rotate(180) flipX() translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2-lPC, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=tClearance-hookM.y+fudge);
-module blHook() rotate(180)         translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2-lPC, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=-hookM.y-fSlopXY);
-module brHook() rotate(180)         translate([-fSideIX+fSlopXY+claspW/2+hookW.y/2+lPC, -fBHookY-hookM.y, 0]) latch( 1, 1, 1, hang=-hookM.y-fSlopXY);
+module bHooks() rotate(180) flipX() translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=tClearance-hookM.y+fudge);
+module blHook() rotate(180)         translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=-hookM.y-fSlopXY);
+module brHook() rotate(180)         translate([-fSideIX+fSlopXY+claspW/2+hookW.y/2, -fBHookY-hookM.y, 0]) latch( 1, 1, 1, hang=-hookM.y-fSlopXY);
 
-module lHooks() rotate( 90) flipX() translate([fHornY-claspW/2-hookW.x/2+lPC, fSideOX, 0]) latch( 1, 0, 0);
-module rHooks() rotate(270) flipX() translate([fHornY-claspW/2-hookW.x/2    , fSideOX, 0]) plate(-1, 0, 1, stop=claspD.x/2+fSlopXY/2);
+module lHooks() rotate( 90) flipX() translate([fHornY-claspW/2-hookW.x/2, fSideOX, 0]) latch( 1, 0, 0);
+module rHooks() rotate(270) flipX() translate([fHornY-claspW/2-hookW.x/2, fSideOX, 0]) plate(-1, 0, 1, stop=claspD.x/2+fSlopXY/2);
 
 
 
@@ -1086,8 +1079,8 @@ module eSlice(h, bounds, translate=[0,0]
 
 
 module tlSeamFill(l) translate([fGridX*l-fBulgeOX, -fHornY+tClearance+fWall4, 0]) {
-  rB = [fBulgeWall+fWall4+lPC+lWS, -tClearance-fWall4];
-  rL = rB - [fWall2+lWS, -fWall2];
+  rB = [fBulgeWall+fWall4, -tClearance-fWall4];
+  rL = rB - [fWall2, -fWall2];
   extrude(fBase) rect(rB);
   translate([0, 0, fGridZ-fTop]) difference() {
     hull() {
@@ -1102,8 +1095,8 @@ module tlSeamFill(l) translate([fGridX*l-fBulgeOX, -fHornY+tClearance+fWall4, 0]
 }
 
 module trSeamFill(r) translate([fGridX*r+fBulgeOX, -fHornY+tClearance+fWall4, 0]) {
-  rB = [-fBulgeWall-fWall4-lPC-lWS, -tClearance-fWall4];
-  rL = rB - [-fWall2-lWS, -fWall2];
+  rB = [-fBulgeWall-fWall4, -tClearance-fWall4];
+  rL = rB - [-fWall2, -fWall2];
   extrude(fBase) rect(rB);
   translate([0, 0, fGridZ-fTop]) difference() {
     hull() {
@@ -1141,7 +1134,7 @@ module bFill(wall=0) translate([0, fHornY-claspD.y+hookM.y, 0]) {
 module bSeamFill() translate([fGridX/2, fHornY-claspD.y+hookM.y, 0]) {
   rB = [claspD.x+stretchX+fWallGrid*2, claspD.y-hookM.y];
   rL = rB - [fWall2*2, fWall2];
-  extrude(fBase) rect(rB+[lPC*2, 0], [0,1]);
+  extrude(fBase) rect(rB, [0,1]);
   translate([0, 0, fGridZ-fTop]) difference() {
     hull() {
       extrude(fTop) rect(rB, [0,1]);
@@ -1157,7 +1150,7 @@ module bSeamFill() translate([fGridX/2, fHornY-claspD.y+hookM.y, 0]) {
 module blSeamFill(l) translate([fGridX*l-fBulgeOX, fHornY-claspD.y+hookM.y, 0]) {
   rB = [fBulgeWall+fWall2, claspD.y-hookM.y];
   rL = rB - [fWall2, fWall2];
-  extrude(fBase) rect(rB+[lPC, 0]);
+  extrude(fBase) rect(rB);
   translate([0, 0, fGridZ-fTop]) difference() {
     hull() {
       extrude(fTop) rect(rB);
@@ -1173,7 +1166,7 @@ module blSeamFill(l) translate([fGridX*l-fBulgeOX, fHornY-claspD.y+hookM.y, 0]) 
 module brSeamFill(r) translate([fGridX*r+fBulgeOX, fHornY-claspD.y+hookM.y, 0]) {
   rB = [-fBulgeWall-fWall2, claspD.y-hookM.y];
   rL = rB - [-fWall2, fWall2];
-  extrude(fBase) rect(rB-[lPC, 0]);
+  extrude(fBase) rect(rB);
   translate([0, 0, fGridZ-fTop]) difference() {
     hull() {
       extrude(fTop) rect(rB);
@@ -1187,7 +1180,7 @@ module brSeamFill(r) translate([fGridX*r+fBulgeOX, fHornY-claspD.y+hookM.y, 0]) 
 }
 
 module rHookFill() {
-  rB = [fWall2+stretchX/2, claspW+hookW.x-lPH];
+  rB = [fWall2+stretchX/2, claspW+hookW.x];
   rL = rB - [fWall2, fWall2];
   flipY() translate([fSideIX, fBulgeIY, 0]) difference() {
     extrude(fGridZ) rect(rB);
@@ -1196,7 +1189,7 @@ module rHookFill() {
 }
 
 module ltHookFill(t) {
-  rB = [-fWall2-stretchX/2, -hookW.x-fWall2-lPH];
+  rB = [-fWall2-stretchX/2, -hookW.x-fWall2];
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY*t+fHornY, 0]) difference() {
     extrude(fGridZ) rect(rB);
@@ -1205,7 +1198,7 @@ module ltHookFill(t) {
 }
 
 module lbHookFill(b) {
-  rB = [-fWall2-stretchX/2, hookW.x+fWall2+lPH];
+  rB = [-fWall2-stretchX/2, hookW.x+fWall2];
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY*b-fHornY, 0]) difference() {
     extrude(fGridZ) rect(rB);
@@ -1214,7 +1207,7 @@ module lbHookFill(b) {
 }
 
 module lHookFill() {
-  rB = [-fWall2-stretchX/2, hookW.x*2+fWall2*2+lPH*2+fSlopXY];
+  rB = [-fWall2-stretchX/2, hookW.x*2+fWall2*2+fSlopXY];
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY/2, 0]) difference() {
     extrude(fGridZ) rect(rB, [1,0]);
@@ -1232,47 +1225,39 @@ module lHookFill() {
 // BUMPS
 
 module trimFBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0]) extrude(size.y) polygon(
-  [ [fudge,        0               ]
-  , [    0,        0               ]
+  [ [fudge, max(0, tIL            )]
   , [    0, max(0, tIL            )]
   , [ -tPH, max(0, tIL+tRL        )]
   , [ -tPH, max(0, tIL+tRL+tPL    )]
   , [    0, max(0, tIL+tRL+tPL+tLL)]
-  , [    0,        tInsert         ]
-  , [fudge,        tInsert         ]
+  , [fudge, max(0, tIL+tRL+tPL+tLL)]
   ]);
 
 module trimMBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0]) extrude(size.y) polygon(
-  [ [-fudge,        0                                          ]
-  , [     0,        0                                          ]
+  [ [-fudge, max(0, tFloat+tIL-fSlopXY*tLS+tOL+tRL+tPL        )]
   , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tOL+tRL+tPL        )]
   , [   tPH, max(0, tFloat+tIL-fSlopXY*tLS+tOL+tRL+tPL  +tLL  )]
   , [   tPH, max(0, tFloat+tIL-fSlopXY*tLS+tOL+tRL+tPL*2+tLL  )]
   , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tOL+tRL+tPL*2+tLL*2)]
-  , [     0,        tInsert                                    ]
-  , [-fudge,        tInsert                                    ]
+  , [-fudge, max(0, tFloat+tIL-fSlopXY*tLS+tOL+tRL+tPL*2+tLL*2)]
   ]);
 
 module mirtFBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, -fGridZ, 0]) extrude(size.y) polygon(
-  [ [fudge,        0               ]
-  , [    0,        0               ]
+  [ [fudge, max(0, tIL            )]
   , [    0, max(0, tIL            )]
   , [ -mPH, max(0, tIL+mRL        )]
   , [ -mPH, max(0, tIL+mRL+tPL    )]
   , [    0, max(0, tIL+mRL+tPL+mLL)]
-  , [    0,        mInsert         ]
-  , [fudge,        mInsert         ]
+  , [fudge, max(0, tIL+mRL+tPL+mLL)]
   ]);
 
 module mirtMBumps(size) rotate([-90,0,0]) flipX() translate([size.x/2, tBase, 0]) extrude(size.y) polygon(
-  [ [-fudge,        0                                          ]
-  , [     0,        0                                          ]
+  [ [-fudge, max(0, tFloat+tIL-fSlopXY*tLS+tOL+mRL+tPL        )]
   , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tOL+mRL+tPL        )]
   , [   mPH, max(0, tFloat+tIL-fSlopXY*tLS+tOL+mRL+tPL  +mLL  )]
   , [   mPH, max(0, tFloat+tIL-fSlopXY*tLS+tOL+mRL+tPL*2+mLL  )]
   , [     0, max(0, tFloat+tIL-fSlopXY*tLS+tOL+mRL+tPL*2+mLL*2)]
-  , [     0,        mInsert                                    ]
-  , [-fudge,        mInsert                                    ]
+  , [-fudge, max(0, tFloat+tIL-fSlopXY*tLS+tOL+mRL+tPL*2+mLL*2)]
   ]);
 
 
@@ -1306,7 +1291,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
   }
   // beside bottom bumps
   flipX() translate([fSideOX-claspW-hookW.y+bPW-fWall2, -fHornY+tClearance+fWall4, fGridZ-tInsert-fTop]) {
-    rB = [fWall2*2+hookW.y+lPH-bPW, -fWall2-tClearance+hookM.y];
+    rB = [fWall2*2+hookW.y-bPW, -fWall2-tClearance+hookM.y];
     rL = rB - [fWall2, -fWall2];
     if (rB[0]>=fWall2*2+gap) difference() {
       hull() {
@@ -1316,11 +1301,11 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
       translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, hFudge=fudge);
     }
   }
-  if (trim) translate([0, -fHornY+tClearance+fWall4, 0]) trimFBumps([fSideOX*2-claspW*2+lPH*2, -fWall2-tClearance+hookM.y]);
+  if (trim) translate([0, -fHornY+tClearance+fWall4, 0]) trimFBumps([fSideOX*2-claspW*2, -fWall2-tClearance+hookM.y]);
   // seam
   if (i<r) translate([fGridX/2, -fHornY+tClearance+fWall4, 0]) {
-    rB = [claspD.x+stretchX+fWall4*2+fSlopXY*2+lPC*2+lWS*2, -tClearance-fWall4];
-    rL = rB - [fWall2*2+lWS*2, -fWall2];
+    rB = [claspD.x+stretchX+fWall4*2+fSlopXY*2, -tClearance-fWall4];
+    rL = rB - [fWall2*2, -fWall2];
     extrude(fBase) rect(rB, [0,1]);
     translate([0, 0, fGridZ-fTop]) difference() {
       hull() {
@@ -1337,7 +1322,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
 }
 
 module bSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
-  extrude(fBase) translate([0, fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4-lPC*2-lWS*2, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
+  extrude(fBase) translate([0, fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
   extrude(fGridZ) flipX() translate([fGridX/2-claspD.x/2-stretchX/2-fSlopXY, fGridY/2-fSlopXY/2]) rect([-fWall2, -claspD.y+hookM.y]);
   tHooks();
   if (i<r) bSeamFill();
@@ -1387,12 +1372,12 @@ module lSide(x=[0], z=1, color=true, trimColor=false) {
   t = is_list(z) ? max(z[0], z[1]) :  (abs(z)-1)/2;
   b = is_list(z) ? min(z[0], z[1]) : -(abs(z)-1)/2;
   if (t>=b) condColor(color) translate([fGridX*(x[0]-1), 0, 0]) {
-    extrude(fBase) for (i=[b:t]) if (i>b) translate([fSideIX, fGridY*(i-0.5)]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid, claspW*2+hookW.x*2-fWall2*2-fSlopXY-lPC*2-lWS*2], [1,0]);
-    extrude(fBase) translate([fSideIX, fGridY*t]) translate([0,  fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid, -claspW-hookW.x+fWallGrid+lPC+lWS]);
-    extrude(fBase) translate([fSideIX, fGridY*b]) translate([0, -fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid,  claspW+hookW.x-fWallGrid-lPC-lWS]);
+    extrude(fBase) for (i=[b:t]) if (i>b) translate([fSideIX, fGridY*(i-0.5)]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid, claspW*2+hookW.x*2-fWall2*2-fSlopXY], [1,0]);
+    extrude(fBase) translate([fSideIX, fGridY*t]) translate([0,  fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid, -claspW-hookW.x+fWallGrid]);
+    extrude(fBase) translate([fSideIX, fGridY*b]) translate([0, -fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid,  claspW+hookW.x-fWallGrid]);
     if (fancy) {
       extrude(fBase) translate([fSideIX, fGridY*b-fHornY]) rect([fWall2+hookM.x+stretchX/2, fGridY*(t-b)+fHornY*2]);
-      extrude(fBase) for (i=[b:t]) translate([fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2+lPC*2], [1,0]);
+      extrude(fBase) for (i=[b:t]) translate([fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2], [1,0]);
     }
     else extrude(fBase) translate([fBulgeOX, fGridY*b-fHornY]) rect([-fBulgeWall-fWall2, fGridY*(t-b)+fHornY*2]);
     extrude(fSideZ) translate([fSideOX, fGridY*b-fHornY]) rect([-fWall2, fGridY*(t-b)+fHornY*2]);
@@ -1437,8 +1422,8 @@ module rSide(x=[0], z=1, color=true, trimColor=false) {
       lHooks();
       if (stretchXFill && i<t) lHookFill();
       translate([-fSideIX, 0, 0]) {
-        rB = [-fBulgeWall-fWall2, fHornY*2-claspW*2-hookW.x*2+fWall2*2+lPC*2+lWS*2];
-        rL = rB - [-fWall2, fWall2*2+lWS*2];
+        rB = [-fBulgeWall-fWall2, fHornY*2-claspW*2-hookW.x*2+fWall2*2];
+        rL = rB - [-fWall2, fWall2*2];
         extrude(fBase) rect(rB, [1,0]);
         translate([0, 0, fGridZ-tInsert-fTop]) difference() {
           hull() {
@@ -1509,8 +1494,8 @@ module tlSide(x=1, z=[0], color=true, trimColor=false) {
         if (trim) translate([fGridX-edge-fillet, fBHookY]) rect([fWall2, -rise+claspD.y-hookM.y-fWall2*2]);
       }
       trSeamFill(r-l+1);
-      rB = [claspD.x+stretchX+fWallGrid*3+lPC+lWS, -rise-fillet+claspD.y-hookM.y-fWall2*2];
-      rL = rB - [fWall2*2+lWS, -fWall2];
+      rB = [claspD.x+stretchX+fWallGrid*3, -rise-fillet+claspD.y-hookM.y-fWall2*2];
+      rL = rB - [fWall2*2, -fWall2];
       tx = fGridX - edge - fillet;
       ty = -fGridY + fHornY + fWallGrid + fillet + fSlopXY - tPHAdj;
       // #translate([tx, ty]) extrude(fGridZ+1) rect(rB);
@@ -1559,8 +1544,8 @@ module trSide(x=1, z=[0], color=true, trimColor=false) {
         if (trim) translate([edge-fGridX+fillet, fBHookY]) rect([-fWall2, -rise+claspD.y-hookM.y-fWall2*2]);
       }
       tlSeamFill(l-r-1);
-      rB = [-claspD.x-stretchX-fWallGrid*3-lPC-lWS, -rise-fillet+claspD.y-hookM.y-fWall2*2];
-      rL = rB - [-fWall2*2-lWS, -fWall2];
+      rB = [-claspD.x-stretchX-fWallGrid*3, -rise-fillet+claspD.y-hookM.y-fWall2*2];
+      rL = rB - [-fWall2*2, -fWall2];
       tx = -fGridX + edge + fillet;
       ty = -fGridY + fHornY + fWallGrid + fillet + fSlopXY - tPHAdj;
       // #translate([tx, ty]) extrude(fGridZ+1) rect(rB);
@@ -1614,7 +1599,7 @@ module blSide(x=1, z=[0], color=true, trimColor=false) {
       // #translate([tx, ty]) extrude(fGridZ+1) rect(rB);
       // #translate([tx+fWall2, ty+fWall2]) extrude(fGridZ+2) rect(rL);
       extrude(fBase) intersection() {
-        translate([tx, ty]) rect(rB+[lPC, 0]);
+        translate([tx, ty]) rect(rB);
         cornerMask(fillet, [edge, fHornY+fSlopXY], align);
       }
       translate([0, 0, fGridZ-fTop]) difference() {
@@ -1660,7 +1645,7 @@ module brSide(x=1, z=[0], color=true, trimColor=false) {
       // #translate([tx, ty]) extrude(fGridZ+1) rect(rB);
       // #translate([tx-fWall2, ty+fWall2]) extrude(fGridZ+2) rect(rL);
       extrude(fBase) intersection() {
-        translate([tx, ty]) rect(rB-[lPC, 0]);
+        translate([tx, ty]) rect(rB);
         cornerMask(fillet, [edge, fHornY+fSlopXY], align);
       }
       translate([0, 0, fGridZ-fTop]) difference() {
@@ -1684,13 +1669,13 @@ module brSide(x=1, z=[0], color=true, trimColor=false) {
 // TRIM
 
 module tTrimBase(l, r) for (i=[l:r]) translate([fGridX*i, -fHornY+fWall2+tClearance, 0]) {
-  w = hookW.y-bPW+fWall2+lPH-tPH-fSlopXY;
+  w = hookW.y-bPW+fWall2-tPH-fSlopXY;
   hl(w<fWall2, "Inadequate space for top trim clip.") {
     extrude(-tBase-tInsert) {
       flipX() translate([fSideOX-claspW-hookW.y+bPW-fWall2, 0, 0]) rect([w, -tClearance+fSlopXY]);
-      rect([fSideOX*2-claspW*2+lPH*2-tPH*2-fSlopXY*2, -tClearance+bPH+fSlopXY], [0,1]);
+      rect([fSideOX*2-claspW*2-tPH*2-fSlopXY*2, -tClearance+bPH+fSlopXY], [0,1]);
     }
-    trimMBumps([fSideOX*2-claspW*2+lPH*2-tPH*2-fSlopXY*2, -tClearance+fSlopXY]);
+    trimMBumps([fSideOX*2-claspW*2-tPH*2-fSlopXY*2, -tClearance+fSlopXY]);
   }
 }
 
@@ -1750,8 +1735,8 @@ module rTrim(x=[0], z=1, print=true) {
     translate([fGridX*(x[0]+1)-fSideIX-fWallGrid, 0, print?0:fGridZ+tBase+tFloat]) {
       extrude(-tBase) translate([0, fGridY*b-fHornY]) rect([fSlopXY-fBulgeWall, fGridY*(t-b)+fHornY*2]);
       for (i=[b:t]) translate([0, fGridY*i, 0]) {
-        extrude(-tBase-tInsert) rect([fSlopXY-fBulgeWall, fHornY*2-claspW*2-hookW.x*2+lPC*2-tPH*2-fSlopXY*2], [1,0]);
-        rotate(270) trimMBumps([fHornY*2-claspW*2-hookW.x*2+lPC*2-tPH*2-fSlopXY*2, fSlopXY-fBulgeWall]);
+        extrude(-tBase-tInsert) rect([fSlopXY-fBulgeWall, fHornY*2-claspW*2-hookW.x*2-tPH*2-fSlopXY*2], [1,0]);
+        rotate(270) trimMBumps([fHornY*2-claspW*2-hookW.x*2-tPH*2-fSlopXY*2, fSlopXY-fBulgeWall]);
       }
     }
 }
@@ -1868,9 +1853,6 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
   drawerZError = dFloorZ(drawerZIdeal) - drawerZIdeal;
 
   module rBulge(top=false) translate([fBulgeOX, 0, 0]) {
-    // #extrude(fGridZ) translate([0, fBulgeOY]) rect([-fBulgeWall-fWall2, (top?stopZError:0)-fWall2]);
-    // #extrude(fGridZ) translate([0, -fBulgeOY]) rect([-fBulgeWall-fWall2, fWall2]);
-    // extrude(fGridZ) if (drawSides) rect([-fWall2, fBulgeOY*2], [1,0]);
     extrude(fGridZ) {
       translate([0, fBulgeOY]) rect([-fBulgeWall-fWall2, (top?stopZError:0)-fWall2]);
       translate([0, -fBulgeOY]) rect([-fBulgeWall-fWall2, fWall2]);
@@ -1886,6 +1868,8 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
       if (i>l) translate([-fGridX/2, 0, 0]) extrude(fGridZ) flipX()
         translate([-claspD.x/2-stretchX/2-fSlopXY, fTopIY]) rect([-fWall2, fHornY-fTopIY]);
       if (drawTop) bFill();
+      // hook supports
+      flipX() translate([fSideIX-fSlopXY, fTopIY, 0]) box([-fWall2, fWall2+hookM.y, fGridZ]);
     }
     if (drawTop) extrude(fGridZ) translate([fGridX*r+fSideOX, fTHookY]) rect([fGridX*(l-r)-fSideOX*2, -fWall2]);
     for (i=[l:r]) if (i<r) translate([fGridX*i, 0, 0]) bSeamFill();
@@ -1895,8 +1879,8 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
     translate([fGridX*l, 0, 0]) blHook();
     translate([fGridX*r, 0, 0]) brHook();
     extrude(fGridZ) {
-      translate([fGridX*r+fSideOX, -fHornY]) rect([-fWall4-lPC-lWS, fWall2]);
-      translate([fGridX*l-fSideOX, -fHornY]) rect([ fWall4+lPC+lWS, fWall2]);
+      translate([fGridX*r+fSideOX, -fHornY]) rect([-fWall4, fWall2]);
+      translate([fGridX*l-fSideOX, -fHornY]) rect([ fWall4, fWall2]);
     }
   }
 
@@ -1909,11 +1893,6 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
       if (drawSides) lHooks();
       if (stretchXFill && i<t) lHookFill();
       lBulge(top=i==t);
-      // fill hole caused by locks (if used)
-      if (lPH>0) flipY() translate([-fBulgeOX, fBulgeIY, fGridZ]) hull() {
-        extrude(-fTop    ) rect([claspD.x/2-fSlopXY/2, fWall2+lPC]);
-        extrude(-fTop-lPC) rect([claspD.x/2-fSlopXY/2, fWall2    ]);
-      }
       if (i<t) extrude(fGridZ) translate([-fSideOX, fBulgeIY]) rect([fWall2, fGridY-fBulgeIY*2]);
     }
     if (drawSides) {
@@ -2003,49 +1982,49 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
       if (fancy) extrude(fBase, convexity=2) {
         translate([fGridX*r+fSideOX+hookM.x+stretchX/2, fGridY*t+fTopOY+hookM.y]) rect([fGridX*(l-r)-fSideOX*2-hookM.x*2-stretchX, fGridY*(b-t-1)+claspD.y-hookM.y*2+fSlopXY*2+bPH]);
         // upper left  (not sure this is needed for anything other than latch backstops, but not even that??)
-        // #translate([fGridX*l-fSideOX-hookM.x, fGridY*t+fHornY]) rect([fWall2+hookM.x+lPC, -fWall4-hookM.y-hookG.y]);
+        // #translate([fGridX*l-fSideOX-hookM.x, fGridY*t+fHornY]) rect([fWall2+hookM.x, -fWall4-hookM.y-hookG.y]);
         // lower corners
-        translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([ fWall4+hookM.x+stretchX/2+lPC+lWS, fWall4+bPH]);
-        translate([fGridX*r+fSideOX+hookM.x+stretchX/2, fGridY*b-fHornY]) rect([-fWall4-hookM.x-stretchX/2-lPC-lWS, fWall4+bPH]);
+        translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([ fWall4+hookM.x+stretchX/2, fWall4+bPH]);
+        translate([fGridX*r+fSideOX+hookM.x+stretchX/2, fGridY*b-fHornY]) rect([-fWall4-hookM.x-stretchX/2, fWall4+bPH]);
         // right seam
         for (i=[b:t]) if (i>b) translate([fGridX*(r+0.5)+claspD.x/2-hookM.x, fGridY*(i-0.5)]) rect([-claspD.x+hookM.x-stretchX/2-fWallGrid, -fWall4], [1,0]);
         // upper right hook
-        for (i=[b:t]) translate([fGridX*r+fSideIX-lPC, fGridY*i+fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid+lPC, -claspW-hookW.x+fWallGrid+lPC+lWS]);
+        for (i=[b:t]) translate([fGridX*r+fSideIX, fGridY*i+fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid, -claspW-hookW.x+fWallGrid]);
         // lower right hook
-        for (i=[b:t]) translate([fGridX*r+fSideIX-fWallGrid-lPC-lWS, fGridY*i-fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid*2+lPC+lWS, claspW+hookW.x-fWallGrid-lPC-lWS]);
+        for (i=[b:t]) translate([fGridX*r+fSideIX-fWallGrid, fGridY*i-fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid*2, claspW+hookW.x-fWallGrid]);
         // left bulge
-        for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+lPC*2+fWallGrid*2+lWS*2], [1,0]);
+        for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+fWallGrid*2], [1,0]);
         // right bulge
-        for (i=[b:t]) translate([fGridX*r+fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2+lPC*2], [1,0]);
+        for (i=[b:t]) translate([fGridX*r+fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2], [1,0]);
         // top hooks
-        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4-lPC*2-lWS*2, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
+        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
         // top seam  (is this necessary?)
-        // #for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*t+fHornY]) rect([claspD.x+stretchX+fWallGrid*2+lPC*2, -fWall4], [0,1]);
+        // #for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*t+fHornY]) rect([claspD.x+stretchX+fWallGrid*2, -fWall4], [0,1]);
         // bottom seam
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4+lPC*2+lWS*2, fWall4+bPH], [0,1]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH], [0,1]);
         // bottom seam hooks
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)+claspD.x/2+stretchX/2+fWall2+fSlopXY*2+lPC, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2]) rect([ fWall2+lWS, claspD.y-hookM.y*2]);
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)-claspD.x/2-stretchX/2-fWall2-fSlopXY*2-lPC, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2]) rect([-fWall2-lWS, claspD.y-hookM.y*2]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)+claspD.x/2+stretchX/2+fWall2+fSlopXY*2, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2]) rect([ fWall2, claspD.y-hookM.y*2]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)-claspD.x/2-stretchX/2-fWall2-fSlopXY*2, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2]) rect([-fWall2, claspD.y-hookM.y*2]);
         // hook stem fills
-        translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([ fWall2+hookM.x+stretchX/2+lPC, fGridY*(t-b)+fHornY*2]);
-        translate([fGridX*r+fSideOX+hookM.x+stretchX/2, fGridY*b-fHornY]) rect([-fWall2-hookM.x-stretchX/2-lPC, fGridY*(t-b)+fHornY*2]);
+        translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([ fWall2+hookM.x+stretchX/2, fGridY*(t-b)+fHornY*2]);
+        translate([fGridX*r+fSideOX+hookM.x+stretchX/2, fGridY*b-fHornY]) rect([-fWall2-hookM.x-stretchX/2, fGridY*(t-b)+fHornY*2]);
       }
       else extrude(fBase, convexity=2) {
         translate([fGridX*r+fSideOX+fBulgeWall, fGridY*t+fTopOY+claspD.y-hookM.y-fWall2]) rect([fGridX*(l-r)-fSideOX*2-fBulgeWall-hookM.x-stretchX/2, fGridY*(b-t-1)+fWall2+fSlopXY*2+bPH]);
         // lower left corner
-        translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([fWall4+hookM.x+stretchX/2+lPC+lWS, fWall4+bPH]);
+        translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([fWall4+hookM.x+stretchX/2, fWall4+bPH]);
         // right seam
         for (i=[b:t]) if (i>b) translate([fGridX*(r+0.5)+claspD.x/2-hookM.x, fGridY*(i-0.5)]) rect([-claspD.x+hookM.x-stretchX/2-fWallGrid, -fWall4], [1,0]);
         // upper right hook
-        for (i=[b:t]) translate([fGridX*r+fSideIX-lPC, fGridY*i+fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid+lPC, -claspW-hookW.x+fWallGrid+lPC+lWS]);
+        for (i=[b:t]) translate([fGridX*r+fSideIX, fGridY*i+fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid, -claspW-hookW.x+fWallGrid]);
         // lower right hook
-        for (i=[b:t]) translate([fGridX*r+fSideIX-fWallGrid-lPC-lWS, fGridY*i-fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid*2+lPC+lWS, claspW+hookW.x-fWallGrid-lPC-lWS]);
+        for (i=[b:t]) translate([fGridX*r+fSideIX-fWallGrid, fGridY*i-fHornY]) rect([claspD.x-hookM.x+stretchX/2+fWallGrid*2, claspW+hookW.x-fWallGrid]);
         // left bulge
-        for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+lPC*2+fWallGrid*2+lWS*2], [1,0]);
+        for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+fWallGrid*2], [1,0]);
         // top hooks
-        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4-lPC*2-lWS*2, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
+        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
         // bottom seam
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4+lPC*2+lWS*2, fWall4+bPH], [0,1]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH], [0,1]);
       }
       if (mountingHoleD>0 && t-b>0) for (i=[l:r]) for (j=[b:t-1]) translate([fGridX*i, fGridY*(j+0.5), -fudge])
         rod(fBase+fudge2, r=circumgoncircumradius(d=mountingHoleD, $fn=mountingHoleFn)+fSlopXY, $fn=mountingHoleFn);
@@ -2444,7 +2423,7 @@ module hookInsert() render() {
     }
     box([fGridX, -fGridY, -fBase-fudge], [0,1,1]);
   }
-  translate([0, -fHornY+fWall2, 0]) box([claspD.x+stretchX+fWall4*2+fSlopXY*2+lPC*2+lWS*2, -fWall2, fGridZ-fBase], [0,1,1]);
+  translate([0, -fHornY+fWall2, 0]) box([claspD.x+stretchX+fWall4*2+fSlopXY*2, -fWall2, fGridZ-fBase], [0,1,1]);
 }
 
 
