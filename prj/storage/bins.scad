@@ -64,6 +64,9 @@ Possible future improvements
     [ ] trim side bumps with shallow slopes (or highlight)
     [ ] additional bump rails on tall drawers
        -  should be optional (might be too stiff)
+    [ ] cut arc under/behind stops to prevent deformation and ease insertion of drawer
+       -  can't really be an arc due to overhangs
+       -  deformation is hidden and doesn't affect strength, so who cares
   [ ] highlight additional invalid states
   [ ] support ribs along length of side edges
      -  requires adjusting fills
@@ -691,7 +694,7 @@ handleTray = Tray_handle;
 
 drawCuts = !$preview || Draw_cuts;
 
-compensated = Bin_drawer_compensation && !Frame_unit_width_in_bin_units;
+compensated = stretchX>0;
 
 echo("Frame unit size:");
 echo(str("    width: \t", fGridX, (compensated ? str(" mm, ", stretchX, " mm used for bin drawer compensation") : " mm")));
@@ -956,7 +959,7 @@ module sliceX(bounds, translate=[0,0]
       translate([-fudge*2, gap*dir]) rect([x+fudge2*2, y], [1,0]);  // expose only top or bottom
     }
   }
-  if (drawCuts) translate([tx, ty]) {
+  translate([tx, ty]) {
     if (fillWalls>0) {
       if (cutMid) translate([flushL?-fudge:0, 0]) rect([x+fudge*flushSides, gap], [1,0]);
       for (i=[0:fillWalls-1]) {
@@ -1005,7 +1008,7 @@ module eSliceX(h, bounds, translate=[0,0]
 , wall2=fWall2, layerH=fLayerHN, hFudge=0
 ) translate([0, 0, (centerZ?-h/2:0)+(h<0?h:0)])
     if ((cutAlt || is_num(cutAlt)) && (abs(h)>=layerH)) for (i=[0:abs(h)/layerH-1]) {
-      translate([0, 0, layerH*i]) extrude(layerH+(epsilon_equals(i, abs(h)/layerH-1)?abs(hFudge):0)) sliceX(bounds, translate
+      translate([0, 0, layerH*i]) extrude(layerH+abs(hFudge)) sliceX(bounds, translate
       , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
       , centerX=centerX, centerY=centerY
       , cutT=cutT, cutB=cutB, cutMid=cutMid, cutAlt=mod(i+(is_num(cutAlt)?cutAlt:0), 2)
@@ -1028,7 +1031,7 @@ module eSliceY(h, bounds, translate=[0,0]
 , wall2=fWall2, layerH=fLayerHN, hFudge=0
 ) translate([0, 0, (centerZ?-h/2:0)+(h<0?h:0)])
     if ((cutAlt || is_num(cutAlt)) && (abs(h)>=layerH)) for (i=[0:abs(h)/layerH-1]) {
-      translate([0, 0, layerH*i]) extrude(layerH+(epsilon_equals(i, abs(h)/layerH-1)?abs(hFudge):0)) sliceY(bounds, translate
+      translate([0, 0, layerH*i]) extrude(layerH+abs(hFudge)) sliceY(bounds, translate
       , flushT=flushT, flushB=flushB, flushL=flushL, flushR=flushR
       , centerX=centerX, centerY=centerY
       , cutL=cutL, cutR=cutR, cutMid=cutMid, cutAlt=mod(i+(is_num(cutAlt)?cutAlt:0), 2)
@@ -1087,7 +1090,7 @@ module tlSeamFill(l) translate([fGridX*l-fBulgeOX, -fHornY+tClearance+fWall4, 0]
       extrude(fTop) rect(rB);
       extrude(rL.y) rect([rB.x, -fWall2]);
     }
-    translate([0, -fWall2, 0]) {
+    if (drawCuts) translate([0, -fWall2, 0]) {
       eSliceX(rL.y, rL, flushL=true);
       eSliceX(fTop, [rL.x, rL.y+fWall2], flushL=true, cutAlt=true, hFudge=fudge);
     }
@@ -1103,7 +1106,7 @@ module trSeamFill(r) translate([fGridX*r+fBulgeOX, -fHornY+tClearance+fWall4, 0]
       extrude(fTop) rect(rB);
       extrude(rL.y) rect([rB.x, -fWall2]);
     }
-    translate([0, -fWall2, 0]) {
+    if (drawCuts) translate([0, -fWall2, 0]) {
       eSliceX(rL.y, rL, flushR=true);
       eSliceX(fTop, [rL.x, rL.y+fWall2], flushR=true, cutAlt=true, hFudge=fudge);
     }
@@ -1123,7 +1126,7 @@ module bFill(wall=0) translate([0, fHornY-claspD.y+hookM.y, 0]) {
       }
       if (!$preview || !Expose_bottom_trim_bumps) translate([0, rB.y, 0]) extrude(fTop+wall) rect([rB.x, -fWall2], [0,1]);
     }
-    translate([0, fWall2, 0]) {
+    if (drawCuts) translate([0, fWall2, 0]) {
       eSliceX(-rL.y, rL, centerX=true);
       eSliceX(fTop, [rL.x, rL.y-fWall2], centerX=true, cutAlt=true, hFudge=fudge);
       eSliceY(fTop+wall, [rL.x, fWall2], translate=[0, rL.y-fWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, hFudge=fudge);
@@ -1140,7 +1143,7 @@ module bSeamFill() translate([fGridX/2, fHornY-claspD.y+hookM.y, 0]) {
       extrude(fTop) rect(rB, [0,1]);
       extrude(-rL.y) rect([rB.x, fWall2], [0,1]);
     }
-    translate([0, fWall2, 0]) {
+    if (drawCuts) translate([0, fWall2, 0]) {
       eSliceX(-rL.y, rL, centerX=true);
       eSliceY(fTop, rL, flushT=true, centerX=true, cutAlt=true, hFudge=fudge);
     }
@@ -1156,7 +1159,7 @@ module blSeamFill(l) translate([fGridX*l-fBulgeOX, fHornY-claspD.y+hookM.y, 0]) 
       extrude(fTop) rect(rB);
       extrude(-rL.y) rect([rB.x, fWall2]);
     }
-    translate([0, fWall2, 0]) {
+    if (drawCuts) translate([0, fWall2, 0]) {
       eSliceX(-rL.y, rL, flushL=true);
       eSliceY(fTop, rL, flushT=true, flushL=true, hFudge=fudge);
     }
@@ -1172,7 +1175,7 @@ module brSeamFill(r) translate([fGridX*r+fBulgeOX, fHornY-claspD.y+hookM.y, 0]) 
       extrude(fTop) rect(rB);
       extrude(-rL.y) rect([rB.x, fWall2]);
     }
-    translate([0, fWall2, 0]) {
+    if (drawCuts) translate([0, fWall2, 0]) {
       eSliceX(-rL.y, rL, flushR=true);
       eSliceY(fTop, rL, flushT=true, flushR=true, hFudge=fudge);
     }
@@ -1184,7 +1187,7 @@ module rHookFill() {
   rL = rB - [fWall2, fWall2];
   flipY() translate([fSideIX, fBulgeIY, 0]) difference() {
     extrude(fGridZ) rect(rB);
-    translate([fWall2, fWall2, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushR=true, hFudge=fudge);
+    if (drawCuts) translate([fWall2, fWall2, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushR=true, hFudge=fudge);
   }
 }
 
@@ -1193,7 +1196,7 @@ module ltHookFill(t) {
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY*t+fHornY, 0]) difference() {
     extrude(fGridZ) rect(rB);
-    translate([-fWall2, 0, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushB=true, flushL=true, hFudge=fudge);
+    if (drawCuts) translate([-fWall2, 0, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushB=true, flushL=true, hFudge=fudge);
   }
 }
 
@@ -1202,7 +1205,7 @@ module lbHookFill(b) {
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY*b-fHornY, 0]) difference() {
     extrude(fGridZ) rect(rB);
-    translate([-fWall2, 0, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushB=true, flushL=true, hFudge=fudge);
+    if (drawCuts) translate([-fWall2, 0, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushB=true, flushL=true, hFudge=fudge);
   }
 }
 
@@ -1211,7 +1214,7 @@ module lHookFill() {
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY/2, 0]) difference() {
     extrude(fGridZ) rect(rB, [1,0]);
-    translate([-fWall2, 0, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushB=true, flushL=true, centerY=true, hFudge=fudge);
+    if (drawCuts) translate([-fWall2, 0, fBase]) eSliceY(fGridZ-fBase, rL, flushT=true, flushB=true, flushL=true, centerY=true, hFudge=fudge);
   }
 }
 
@@ -1274,7 +1277,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
         extrude(fTop) rect(rB, [0,1]);
         extrude(rL.y) rect([rB.x, -fWall2], [0,1]);
       }
-      translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, flushR=true, centerX=true, hFudge=fudge);
+      if (drawCuts) translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, flushR=true, centerX=true, hFudge=fudge);
     }
   }
   // over bottom bumps
@@ -1286,7 +1289,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
         extrude(fTop) rect(rB);
         extrude(rL.y) rect([rB.x, -fWall2]);
       }
-      translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, hFudge=fudge);
+      if (drawCuts) translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, hFudge=fudge);
     }
   }
   // beside bottom bumps
@@ -1298,7 +1301,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
         extrude(fTop) rect(rB);
         extrude(rL.y) rect([rB.x, -fWall2]);
       }
-      translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, hFudge=fudge);
+      if (drawCuts) translate([0, -fWall2, rL.y]) eSliceX(fTop-rL.y, rL, flushB=true, flushL=true, hFudge=fudge);
     }
   }
   if (trim) translate([0, -fHornY+tClearance+fWall4, 0]) trimFBumps([fSideOX*2-claspW*2, -fWall2-tClearance+hookM.y]);
@@ -1312,7 +1315,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
         extrude(fTop) rect(rB, [0,1]);
         extrude(rL.y) rect([rB.x, -fWall2], [0,1]);
       }
-      translate([0, -fWall2, 0]) {
+      if (drawCuts) translate([0, -fWall2, 0]) {
         eSliceX(rL.y, rL, centerX=true);
         eSliceX(fTop, [rL.x, rL.y+fWall2], centerX=true, cutAlt=true, hFudge=fudge);
         eSliceY(fTop, [rL.x, -fWall2], translate=[0, rL.y+fWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, hFudge=fudge);
@@ -1393,7 +1396,7 @@ module lSide(x=[0], z=1, color=true, trimColor=false) {
             extrude(fTop) rect(rB, [1,0]);
             extrude(-rL.x) rect([fWall2, rB.y], [1,0]);
           }
-          translate([fWall2, 0, 0]) {
+          if (drawCuts) translate([fWall2, 0, 0]) {
             eSliceY(-rL.x, rL, centerY=true);
             eSliceY(fTop, rL-[fWall2, 0], centerY=true, cutAlt=true, hFudge=fudge);
             eSliceX(fTop, [fWall2, rL.y], translate=[rL.x-fWall2, 0], flushL=true, flushR=true, centerY=true, cutAlt=true, hFudge=fudge);
@@ -1430,7 +1433,7 @@ module rSide(x=[0], z=1, color=true, trimColor=false) {
             extrude(fTop) rect(rB, [1,0]);
             extrude(rL.x) rect([-fWall2, rB.y], [1,0]);
           }
-          translate([-fWall2, 0, 0]) {
+          if (drawCuts) translate([-fWall2, 0, 0]) {
             eSliceY(rL.x, rL, centerY=true);
             eSliceY(fTop, [rL.x+fWall2, rL.y], centerY=true, cutAlt=true, hFudge=fudge);
             eSliceX(fTop, [-fWall2, rL.y], translate=[rL.x+fWall2, 0], flushL=true, flushR=true, centerY=true, cutAlt=true, hFudge=fudge);
@@ -1512,11 +1515,13 @@ module tlSide(x=1, z=[0], color=true, trimColor=false) {
           }
           extrude((rL.y-fTop)*2, center=true) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
         }
-        eSliceX(rL.y, rL, translate=[tx+fWall2, ty-fWall2]);
-        eSliceX(fTop, [rL.x, rL.y+fWall2], translate=[tx+fWall2, ty-fWall2], cutAlt=true, hFudge=fudge)
-          offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
-        eSliceY(fTop, [rL.x, -fWall2], translate=[tx+fWall2, ty+rL.y], flushT=true, flushB=true, cutAlt=1, hFudge=fudge)
-          offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
+        if (drawCuts) {
+          eSliceX(rL.y, rL, translate=[tx+fWall2, ty-fWall2]);
+          eSliceX(fTop, [rL.x, rL.y+fWall2], translate=[tx+fWall2, ty-fWall2], cutAlt=true, hFudge=fudge)
+            offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
+          eSliceY(fTop, [rL.x, -fWall2], translate=[tx+fWall2, ty+rL.y], flushT=true, flushB=true, cutAlt=1, hFudge=fudge)
+            offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
+        }
       }
     }
   }
@@ -1562,11 +1567,13 @@ module trSide(x=1, z=[0], color=true, trimColor=false) {
           }
           extrude((rL.y-fTop)*2, center=true) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
         }
-        eSliceX(rL.y, rL, translate=[tx-fWall2, ty-fWall2]);
-        eSliceX(fTop, [rL.x, rL.y+fWall2], translate=[tx-fWall2, ty-fWall2], cutAlt=true, hFudge=fudge)
-          offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
-        eSliceY(fTop, [rL.x, -fWall2], translate=[tx-fWall2, ty+rL.y], flushT=true, flushB=true, cutAlt=1, hFudge=fudge)
-          offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
+        if (drawCuts) {
+          eSliceX(rL.y, rL, translate=[tx-fWall2, ty-fWall2]);
+          eSliceX(fTop, [rL.x, rL.y+fWall2], translate=[tx-fWall2, ty-fWall2], cutAlt=true, hFudge=fudge)
+            offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
+          eSliceY(fTop, [rL.x, -fWall2], translate=[tx-fWall2, ty+rL.y], flushT=true, flushB=true, cutAlt=1, hFudge=fudge)
+            offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fWallGrid+fSlopXY-tPHAdj], align);
+        }
       }
     }
   }
@@ -1610,9 +1617,11 @@ module blSide(x=1, z=[0], color=true, trimColor=false) {
           }
           extrude((rL.y+fTop)*2, center=true) cornerMask(fillet, [edge, fHornY+fSlopXY], align);
         }
-        eSliceX(-rL.y, rL, translate=[tx+fWall2, ty+fWall2]);
-        eSliceY(fTop, rL, translate=[tx+fWall2, ty+fWall2], flushT=true, cutAlt=true, hFudge=fudge)
-          offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fSlopXY], align);
+        if (drawCuts) {
+          eSliceX(-rL.y, rL, translate=[tx+fWall2, ty+fWall2]);
+          eSliceY(fTop, rL, translate=[tx+fWall2, ty+fWall2], flushT=true, cutAlt=true, hFudge=fudge)
+            offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fSlopXY], align);
+        }
       }
     }
   }
@@ -1656,9 +1665,11 @@ module brSide(x=1, z=[0], color=true, trimColor=false) {
           }
           extrude((rL.y+fTop)*2, center=true) cornerMask(fillet, [edge, fHornY+fSlopXY], align);
         }
-        eSliceX(-rL.y, rL, translate=[tx-fWall2, ty+fWall2]);
-        eSliceY(fTop, rL, translate=[tx-fWall2, ty+fWall2], flushT=true, cutAlt=true, hFudge=fudge)
-          offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fSlopXY], align);
+        if (drawCuts) {
+          eSliceX(-rL.y, rL, translate=[tx-fWall2, ty+fWall2]);
+          eSliceY(fTop, rL, translate=[tx-fWall2, ty+fWall2], flushT=true, cutAlt=true, hFudge=fudge)
+            offset(delta=-fWall2) cornerMask(fillet, [edge, fHornY+fSlopXY], align);
+        }
       }
     }
   }
@@ -2062,7 +2073,7 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
   stopZError = stopZ - stopZIdeal;
   stopHIdeal = (fWall2 + gap)*(h==1 ? fStopLines0 : fStopLinesN);
   stopH = stopHIdeal - stopZError;
-  brace = !dubWall && fBulgeWall >= dWall2 + gap;
+  brace = fBulgeWall >= dWall2 + gap;
   braceTop = dRoundH(bodyZ - stopZ + stopHIdeal - dSlopZ + dSlop45);
   railW = railWN - (h==1 ? stopH : 0);
   peakW = peakWN - (h==1 ? stopH : 0);
@@ -2238,17 +2249,17 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
             , [-w/2-fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
             ]);
         // back brace block
-        if (brace) translate([0, drawerY/2-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
+        if (brace) translate([0, drawerY/2+(dubWall?gap:0)-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
       }
       // back brace cut
-      if (brace && drawCuts) translate([0, drawerY/2, bodyZ-braceTop]) {
-        rL = [w, fBulgeWall];
+      if (brace && drawCuts) translate([0, drawerY/2+(dubWall?gap:0), bodyZ-braceTop]) {
+        rL = [w-dWall2*2, fBulgeWall];
         difference() {
-          eSliceX(-rL.y, rL+[0, fudge], flushL=true, flushR=true, centerX=true, wall2=dWall2);
-          rotate([45,0,0]) box([w, -fBulgeWall*sqrt(2), -fBulgeWall*sqrt(2)], [0,1,1]);
+          translate([0, 0, fudge]) eSliceX(-rL.y-fudge, rL-[0, -fudge], centerX=true, wall2=dWall2);
+          rotate([45,0,0]) box([w+fudge2, -fBulgeWall*sqrt(2), -fBulgeWall*sqrt(2)], [0,1,1]);
         }
-        eSliceX(braceTop, rL-[dWall2*2, dWall2], centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
-        eSliceY(braceTop, [rL.x-dWall2*2, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=true, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
+        eSliceX(braceTop, rL-[0, dWall2], centerX=true, cutAlt=1, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
+        eSliceY(braceTop, [rL.x, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=mod(braceTop/dLayerHN+1, 2), wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
       }
       // bottom front chamfer
       translate([0, drawerY/2+(dubWall?gap:0)+fBulgeWall-dChamfer, 0]) rotate([-45])
@@ -2261,10 +2272,8 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       }
       // back wall cut
       if (dubWall && drawCuts) translate([0, drawerY/2+gap, dBase]) {
-        translate([0, -dWall2-fudge, 0]) for (i=[0:(bodyZ-dBase)/dLayerHN-1])
-          translate([(w-dWall2*2-gap)*(mod(i, 2)==0?1:-1)/2, 0, i*dLayerHN])
-            box([gap, dWall2+fBulgeWall+fudge2, dLayerHN+fudge], [0,1,1]);
-        flipX() translate([w/2-dWall2-gap, 0, 0]) box([gap, fBulgeWall+fudge, bodyZ-dBase+fudge], [1,1,1]);
+        eSliceY(bodyZ-dBase, [w-dWall2*2, dWall2], translate=[0, -dWall2], flushT=true, flushB=true, centerX=true, cutAlt=mod((bodyZ-dBase)/dLayerHN, 2), wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
+        flipX() translate([w/2-dWall2-gap, 0, 0]) box([gap, fBulgeWall+fudge, bodyZ-dBase+fudge-(brace?braceTop:0)], [1,1,1]);
       }
       // rail
       flipX() translate([w/2+fBulgeWall, fBulgeWall/2, railZ]) hull() {
