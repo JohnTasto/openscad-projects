@@ -64,9 +64,6 @@ Possible future improvements
     [ ] trim side bumps with shallow slopes (or highlight)
     [ ] additional bump rails on tall drawers
        -  should be optional (might be too stiff)
-    [ ] cut arc under/behind stops to prevent deformation and ease insertion of drawer
-       -  can't really be an arc due to overhangs
-       -  deformation is hidden and doesn't affect strength, so who cares
   [ ] highlight additional invalid states
   [ ] support ribs along length of side edges
      -  requires adjusting fills
@@ -2074,7 +2071,9 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
   stopHIdeal = (fWall2 + gap)*(h==1 ? fStopLines0 : fStopLinesN);
   stopH = stopHIdeal - stopZError;
   brace = fBulgeWall >= dWall2 + gap;
-  braceTop = dRoundH(bodyZ - stopZ + stopHIdeal - dSlopZ + dSlop45);
+  braceTopIdeal = bodyZ - stopZ + stopHIdeal - dSlopZ + dSlop45 + (h>1?fBulgeWall:0);
+  braceTop = dFloorH(braceTopIdeal);
+  braceTopError = braceTop - braceTopIdeal;
   railW = railWN - (h==1 ? stopH : 0);
   peakW = peakWN - (h==1 ? stopH : 0);
   bulgeZ = fHornY - fWall2 - dSlopZ;
@@ -2218,21 +2217,31 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       union() {
         // main body
         box([w, bodyY, bodyZ], [0,0,1]);
-        translate([0, -drawerY/2+(dubWall?gap:0), bulgeZ]) {
-          // bulges
-          for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0), "Inadequate space for drawer rib.")
-            translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
-              box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
-              box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
+        difference() {
+          translate([0, -drawerY/2+(dubWall?gap:0), bulgeZ]) {
+            // bulges
+            for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0), "Inadequate space for drawer rib.")
+              translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
+                box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
+                box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
+              }
+            // bottom front corner
+            translate([0, drawerY-fudge, -(h==1?stopH/2:0)]) hull() {
+              translate([0, 0, -fBulgeWall/2]) box([w, fBulgeWall+fudge, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
+              box([w+fBulgeWall*2, fBulgeWall+fudge, bulgeMidH-(h==1?stopH:0)], [0,1,0]);
             }
-          // bottom front corner
-          translate([0, drawerY-fudge, -(h==1?stopH/2:0)]) hull() {
-            translate([0, 0, -fBulgeWall/2]) box([w, fBulgeWall+fudge, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
-            box([w+fBulgeWall*2, fBulgeWall+fudge, bulgeMidH-(h==1?stopH:0)], [0,1,0]);
           }
+          // stop undercut (imperfect, but it helps with drawer insertion)
+          translate([0, drawerY/2+(dubWall?gap:0), h>1?fGridY*(h-1)+bulgeZ-stopH+bulgeMidH/2:railZ-railW/2])
+            let (size=h>1?stopH-bulgeMidH-fBulgeWall:railW/2-fBulgeIY+dSlop45+stopH/2)
+              rotate([90,0,90]) extrude(w+fBulgeWall*2+fudge2, center=true) polygon(
+              [ [fBulgeWall+fudge, fudge]
+              , [fBulgeWall+fudge, size ]
+              , [fBulgeWall+size , size ]
+              ]);
         }
         // bottom front corner
-        translate([0, drawerY/2+(dubWall?gap:0)-fudge, 0]) box([w, fBulgeWall+fudge, bulgeZ-bulgeMidH/2], [0,1,1]);
+        translate([0, drawerY/2+(dubWall?gap:0)-fudge, 0]) box([w, fBulgeWall+fudge, h>1?bulgeZ-fBulgeIY+dSlop45+fudge:railZ-railW/2], [0,1,1]);
         // stops
         if (dStopLines>0) hl(bulgeMidH<stopH, "Drawer stop is too tall.")
           translate([0, bodyY/2+fBulgeWall, stopZ]) for (i=[0:dStopLines-1])
@@ -2255,8 +2264,8 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       if (brace && drawCuts) translate([0, drawerY/2+(dubWall?gap:0), bodyZ-braceTop]) {
         rL = [w-dWall2*2, fBulgeWall];
         difference() {
-          translate([0, 0, fudge]) eSliceX(-rL.y-fudge, rL-[0, -fudge], centerX=true, wall2=dWall2);
-          rotate([45,0,0]) box([w+fudge2, -fBulgeWall*sqrt(2), -fBulgeWall*sqrt(2)], [0,1,1]);
+          translate([0, 0, fudge]) eSliceX(-rL.y-fudge+(h>1?braceTopError:0), rL-[0, -fudge], centerX=true, wall2=dWall2);
+          if (h==1) rotate([45,0,0]) box([w+fudge2, -fBulgeWall*sqrt(2), -fBulgeWall*sqrt(2)], [0,1,1]);
         }
         eSliceX(braceTop, rL-[0, dWall2], centerX=true, cutAlt=1, wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
         eSliceY(braceTop, [rL.x, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=mod(braceTop/dLayerHN+1, 2), wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
@@ -2273,7 +2282,11 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       // back wall cut
       if (dubWall && drawCuts) translate([0, drawerY/2+gap, dBase]) {
         eSliceY(bodyZ-dBase, [w-dWall2*2, dWall2], translate=[0, -dWall2], flushT=true, flushB=true, centerX=true, cutAlt=mod((bodyZ-dBase)/dLayerHN, 2), wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
-        flipX() translate([w/2-dWall2-gap, 0, 0]) box([gap, fBulgeWall+fudge, bodyZ-dBase+fudge-(brace?braceTop:0)], [1,1,1]);
+        flipX() translate([w/2-dWall2-gap, 0, 0]) box([gap, fBulgeWall+fudge,
+          brace && h==1 ? bodyZ-braceTop-dBase+fudge :
+          brace && h>1  ? fGridY*(h-2)+bulgeZ+fBulgeIY-dSlop45-dBase :
+                          fGridY*(h-1)+bulgeZ+fBulgeIY-dSlop45-stopH-dBase
+        ]);
       }
       // rail
       flipX() translate([w/2+fBulgeWall, fBulgeWall/2, railZ]) hull() {
