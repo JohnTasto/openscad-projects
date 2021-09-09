@@ -168,12 +168,6 @@ Tray_handle = false;
 Back_bottom_chamfer = 1.50;  // [0.0:0.1:5.0]
 
 /* [<local> Frames] */
-// Holes align with frame units.
-Enable_mounting_holes = true;
-// in mm. Set to 0 to disable.
-Mounting_hole_diameter = 4.0;  // [2.0:0.1:10.0]
-// Number of segments around mounting holes.
-Mounting_hole_segments = 16;  // [8:4:64]
 // Add squiggles to fill gaps caused by bin drawer compensation. This may increase print time more than expected due to acceleration.
 Fill_horizontal_gaps = false;
 // Thicken frame drawer roof along sides to compensate for drawer height layer quantization. Too many lines will increase print time.
@@ -204,6 +198,24 @@ Enable_trim = true;
 Front_lip = 2.0;  // [0.0:0.1:10.0]
 // Number of segments along side corners.
 Side_corner_segments = 8;  // [2:1:32]
+
+/* [<global> Mounting Holes] */
+// Holes align with frame units.
+Enable_mounting_holes = true;
+// in mm
+Fastener_shaft_diameter = 4.00;  // [2.00:0.05:10.00]
+// in mm
+Fastener_head_diameter = 6.0;  // [4.0:0.1:20.0]
+// in mm
+Fastener_head_height = 4.00;  // [2.00:0.05:10.00]
+// in mm
+Keyhole_length = 6.0;  // [4.0:0.1:20.0]
+// in mm
+Keyhole_width_offset = -0.10;  // [-2.00:0.05:0.00]
+// in degrees
+Keyhole_angle = 90;  // [0:15:180]
+// Number of segments around mounting holes.
+Mounting_hole_segments = 32;  // [8:4:64]
 
 /* [<global> Drawer Detents - Main] */
 // in mm. The bumps on the sides of drawers.
@@ -271,12 +283,12 @@ Frame_width_units = "inches";  // [bins:bin units, mm:mm, inches:inches]
 Frame_unit_width_in_bin_units = 2;  // [1:1:6]
 Frame_unit_width_in_mm = 20.000;  // [10.000:0.025:60.000]
 Frame_unit_width_in_inches = 0.800;  // [0.400:0.001:2.400]
-// Depth from back of frame to front of drawer face, not including extra lip on sides and trim.
+// Depth of bare frame pieces, not including drawers, sides, or trim.
 Frame_depth_units = "same";  // [same:same as width, mm:mm, inches:inches]
 Frame_depth_in_bin_units = 12;  // [4:1:60]
 Frame_depth_in_mm = 120.000;  // [40.00:0.25:600.00]
 Frame_depth_in_inches = 4.800;  // [1.60:0.01:24.00]
-// Check the console to ensure there is adequate space for bumps.
+// Ensure there is adequate space for drawer detents.
 Frame_height_units = "same";  // [same:same as width - defaults to mm if width is bin units, mm:mm, inches:inches]
 Frame_unit_height_in_mm = 20.000;  // [10.000:0.025:60.000]
 Frame_unit_height_in_inches = 0.800;  // [0.400:0.001:2.400]
@@ -395,6 +407,8 @@ binDrawersEnabled = Bin_drawer_compensation || fWUnits == "bins";
 dubWallBinDrawers = Double_bin_drawer_walls;
 dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
 
+fullFn = !$preview || Full_resolution_corners;
+
 fudge  = 0.01;
 fudge2 = 0.02;
 
@@ -503,8 +517,8 @@ dWallsX = dubWallBinDrawers ? dWall2*2 : dWall*2;
 bMinGridXY = claspD.x + fWallGrid*2 + dWallsX + dSlopXY*2 + bSlopXY;
 
 fWUseBU = fWUnits == "bins";
-binsX    = fWUseBU ? fWbu : floor(fWmm/bMinGridXY) - 1;
-bGridXY  = fWUseBU ? bMinGridXY : fWmm/(binsX+1);
+binsX    = fWUseBU ? fWbu              : floor(fWmm/bMinGridXY) - 1;
+bGridXY  = fWUseBU ? bMinGridXY        : fWmm/(binsX+1);
 binXY    = bGridXY - bSlopXY;
 drawerX  = bGridXY*binsX + bSlopXY + dWallsX + (!fWUseBU && !Bin_drawer_compensation ? bGridXY-bMinGridXY : 0);
 fGridX   = fWUseBU ? bGridXY*(binsX+1) : fWmm;
@@ -592,26 +606,37 @@ peakW1 = peakWN - (fWall2 + gap)*fStopLines0
        + dFloorZ(fGridY - claspW - hookW.x - fWallGrid*2 - dSlopZ*2)
        -        (fGridY - claspW - hookW.x - fWallGrid*2 - dSlopZ*2);
 
-dFloat = Drawer_float;
-dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
+keyholes = Enable_mounting_holes;
+keyholeFn = fullFn ? Mounting_hole_segments : 8;
+keyShaftR = circumgoncircumradius(d=Fastener_shaft_diameter+fSlopXY*2, $fn=keyholeFn);
+keyOpeningR = circumgoncircumradius(d=Fastener_head_diameter+fSlopXY*2, $fn=keyholeFn);
+keyHeadR = circumgoncircumradius(d=Fastener_head_diameter, $fn=keyholeFn);
+keyHeadH = keyholes ? Fastener_head_height : 0;
+keyholeL = Keyhole_length + fSlopXY*2;
+keyholeW = Fastener_shaft_diameter + fSlopXY*2 + Keyhole_width_offset;
+keyholeA = Keyhole_angle - 90;
+
 dWallsY = dubWallBinDrawers ? (dubWallFaceLip ? dWall2*2 : dWall2-gap) : dWall*2;
 
 fDUseBU = fDUnits == "bins";
-drawerMaxY  = fDUseBU ? undef                              : fFloorZ(fDmm - dFaceD) - fBase - fBulgeWall - gap;
-binsY       = fDUseBU ? fDbu                               : floor((drawerMaxY - bSlopXY - dWallsY)/bGridXY);
-drawerY     = fDUseBU ? bGridXY*binsY + bSlopXY + dWallsY  : Bin_drawer_compensation ? bGridXY*binsY + bSlopXY + dWallsY : drawerMaxY;
-fGridZIdeal = fDUseBU ? fBase + fBulgeWall + drawerY + gap : undef;
-fGridZ      = fDUseBU ? fCeilZ(fGridZIdeal)                : fFloorZ(fDmm - dFaceD);
-fGridZError = fDUseBU ? fGridZ - fGridZIdeal               : drawerMaxY - drawerY;
+drawerMaxY  = fDUseBU ? undef                                              : fFloorZ(fDmm) - fBase - max(fBulgeWall, keyHeadH) - gap;
+binsY       = fDUseBU ? fDbu                                               : floor((drawerMaxY - bSlopXY - dWallsY)/bGridXY);
+drawerY     = fDUseBU ? bGridXY*binsY + bSlopXY + dWallsY                  : Bin_drawer_compensation ? bGridXY*binsY + bSlopXY + dWallsY : drawerMaxY;
+fGridZIdeal = fDUseBU ? fBase + max(fBulgeWall, keyHeadH) + drawerY + gap  : fDmm;
+fGridZ      = fCeilZ(fGridZIdeal);
+stretchY    = fDUseBU ? fGridZ - fGridZIdeal + max(keyHeadH-fBulgeWall, 0) : drawerMaxY - drawerY + max(keyHeadH-fBulgeWall, 0);
 
-cInset = cIL + dBL + dPL - (railD+dSlopXY-dPH)*dFS + dFloat + fBase + fGridZError;  // back catch bump
-dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;                  // front drawer bump
-hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;         // front hold bump
-kInset = kIL;                                                                       // front keep bump
+dFloat = Drawer_float;
+dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
+
+cInset = cIL + dBL + dPL - (railD+dSlopXY-dPH)*dFS + dFloat + fBase + stretchY;  // back catch bump
+dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;                 // front drawer bump
+hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;        // front hold bump
+kInset = kIL;                                                                      // front keep bump
 
 dTravel = drawerY + fBulgeWall - dInset - dFL - dPL - dBL;
 
-drawerYFrameZAlign = fBase + fGridZError + dFloat + fBulgeWall + drawerY/2;
+drawerYFrameZAlign = fBase + stretchY + dFloat + fBulgeWall + drawerY/2;
 drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
 
 trim = Enable_trim;
@@ -641,10 +666,6 @@ fSideZ = fCeilZ(fGridZ + dFaceD + tLip);
 
 fDrawerLayerCompLines = Drawer_layer_compensation_lines;
 
-fullFn = !$preview || Full_resolution_corners;
-
-mountingHoleD = Enable_mounting_holes ? Mounting_hole_diameter : 0;
-mountingHoleFn = fullFn ? Mounting_hole_segments : 8;
 cornerFn = fullFn ? Side_corner_segments*4 : 8;
 
 binR = Bin_radius;
@@ -1179,7 +1200,7 @@ module brSeamFill(r) translate([fGridX*r+fBulgeOX, fHornY-claspD.y+hookM.y, 0]) 
   }
 }
 
-module rHookFill() {
+module rHookFill() if (stretchXFill) {
   rB = [fWall2+stretchX/2, claspW+hookW.x];
   rL = rB - [fWall2, fWall2];
   flipY() translate([fSideIX, fBulgeIY, 0]) difference() {
@@ -1188,7 +1209,7 @@ module rHookFill() {
   }
 }
 
-module ltHookFill(t) {
+module ltHookFill(t) if (stretchXFill) {
   rB = [-fWall2-stretchX/2, -hookW.x-fWall2];
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY*t+fHornY, 0]) difference() {
@@ -1197,7 +1218,7 @@ module ltHookFill(t) {
   }
 }
 
-module lbHookFill(b) {
+module lbHookFill(b) if (stretchXFill) {
   rB = [-fWall2-stretchX/2, hookW.x+fWall2];
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY*b-fHornY, 0]) difference() {
@@ -1206,7 +1227,7 @@ module lbHookFill(b) {
   }
 }
 
-module lHookFill() {
+module lHookFill() if (stretchXFill) {
   rB = [-fWall2-stretchX/2, hookW.x*2+fWall2*2+fSlopXY];
   rL = rB - [-fWall2, 0];
   translate([-fSideIX, fGridY/2, 0]) difference() {
@@ -1383,7 +1404,7 @@ module lSide(x=[0], z=1, color=true, trimColor=false) {
     extrude(fSideZ) translate([fSideOX, fGridY*b-fHornY]) rect([-fWall2, fGridY*(t-b)+fHornY*2]);
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       rHooks();
-      if (stretchXFill) rHookFill();
+      rHookFill();
       translate([fSideIX, 0, 0]) {
         rB = [fBulgeWall+fWall2, fHornY*2-claspW*2-hookW.x*2-fSlopXY*2];
         rL = rB - [fWall2, fWall2*2];
@@ -1414,13 +1435,11 @@ module rSide(x=[0], z=1, color=true, trimColor=false) {
   if (t>=b) condColor(color) translate([fGridX*(x[0]+1), 0, 0]) {
     extrude(fBase) translate([-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([fWall2+hookM.x+stretchX/2, fGridY*(t-b)+fHornY*2]);
     extrude(fSideZ) translate([-fSideOX, fGridY*b-fHornY]) rect([fWall2, fGridY*(t-b)+fHornY*2]);
-    if (stretchXFill) {
-      ltHookFill(t);
-      lbHookFill(b);
-    }
+    ltHookFill(t);
+    lbHookFill(b);
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
       lHooks();
-      if (stretchXFill && i<t) lHookFill();
+      if (i<t) lHookFill();
       translate([-fSideIX, 0, 0]) {
         rB = [-fBulgeWall-fWall2, fHornY*2-claspW*2-hookW.x*2+fWall2*2];
         rL = rB - [-fWall2, fWall2*2];
@@ -1893,17 +1912,19 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
   }
 
   module lFrame(b=0, t=0) {
-    if (stretchXFill) {
-      ltHookFill(t);
-      lbHookFill(b);
-    }
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
-      if (drawSides) lHooks();
-      if (stretchXFill && i<t) lHookFill();
       lBulge(top=i==t);
-      if (i<t) extrude(fGridZ) translate([-fSideOX, fBulgeIY]) rect([fWall2, fGridY-fBulgeIY*2]);
+      if (drawSides) {
+        lHooks();
+        if (i<t) {
+          lHookFill();
+          extrude(fGridZ) translate([-fSideOX, fBulgeIY]) rect([fWall2, fGridY-fBulgeIY*2]);
+        }
+      }
     }
     if (drawSides) {
+      ltHookFill(t);
+      lbHookFill(b);
       translate([-fSideOX, fGridY*t+fBulgeIY, 0]) hull() {
         box([fWall2, fHornY-fBulgeIY-hornC, fGridZ      ]);
         box([fWall2, fHornY-fBulgeIY      , fGridZ-hornC]);
@@ -1914,16 +1935,27 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
 
   module rFrame(b=0, t=0) {
     for (i=[b:t]) translate([0, fGridY*i, 0]) {
-      if (drawSides) rHooks();
-      if (stretchXFill) rHookFill();
       rBulge(top=i==t);
-      if (i<t) extrude(fGridZ) translate([fSideOX, fBulgeIY]) rect([fWall2, fGridY-fBulgeIY*2], [-1,1]);
+      if (drawSides) {
+        rHooks();
+        rHookFill();
+        if (i<t) extrude(fGridZ) translate([fSideOX, fBulgeIY]) rect([fWall2, fGridY-fBulgeIY*2], [-1,1]);
+      }
     }
     if (drawSides) extrude(fGridZ) {
       translate([fSideOX, fGridY*t+fBulgeIY]) rect([-fWall2, fHornY-fBulgeIY]);
       translate([fSideOX, fGridY*b-fBulgeIY]) rect([-fWall2, fBulgeIY-fHornY]);
     }
   }
+
+  module keyholes(head=false)
+    if (keyholes && t-b>0) for (i=[l:r]) for (j=[b:t-1]) translate([fGridX*i, fGridY*(j+0.5)]) rotate(keyholeA)
+      if (head) rotate(180/keyholeFn) circle(keyHeadR, $fn=keyholeFn);
+      else {
+        rotate(180/keyholeFn) circle(r=keyShaftR, $fn=keyholeFn);
+        rect([keyholeW, -keyholeL], [0,1]);
+        translate([0, -keyholeL, 0]) rotate(180/keyholeFn) circle(keyOpeningR, $fn=keyholeFn);
+      }
 
   if (t>=b && l<=r) {
     translate([0, fGridY*t, 0]) tFrame(l, r);
@@ -2034,8 +2066,11 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
         // bottom seam
         for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH], [0,1]);
       }
-      if (mountingHoleD>0 && t-b>0) for (i=[l:r]) for (j=[b:t-1]) translate([fGridX*i, fGridY*(j+0.5), -fudge])
-        rod(fBase+fudge2, r=circumgoncircumradius(d=mountingHoleD, $fn=mountingHoleFn)+fSlopXY, $fn=mountingHoleFn);
+      translate([0, 0, -fudge]) extrude(fBase+fudge2) keyholes();
+    }
+    else {
+      extrude(fBase) keyholes();
+      translate([0, 0, fBase]) extrude(keyHeadH) keyholes(head=true);
     }
 
     if (drawer || is_num(drawer))
@@ -2235,9 +2270,9 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
           translate([0, drawerY/2+(dubWall?gap:0), h>1?fGridY*(h-1)+bulgeZ-stopH+bulgeMidH/2:railZ-railW/2])
             let (size=h>1?stopH-bulgeMidH-fBulgeWall:railW/2-fBulgeIY+dSlop45+stopH/2)
               rotate([90,0,90]) extrude(w+fBulgeWall*2+fudge2, center=true) polygon(
-              [ [fBulgeWall+fudge, fudge]
-              , [fBulgeWall+fudge, size ]
-              , [fBulgeWall+size , size ]
+              [ [fBulgeWall+fudge     ,      fudge]
+              , [fBulgeWall+fudge     , size-fudge]
+              , [fBulgeWall-fudge+size, size-fudge]
               ]);
         }
         // bottom front corner
@@ -2793,7 +2828,7 @@ module demoFrameLarge2(drawers=true, drawTrim=true) {
 
 module demoDrawerBumpAlignment(x=1, h=1, drawer=dTravel, divisions=false)
   rotate([90,0,0]) translate([0, -drawerZFrameYAlign, -drawerYFrameZAlign-drawer]) {
-    frame(x, [0, h-1], drawer=drawer, divisions=divisions, drawFace=drawer==dTravel, drawFloor=false, drawSides=false);
+    frame(x, [0, h-1], drawer=drawer, divisions=divisions, drawFace=true, drawFloor=false, drawSides=false);
     frame(x, [-1, -h], drawTop=false, drawFloor=false, drawSides=false);
   }
 
