@@ -165,7 +165,7 @@ Handle_bend_segments = 24;  // [8:2:128]
 // Extend drawer base into the handle
 Tray_handle = false;
 // in mm. Makes it easier to insert drawers.
-Back_bottom_chamfer = 1.50;  // [0.0:0.1:5.0]
+Back_bottom_chamfer = 1.75;  // [0.00:0.05:5.00]
 
 /* [<local> Frames] */
 // Add squiggles to fill gaps caused by bin drawer compensation. This may increase print time more than expected due to acceleration.
@@ -203,15 +203,17 @@ Side_corner_segments = 8;  // [2:1:32]
 // Holes align with frame units.
 Enable_mounting_holes = true;
 // in mm
-Fastener_shaft_diameter = 4.00;  // [2.00:0.05:10.00]
+Fastener_shaft_diameter = 4.50;  // [2.00:0.05:10.00]
 // in mm
-Fastener_head_diameter = 6.0;  // [4.0:0.1:20.0]
+Fastener_head_diameter = 8.5;  // [4.0:0.1:20.0]
 // in mm
-Fastener_head_height = 4.00;  // [2.00:0.05:10.00]
+Fastener_head_height = 2.75;  // [2.00:0.05:10.00]
 // in mm
-Keyhole_length = 6.0;  // [4.0:0.1:20.0]
+Keyhole_length = 6.5;  // [4.0:0.1:20.0]
 // in mm
-Keyhole_width_offset = -0.10;  // [-2.00:0.05:0.00]
+Keyhole_width_offset = -1.00;  // [-2.50:0.05:0.00]
+// in degrees
+Keyhole_opening_bevel = 45;  // [0:5:85]
 // in degrees
 Keyhole_angle = 90;  // [0:15:180]
 // Number of segments around mounting holes.
@@ -240,7 +242,7 @@ Catch_cushion_height_offset = 0.0;  // [-0.50:0.01:0.50]
 
 /* [<global> Drawer Detents - Hold (inner front)] */
 // in mm. The bumps in the front of frames that hold drawers open.
-Hold_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
+Hold_bump_height_offset = 0.10;  // [-0.50:0.01:0.50]
 // in frame layers
 Hold_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Hold_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
@@ -256,12 +258,11 @@ Keep_bump_ramp_slope = 1.000;  // [0.050:0.005:1.000]
 // in absolute drawer layers. The slots in the drawer bottoms. Must be even if using spiralize in Cura.
 Bottom_slot_height = 3;  // [0:1:10]
 // in absolute drawer layers. The bumps on the top frame hooks that keep drawers from falling out too easily. Add a little extra over the slot height to overcome filament dragging.
-Bottom_bump_height = 3.50;  // [0.00:0.25:12.00]
+Bottom_bump_height = 2.75;  // [0.00:0.25:12.00]
 // in frame layers
 Bottom_bump_peak_length = 2.50;  // [0.00:0.25:5.00]
 // in frame double walls. Must leave room for trim clip if trim is enabled.
 Bottom_bump_width = 2.50;  // [1.00:0.25:5.00]
-Bottom_bump_ramp_slope = 1.000;  // [0.050:0.005:1.000]
 
 /* [<global> Stops] */
 // in frame double walls
@@ -278,13 +279,13 @@ Double_bin_drawer_walls = true;
 Add_lip_behind_face_of_double_wall_drawers = true;
 // Required to enable bin drawers when frame width units are in mm or inches. This calculates the best fit bin grid and adjusts frame and drawer dimensions to work with bins, but wastes some horizontal space and narrows the drawer side rails.
 Bin_drawer_compensation = true;
-// Bin drawers are only available when frame width units are in bin units or bin drawer compensation is enabled above.
+// Bin drawers are enabled only when frame width units are in bin units or bin drawer compensation is enabled above.
 Frame_width_units = "inches";  // [bins:bin units, mm:mm, inches:inches]
 Frame_unit_width_in_bin_units = 2;  // [1:1:6]
 Frame_unit_width_in_mm = 20.000;  // [10.000:0.025:60.000]
 Frame_unit_width_in_inches = 0.800;  // [0.400:0.001:2.400]
 // Depth of bare frame pieces, not including drawers, sides, or trim.
-Frame_depth_units = "same";  // [same:same as width, mm:mm, inches:inches]
+Frame_depth_units = "bins";  // [same:same as width, bins:bin units - defaults to same as width if bin drawers are disabled, mm:mm, inches:inches]
 Frame_depth_in_bin_units = 12;  // [4:1:60]
 Frame_depth_in_mm = 120.000;  // [40.00:0.25:600.00]
 Frame_depth_in_inches = 4.800;  // [1.60:0.01:24.00]
@@ -387,8 +388,10 @@ assert(version_num()>=20210100);
 fWbu = Frame_unit_width_in_bin_units;
 fDbu = Frame_depth_in_bin_units;
 
+binDrawersEnabled = Bin_drawer_compensation || Frame_width_units == "bins";
+
 fWUnits = Frame_width_units;
-fDUnits = Frame_depth_units  != "same" ? Frame_depth_units  : fWUnits;
+fDUnits = Frame_depth_units != "same" && (Frame_depth_units != "bins" || binDrawersEnabled) ? Frame_depth_units : fWUnits;
 fHUnits = Frame_height_units != "same" ? Frame_height_units : fWUnits == "bins" ? "mm" : fWUnits;
 
 fWmm = fWUnits == "mm"     ? Frame_unit_width_in_mm
@@ -402,8 +405,6 @@ fDmm = fDUnits == "mm"     ? Frame_depth_in_mm
 fHmm = fHUnits == "mm"     ? Frame_unit_height_in_mm
      :                       mm(Frame_unit_height_in_inches);
 
-binDrawersEnabled = Bin_drawer_compensation || fWUnits == "bins";
-
 dubWallBinDrawers = Double_bin_drawer_walls;
 dubWallFaceLip = Add_lip_behind_face_of_double_wall_drawers;
 
@@ -416,12 +417,12 @@ gap = Cut_gap;
 fancy = Fancy_back;
 
 
-// An effort has been made to use:
+// some effort has been made to use:
 //   x, y, z   for absolute postions
 //   w, d, h   for relative dimensions
-// but there are some exceptions and ambiguous cases
+// but there are many exceptions and ambiguous cases
 //
-// Prefixes:
+// prefixes:
 //   d - Drawer
 
 //   b - Bin
@@ -553,7 +554,7 @@ dBS = 1/Drawer_bump_back_slope;                             // drawer back slope
 cRS = 1/Catch_bump_ramp_slope;                              // catch ramp slope
 hRS = 1/Hold_bump_ramp_slope;                               // hold ramp slope
 kRS = 1/Keep_bump_ramp_slope;                               // keep ramp slope
-bRS = 1/Bottom_bump_ramp_slope;                             // bottom ramp slope
+bRS = 1;                                                    // bottom ramp slope
 
 // d - Drawer
 dPH = railD/2 + Drawer_bump_height/2;                       // drawer peak height
@@ -610,33 +611,34 @@ keyholes = Enable_mounting_holes;
 keyholeFn = fullFn ? Mounting_hole_segments : 8;
 keyShaftR = circumgoncircumradius(d=Fastener_shaft_diameter+fSlopXY*2, $fn=keyholeFn);
 keyOpeningR = circumgoncircumradius(d=Fastener_head_diameter+fSlopXY*2, $fn=keyholeFn);
-keyHeadR = circumgoncircumradius(d=Fastener_head_diameter, $fn=keyholeFn);
+keyOpeningB = Keyhole_opening_bevel;
+keyHeadR = Fastener_head_diameter/2;
 keyHeadH = keyholes ? Fastener_head_height : 0;
 keyholeL = Keyhole_length + fSlopXY*2;
 keyholeW = Fastener_shaft_diameter + fSlopXY*2 + Keyhole_width_offset;
 keyholeA = Keyhole_angle - 90;
 
+dFloat = Drawer_float;
+dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
+dBackD = max(fBulgeWall, keyHeadH);  // gap behind drawer
 dWallsY = dubWallBinDrawers ? (dubWallFaceLip ? dWall2*2 : dWall2-gap) : dWall*2;
 
 fDUseBU = fDUnits == "bins";
-drawerMaxY  = fDUseBU ? undef                                              : fFloorZ(fDmm) - fBase - max(fBulgeWall, keyHeadH) - gap;
-binsY       = fDUseBU ? fDbu                                               : floor((drawerMaxY - bSlopXY - dWallsY)/bGridXY);
-drawerY     = fDUseBU ? bGridXY*binsY + bSlopXY + dWallsY                  : Bin_drawer_compensation ? bGridXY*binsY + bSlopXY + dWallsY : drawerMaxY;
-fGridZIdeal = fDUseBU ? fBase + max(fBulgeWall, keyHeadH) + drawerY + gap  : fDmm;
-fGridZ      = fCeilZ(fGridZIdeal);
-stretchY    = fDUseBU ? fGridZ - fGridZIdeal + max(keyHeadH-fBulgeWall, 0) : drawerMaxY - drawerY + max(keyHeadH-fBulgeWall, 0);
+drawerMaxY  = fDUseBU ? undef                                  : fFloorZ(fDmm) - fBase - dBackD - gap;
+binsY       = fDUseBU ? fDbu                                   : floor((drawerMaxY - bSlopXY - dWallsY)/bGridXY);
+drawerY     = fDUseBU ? bGridXY*binsY + bSlopXY + dWallsY      : Bin_drawer_compensation ? bGridXY*binsY + bSlopXY + dWallsY : drawerMaxY;
+fGridZIdeal = fDUseBU ? fBase + dBackD + drawerY + gap         : fDmm;
+fGridZ      = fDUseBU ? fCeilZ(fGridZIdeal)                    : fFloorZ(fGridZIdeal);
+stretchY    = fDUseBU ? fGridZ - fGridZIdeal + dBackD + dFloat : drawerMaxY - drawerY + dBackD + dFloat;
 
-dFloat = Drawer_float;
-dFaceD = dWall2 + dFloat;  // how far the sides must extend to be flush with the drawer faces
-
-cInset = cIL + dBL + dPL - (railD+dSlopXY-dPH)*dFS + dFloat + fBase + stretchY;  // back catch bump
-dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;                 // front drawer bump
-hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;        // front hold bump
-kInset = kIL;                                                                      // front keep bump
+cInset = cIL + dBL + dPL - (railD+dSlopXY-dPH)*dFS + fBase + stretchY - fBulgeWall;  // back catch bump
+dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;               // front drawer bump
+hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;      // front hold bump
+kInset = kIL;                                                                    // front keep bump
 
 dTravel = drawerY + fBulgeWall - dInset - dFL - dPL - dBL;
 
-drawerYFrameZAlign = fBase + stretchY + dFloat + fBulgeWall + drawerY/2;
+drawerYFrameZAlign = fBase + stretchY + drawerY/2;
 drawerZFrameYAlign = fWall2 + dSlopZ - fHornY;
 
 trim = Enable_trim;
@@ -1950,11 +1952,11 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
 
   module keyholes(head=false)
     if (keyholes && t-b>0) for (i=[l:r]) for (j=[b:t-1]) translate([fGridX*i, fGridY*(j+0.5)]) rotate(keyholeA)
-      if (head) rotate(180/keyholeFn) circle(keyHeadR, $fn=keyholeFn);
+      if (head) circle(keyHeadR, $fn=keyholeFn);
       else {
-        rotate(180/keyholeFn) circle(r=keyShaftR, $fn=keyholeFn);
+        rotate(180/keyholeFn) circle(keyShaftR, $fn=keyholeFn);
         rect([keyholeW, -keyholeL], [0,1]);
-        translate([0, -keyholeL, 0]) rotate(180/keyholeFn) circle(keyOpeningR, $fn=keyholeFn);
+        translate([0, -keyholeL, 0]) teardrop_2d(keyOpeningR, a=keyOpeningB, truncate=keyholeL, $fn=keyholeFn);
       }
 
   if (t>=b && l<=r) {
