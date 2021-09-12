@@ -162,10 +162,12 @@ Elliptical_handle = false;
 Handle_bend_radius = 5.0; // [0.0:0.5:25.0]
 // Number of segments in the curved sections along the length of the handle.
 Handle_bend_segments = 24;  // [8:2:128]
-// Extend drawer base into the handle
+// Extend the drawer base into the handle.
 Tray_handle = false;
 // in mm. Makes it easier to insert drawers.
-Back_bottom_chamfer = 1.75;  // [0.00:0.05:5.00]
+Back_bottom_chamfer = 1.875;  // [0.000:0.025:5.000]
+// Number of segments around the back corners.
+Back_fillet_segments = 6;  // [2:2:32]
 
 /* [<local> Frames] */
 // Add squiggles to fill gaps caused by bin drawer compensation. This may increase print time more than expected due to acceleration.
@@ -221,13 +223,13 @@ Mounting_hole_segments = 32;  // [8:4:64]
 
 /* [<global> Drawer Detents - Main] */
 // in mm. The bumps on the sides of drawers.
-Drawer_bump_height = 0.50;  // [0.00:0.05:5.00]
+Drawer_bump_height = 0.65;  // [0.00:0.05:5.00]
 // in frame layers
 Drawer_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Drawer_bump_front_slope = 1.000;  // [0.050:0.005:1.000]
 Drawer_bump_back_slope = 0.250;  // [0.050:0.005:1.000]
 // in drawer layers. The size of the accordion fold above and below the drawer bumps.
-Drawer_bump_spring_width = 4.0;  // [0.0:0.5:10.0]
+Drawer_bump_spring_width = 5.0;  // [0.0:0.5:10.0]
 // in frame layers. How far fully closed drawers still stick out due to surface roughness.
 Drawer_float = 0.15;  // [0.00:0.05:1.00]
 
@@ -256,9 +258,9 @@ Keep_bump_ramp_slope = 1.000;  // [0.050:0.005:1.000]
 
 /* [<global> Drawer Slots] */
 // in absolute drawer layers. The slots in the drawer bottoms. Must be even if using spiralize in Cura.
-Bottom_slot_height = 3;  // [0:1:10]
+Bottom_slot_height = 4;  // [0:1:10]
 // in absolute drawer layers. The bumps on the top frame hooks that keep drawers from falling out too easily. Add a little extra over the slot height to overcome filament dragging.
-Bottom_bump_height = 2.75;  // [0.00:0.25:12.00]
+Bottom_bump_height = 3.75;  // [0.00:0.25:12.00]
 // in frame layers
 Bottom_bump_peak_length = 2.50;  // [0.00:0.25:5.00]
 // in frame double walls. Must leave room for trim clip if trim is enabled.
@@ -292,7 +294,7 @@ Frame_depth_in_inches = 4.800;  // [1.60:0.01:24.00]
 // Ensure there is adequate space for drawer detents.
 Frame_height_units = "same";  // [same:same as width - defaults to mm if width is bin units, mm:mm, inches:inches]
 Frame_unit_height_in_mm = 20.000;  // [10.000:0.025:60.000]
-Frame_unit_height_in_inches = 0.800;  // [0.400:0.001:2.400]
+Frame_unit_height_in_inches = 0.571;  // [0.400:0.001:2.400]
 
 /* [<global> Frame Detents - Left and Right Hooks] */
 // in mm
@@ -366,9 +368,9 @@ Drawer_horizontal_slop = 0.20;  // [0.00:0.01:1.00]
 Drawer_layer_height = 0.20;  // [0.02:0.04:1.00]
 Drawer_first_layer_height = 0.32;  // [0.02:0.04:1.00]
 // in absolute drawer layers
-Drawer_base_layers = 6;  // [1:1:25]
+Drawer_base_layers = 7;  // [1:1:25]
 // in drawer layers
-Drawer_vertical_slop = 1.00;  // [-5.00:0.25:5.00]
+Drawer_vertical_slop = 1.50;  // [-5.00:0.25:5.00]
 
 /* [<global> Printer Config - Frames] */
 Frame_line_width = 0.400;  // [0.05:0.01:1.50]
@@ -667,6 +669,8 @@ tClearance = (trim ? fWallGrid : 0) + max(bPH, hookM.y);
 fSideZ = fCeilZ(fGridZ + dFaceD + tLip);
 
 fDrawerLayerCompLines = Drawer_layer_compensation_lines;
+
+dFilletFn = fullFn ? Back_fillet_segments*4 : 8;
 
 cornerFn = fullFn ? Side_corner_segments*4 : 8;
 
@@ -2253,52 +2257,81 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
     difference() {
       union() {
         // main body
-        box([w, bodyY, bodyZ], [0,0,1]);
+        translate([0, -bodyY/2, 0]) extrude(bodyZ) {
+          rect([w, bodyY-dWall2], [0,1]);
+          rect([w-dWall2*2, bodyY], [0,1]);
+          flipX() translate([w/2-dWall2, bodyY-dWall2]) circle(dWall2, $fn=dFilletFn);
+        }
         difference() {
-          translate([0, -drawerY/2+(dubWall?gap:0), bulgeZ]) {
+          translate([0, bodyY/2-drawerY, bulgeZ]) {
             // bulges
             for (i=[1:h]) hl(bulgeMidH<(i==h?stopH:0), "Inadequate space for drawer rib.")
               translate([0, 0, fGridY*(i-1)-(i==h?stopH/2:0)]) hull() {
-                box([w, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
-                box([w+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
+                box([w, drawerY-dWall2, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
+                box([w-dWall2*2, drawerY, fBulgeIY*2-dSlop45*2-(i==h?stopH:0)], [0,1,0]);
+                flipX() translate([w/2-dWall2, drawerY-dWall2, 0]) rod(fBulgeIY*2-dSlop45*2-(i==h?stopH:0), r=dWall2, center=true, $fn=dFilletFn);
+                box([w+fBulgeWall*2, drawerY-dWall2+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
+                box([w-dWall2*2+fBulgeWall*2, drawerY+fBulgeWall, bulgeMidH-(i==h?stopH:0)], [0,1,0]);
+                flipX() translate([w/2-dWall2+fBulgeWall, drawerY-dWall2+fBulgeWall, 0]) rod(bulgeMidH-(i==h?stopH:0), r=dWall2, center=true, $fn=dFilletFn);
               }
-            // bottom front corner
-            translate([0, drawerY-fudge, -(h==1?stopH/2:0)]) hull() {
-              translate([0, 0, -fBulgeWall/2]) box([w, fBulgeWall+fudge, fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall], [0,1,0]);
-              box([w+fBulgeWall*2, fBulgeWall+fudge, bulgeMidH-(h==1?stopH:0)], [0,1,0]);
+            // bottom back edge
+            translate([0, drawerY-dWall2-fudge, -(h==1?stopH/2:0)]) hull() {
+              translate([0, 0, -fBulgeWall/2]) extrude(fBulgeIY*2-dSlop45*2-(h==1?stopH:0)-fBulgeWall, center=true) {
+                rect([w, fBulgeWall+fudge], [0,1]);
+                rect([w-dWall2*2, fBulgeWall+dWall2+fudge], [0,1]);
+                flipX() translate([w/2-dWall2, fBulgeWall+fudge]) circle(dWall2, $fn=dFilletFn);
+              }
+              extrude(bulgeMidH-(h==1?stopH:0), center=true) {
+                rect([w+fBulgeWall*2, fBulgeWall+fudge], [0,1]);
+                rect([w+fBulgeWall*2-dWall2*2, fBulgeWall+dWall2+fudge], [0,1]);
+                flipX() translate([w/2+fBulgeWall-dWall2, fBulgeWall+fudge]) circle(dWall2, $fn=dFilletFn);
+              }
             }
           }
           // stop undercut (imperfect, but it helps with drawer insertion)
-          translate([0, drawerY/2+(dubWall?gap:0), h>1?fGridY*(h-1)+bulgeZ-stopH+bulgeMidH/2:railZ-railW/2])
+          translate([0, bodyY/2+fBulgeWall, h>1?fGridY*(h-1)+bulgeZ-stopH+bulgeMidH/2:railZ-railW/2])
             let (size=h>1?stopH-bulgeMidH-fBulgeWall:railW/2-fBulgeIY+dSlop45+stopH/2)
-              rotate([90,0,90]) extrude(w+fBulgeWall*2+fudge2, center=true) polygon(
-              [ [fBulgeWall+fudge     ,      fudge]
-              , [fBulgeWall+fudge     , size-fudge]
-              , [fBulgeWall-fudge+size, size-fudge]
-              ]);
+              shear(zY=1) translate([0, -dWall2, size]) extrude(fudge-size, convexity=2) difference() {
+                rect([w+fBulgeWall*2+fudge2, fudge-size+dWall2], [0,1]);
+                flipX() translate([w/2+fBulgeWall-dWall2, 0]) circle(dWall2, $fn=dFilletFn);
+                rect([w+fBulgeWall*2-dWall2*2, dWall2*2], [0,0]);
+              }
         }
-        // bottom front corner
-        translate([0, drawerY/2+(dubWall?gap:0)-fudge, 0]) box([w, fBulgeWall+fudge, h>1?bulgeZ-fBulgeIY+dSlop45+fudge:railZ-railW/2], [0,1,1]);
+        // bottom back edge
+        translate([0, bodyY/2-dWall2-fudge, 0]) extrude(h>1?bulgeZ-fBulgeIY+dSlop45+fudge:railZ-railW/2) {
+          rect([w, fBulgeWall+fudge], [0,1]);
+          rect([w-dWall2*2, fBulgeWall+dWall2+fudge], [0,1]);
+          flipX() translate([w/2-dWall2, fBulgeWall+fudge]) circle(dWall2, $fn=dFilletFn);
+        }
         // stops
         if (dStopLines>0) hl(bulgeMidH<stopH, "Drawer stop is too tall.")
-          translate([0, bodyY/2+fBulgeWall, stopZ]) for (i=[0:dStopLines-1])
-            translate([0, -(dWall2+gap)*sqrt(2)*i, 0]) extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=4) polygon(
-            [ [ w/2+fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
-            , [ w/2+fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
-            , [ w/2+fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
-            , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
-            , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
-            , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
-            , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
-            , [-w/2-fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
-            , [-w/2-fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
-            , [-w/2-fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
-            ]);
+          translate([0, bodyY/2+fBulgeWall, stopZ]) extrude(-stopHIdeal-fBulgeWall+dSlopZ-dSlop45, convexity=4) difference() {
+            for (i=[0:dStopLines-1]) translate([0, -(dWall2+gap)*sqrt(2)*i]) polygon(
+              [ [ w/2+fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+              , [ w/2+fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
+              , [ w/2+fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
+              , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+              , [ w/2+fBulgeWall-(i>0||!brace?dWall2*sqrt(2)/2:0)-fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
+              , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)+fBulgeWall*sqrt(2),    i>0||!brace?-fBulgeWall*sqrt(2):0]
+              , [-w/2-fBulgeWall+(i>0||!brace?dWall2*sqrt(2)/2:0)                   ,                                    0]
+              , [-w/2-fBulgeWall                                                    ,              i==0?0:dWall2*sqrt(2)/2]
+              , [-w/2-fBulgeWall                                                    ,                    -dWall2*sqrt(2)/2]
+              , [-w/2-fBulgeWall*(1-sqrt(2))                                        , -fBulgeWall*sqrt(2)-dWall2*sqrt(2)/2]
+              ]);
+            flipX() translate([w/2+fBulgeWall-dWall2, -dWall2]) difference() {
+              rect([dWall2+fudge, dWall2+fudge], [1,1]);
+              circle(dWall2, $fn=dFilletFn);
+            }
+          }
         // back brace block
-        if (brace) translate([0, drawerY/2+(dubWall?gap:0)-fudge, bodyZ]) box([w, fBulgeWall+fudge, stopZ-bodyZ-fudge], [0,1,1]);
+        if (brace) translate([0, bodyY/2-dWall2-fudge, bodyZ]) extrude(stopZ-bodyZ-fudge) {
+          rect([w, fBulgeWall+fudge], [0,1]);
+          rect([w-dWall2*2, fBulgeWall+dWall2+fudge], [0,1]);
+          flipX() translate([w/2-dWall2, fBulgeWall+fudge]) circle(dWall2, $fn=dFilletFn);
+        }
       }
       // back brace cut
-      if (brace && drawCuts) translate([0, drawerY/2+(dubWall?gap:0), bodyZ-braceTop]) {
+      if (brace && drawCuts) translate([0, bodyY/2, bodyZ-braceTop]) {
         rL = [w-dWall2*2, fBulgeWall];
         difference() {
           translate([0, 0, fudge]) eSliceX(-rL.y-fudge+(h>1?braceTopError:0), rL-[0, -fudge], centerX=true, wall2=dWall2);
@@ -2308,8 +2341,11 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
         eSliceY(braceTop, [rL.x, dWall2], translate=[0, rL.y-dWall2], flushT=true, flushB=true, centerX=true, cutAlt=mod(braceTop/dLayerHN+1, 2), wall2=dWall2, layerH=dLayerHN, hFudge=fudge);
       }
       // bottom front chamfer
-      translate([0, drawerY/2+(dubWall?gap:0)+fBulgeWall-dChamfer, 0]) rotate([-45])
-        box([w+fudge2, dChamfer*sqrt(2)/2+fudge, dChamfer*sqrt(2)], [0,1,1]);
+      translate([0, bodyY/2+fBulgeWall-dChamfer-dWall2, 0]) shear(zY=1) translate([0, 0, -fudge]) extrude(dChamfer+fudge2, convexity=2) difference() {
+        rect([w+fudge2, dChamfer+dWall2+fudge], [0,1]);
+        flipX() translate([w/2-dWall2, 0]) circle(dWall2, $fn=dFilletFn);
+        rect([w-dWall2*2, dWall2*2], [0,0]);
+      }
       // cavity
       if (dubWall) translate([0, drawerY/2+gap-dWall2, dBase]) {
         if (divided) translate([0, fudge, 0])
@@ -2340,12 +2376,16 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
         }
     }
     // bumps
-    hl(peakW<0, "Inadequate space for drawer side bumps.") flipX() translate([w/2+fBulgeWall-railD, dubWall?gap:0, railZ]) {
-      translate([0, drawerY/2+fBulgeWall, 0]) render() difference() {
+    hl(peakW<0, "Inadequate space for drawer side bumps.") flipX() translate([w/2+fBulgeWall-railD, bodyY/2, railZ]) {
+      translate([0, fBulgeWall, 0]) render() difference() {
         bump();
         translate([-fudge*2, 0, bulgeMidH/2]) rotate([45]) box([dPH+fudge*3, fBulgeWall*sqrt(2)/2, fBulgeWall*sqrt(2)]);
+        extrude(railW, center=true, convexity=2) flipX() translate([railD-dWall2, -dWall2, 0]) difference() {
+          rect([dWall2+fudge, dWall2+fudge], [1,1]);
+          circle(dWall2, $fn=dFilletFn);
+        }
       }
-      translate([0, -drawerY/2+dFL+dPL+dBL+dInset, 0]) bump();
+      translate([0, -drawerY+dFL+dPL+dBL+dInset, 0]) bump();
     }
     // dividers
     if (divided) hl(bodyZ-dBase-dLayerHN<binR-binR*(1-sqrt(2)/2), "Bin radius is too large for drawer height.")
