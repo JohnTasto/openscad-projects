@@ -165,7 +165,7 @@ Handle_bend_segments = 24;  // [8:2:128]
 // Extend the drawer base into the handle.
 Tray_handle = false;
 // in mm. Makes it easier to insert drawers.
-Back_bottom_chamfer = 1.875;  // [0.000:0.025:5.000]
+Back_bottom_chamfer = 2.075;  // [0.000:0.025:5.000]
 // Number of segments around the back corners.
 Back_fillet_segments = 6;  // [2:2:32]
 
@@ -176,8 +176,10 @@ Fill_horizontal_gaps = false;
 Drawer_layer_compensation_lines = 2;  // [0:1:5]
 // in frame layers
 Thickness_of_front_fills = 3;  // [0:1:10]
-// in mm.  Chamfer the wall on the upper left, which can be sharp.
+// in mm. Chamfer the wall on the upper left, which can be sharp.
 Horn_chamfer = 0.75;  // [0.00:0.25:10.00]
+// in mm. The back wall sometimes sticks to the piece below it and needs a bit more clearance to lay flat.
+Back_wall_extra_slop = 0.10;  // [0.00:0.01:1.00]
 
 /* [<sides> Trim Detents] */
 // in mm
@@ -461,6 +463,7 @@ dSlopZ  = dH(Drawer_vertical_slop);
 dSlop45 = max(0, dSlopZ - dSlopXY);
 
 fSlopXY = Frame_horizontal_slop;
+fSlopB  = Back_wall_extra_slop;
 fSlopZ  = fH(Frame_vertical_slop);  // hook overhang
 fWallGrid = fWall2 + fSlopXY;
 fWall4 = fWallGrid + fWall2;
@@ -1349,7 +1352,7 @@ module tSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
 }
 
 module bSideBase(l, r) for (i=[l:r]) translate([fGridX*i, 0, 0]) {
-  extrude(fBase) translate([0, fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
+  extrude(fBase) translate([0, fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH-fSlopB], [0,1]);
   extrude(fGridZ) flipX() translate([fGridX/2-claspD.x/2-stretchX/2-fSlopXY, fGridY/2-fSlopXY/2]) rect([-fWall2, -claspD.y+hookM.y]);
   tHooks();
   if (i<r) bSeamFill();
@@ -2043,14 +2046,12 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
         // right bulge
         for (i=[b:t]) translate([fGridX*r+fBulgeOX, fGridY*i]) rect([-fBulgeWall-fWall2, fBulgeOY*2], [1,0]);
         // top hooks
-        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
-        // top seam  (is this necessary?)
-        // #for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*t+fHornY]) rect([claspD.x+stretchX+fWallGrid*2, -fWall4], [0,1]);
+        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH-fSlopB], [0,1]);
         // bottom seam
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH], [0,1]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY+fSlopB]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH-fSlopB], [0,1]);
         // bottom seam hooks
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)+claspD.x/2+stretchX/2+fWall2+fSlopXY*2, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2]) rect([ fWall2, claspD.y-hookM.y*2]);
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)-claspD.x/2-stretchX/2-fWall2-fSlopXY*2, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2]) rect([-fWall2, claspD.y-hookM.y*2]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)+claspD.x/2+stretchX/2+fWall2+fSlopXY*2, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2+fSlopB]) rect([ fWall2, claspD.y-hookM.y*2-fSlopB]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5)-claspD.x/2-stretchX/2-fWall2-fSlopXY*2, fGridY*b-fHornY-claspD.y+hookM.y*2+fWall2+fSlopB]) rect([-fWall2, claspD.y-hookM.y*2-fSlopB]);
         // hook stem fills
         translate([fGridX*l-fSideOX-hookM.x-stretchX/2, fGridY*b-fHornY]) rect([ fWall2+hookM.x+stretchX/2, fGridY*(t-b)+fHornY*2]);
         translate([fGridX*r+fSideOX+hookM.x+stretchX/2, fGridY*b-fHornY]) rect([-fWall2-hookM.x-stretchX/2, fGridY*(t-b)+fHornY*2]);
@@ -2068,9 +2069,9 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
         // left bulge
         for (i=[b:t]) translate([fGridX*l-fBulgeOX, fGridY*i]) rect([fBulgeWall+fWall2, fBulgeOY*2+fWallGrid*2], [1,0]);
         // top hooks
-        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH], [0,1]);
+        for (i=[l:r]) translate([fGridX*i, fGridY*t+fHornY-claspD.y+hookM.y]) rect([fSideOX*2-fWallGrid*4, claspD.y-hookM.y+fWallGrid+bPH-fSlopB], [0,1]);
         // bottom seam
-        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH], [0,1]);
+        for (i=[l:r]) if (i<r) translate([fGridX*(i+0.5), fGridY*b-fHornY+fSlopB]) rect([claspD.x+stretchX+fWallGrid*4, fWall4+bPH-fSlopB], [0,1]);
       }
       translate([0, 0, -fudge]) extrude(fBase+fudge2) keyholes();
     }
