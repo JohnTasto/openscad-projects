@@ -549,6 +549,34 @@ module slice(layerH0, layerHN, minL, maxL, minH, maxH, size, align=[0,0]) {
   }
 }
 
+// layer -> relative height
+function layer_relative_height(l, layerHN) =
+  layerHN*l;
+
+// layer -> absolute height
+function layer_absolute_height(l, layerHN, layerH0) =
+  l<=0 ? 0 :
+  l<=1 ? layerH0*l :
+  layerH0 + layer_relative_height(l-1, layerHN);
+
+// relative height -> layer
+function floor_relative_height_layer(h, layerHN) = div(h, layerHN)*layerHN;
+function  ceil_relative_height_layer(h, layerHN) = floor_relative_height_layer(h, layerHN)
+                                                 + (mod(h, layerHN)==0 ? 0 : layerHN);
+function round_relative_height_layer(h, layerHN) = let
+  ( f =  floor_relative_height_layer(h, layerHN)
+  , c =   ceil_relative_height_layer(h, layerHN)
+  ) h-f < c-h ? f : c;
+
+// absolute height -> layer
+function floor_absolute_height_layer(z, layerHN, layerH0) = max(0, div(z-layerH0, layerHN)*layerHN + layerH0);
+function  ceil_absolute_height_layer(z, layerHN, layerH0) = floor_absolute_height_layer(z, layerHN, layerH0)
+                                                          + (mod(z-layerH0, layerHN)==0 ? 0 : z<layerH0 ? layerH0 : layerHN);
+function round_absolute_height_layer(z, layerHN, layerH0) = let
+  ( f =  floor_absolute_height_layer(z, layerHN, layerH0)
+  , c =   ceil_absolute_height_layer(z, layerHN, layerH0)
+  ) z-f < c-z ? f : c;
+
 
 /*********/
 /* bolts */

@@ -272,7 +272,7 @@ Bottom_bump_width = 2.50;  // [1.00:0.25:5.00]
 // in frame double walls
 Frame_stop_lines_for_single_unit_high_parts = 2;  // [0:1:10]
 // in frame double walls
-Frame_stop_lines_for_multi_unit_high_parts = 3;  // [0:1:15]
+Frame_stop_lines_for_multi_unit_high_parts = 2;//3;  // [0:1:15]
 // in drawer double walls
 Drawer_stop_lines = 2;  // [0:1:5]
 
@@ -290,13 +290,13 @@ Frame_unit_width_in_mm = 20.000;  // [10.000:0.025:60.000]
 Frame_unit_width_in_inches = 0.800;  // [0.400:0.001:2.400]
 // Depth of bare frame pieces, not including drawers, sides, or trim.
 Frame_depth_units = "bins";  // [same:same as width, bins:bin units - defaults to same as width if bin drawers are disabled, mm:mm, inches:inches]
-Frame_depth_in_bin_units = 12;  // [4:1:60]
+Frame_depth_in_bin_units = 20;//12;  // [4:1:60]
 Frame_depth_in_mm = 120.000;  // [40.00:0.25:600.00]
 Frame_depth_in_inches = 4.800;  // [1.60:0.01:24.00]
 // Ensure there is adequate space for drawer detents.
 Frame_height_units = "same";  // [same:same as width - defaults to mm if width is bin units, mm:mm, inches:inches]
 Frame_unit_height_in_mm = 20.000;  // [10.000:0.025:60.000]
-Frame_unit_height_in_inches = 0.571;  // [0.400:0.001:2.400]
+Frame_unit_height_in_inches = 4/7;//0.571;  // [0.400:0.001:2.400]
 
 /* [<global> Frame Detents - Left and Right Hooks] */
 // in mm
@@ -448,12 +448,12 @@ fWall2 = fWall*2;
 fLayerHN = Frame_layer_height;
 fLayerH0 = Frame_first_layer_height;
 
-function bH(l) = bLayerHN*l;
-function dH(l) = dLayerHN*l;
-function fH(l) = fLayerHN*l;
-function bZ(l) = l<=0 ? 0 : l<=1 ? bLayerH0*l : bLayerH0 + bH(l-1);
-function dZ(l) = l<=0 ? 0 : l<=1 ? dLayerH0*l : dLayerH0 + dH(l-1);
-function fZ(l) = l<=0 ? 0 : l<=1 ? fLayerH0*l : fLayerH0 + fH(l-1);
+function bH(l) = layer_relative_height(l, bLayerHN);
+function dH(l) = layer_relative_height(l, dLayerHN);
+function fH(l) = layer_relative_height(l, fLayerHN);
+function bZ(l) = layer_absolute_height(l, bLayerHN, bLayerH0);
+function dZ(l) = layer_absolute_height(l, dLayerHN, dLayerH0);
+function fZ(l) = layer_absolute_height(l, fLayerHN, fLayerH0);
 
 bSlopXY = Bin_horizontal_slop;
 bSlopZ  = bH(Bin_vertical_slop);
@@ -473,26 +473,29 @@ dBase = dZ(Drawer_base_layers);
 fBase = fZ(Frame_base_layers);
 fTop = fH(Thickness_of_front_fills);
 
-function bFloorH(h) = div(h, bLayerHN)*bLayerHN;
-function bFloorZ(z) = max(0, div(z-bLayerH0, bLayerHN)*bLayerHN + bLayerH0);
-function bCeilH(h) = bFloorH(h) + (mod(h, bLayerHN)==0 ? 0 : bLayerHN);
-function bCeilZ(z) = bFloorZ(z) + (mod(z-bLayerH0, bLayerHN)==0 ? 0 : (z<bLayerH0 ? bLayerH0 : bLayerHN));
-function bRoundH(h) = let (f=bFloorH(h), c=bCeilH(h)) h-f < c-h ? f : c;
-function bRoundZ(z) = let (f=bFloorZ(z), c=bCeilZ(z)) z-f < c-z ? f : c;
+function bFloorH(h) = floor_relative_height_layer(h, bLayerHN);
+function dFloorH(h) = floor_relative_height_layer(h, dLayerHN);
+function fFloorH(h) = floor_relative_height_layer(h, fLayerHN);
 
-function dFloorH(h) = div(h, dLayerHN)*dLayerHN;
-function dFloorZ(z) = max(0, div(z-dLayerH0, dLayerHN)*dLayerHN + dLayerH0);
-function dCeilH(h) = dFloorH(h) + (mod(h, dLayerHN)==0 ? 0 : dLayerHN);
-function dCeilZ(z) = dFloorZ(z) + (mod(z-dLayerH0, dLayerHN)==0 ? 0 : (z<dLayerH0 ? dLayerH0 : dLayerHN));
-function dRoundH(h) = let (f=dFloorH(h), c=dCeilH(h)) h-f < c-h ? f : c;
-function dRoundZ(z) = let (f=dFloorZ(z), c=dCeilZ(z)) z-f < c-z ? f : c;
+function bCeilH(h)  =  ceil_relative_height_layer(h, bLayerHN);
+function dCeilH(h)  =  ceil_relative_height_layer(h, dLayerHN);
+function fCeilH(h)  =  ceil_relative_height_layer(h, fLayerHN);
 
-function fFloorH(h) = div(h, fLayerHN)*fLayerHN;
-function fFloorZ(z) = max(0, div(z-fLayerH0, fLayerHN)*fLayerHN + fLayerH0);
-function fCeilH(h) = fFloorH(h) + (mod(h, fLayerHN)==0 ? 0 : fLayerHN);
-function fCeilZ(z) = fFloorZ(z) + (mod(z-fLayerH0, fLayerHN)==0 ? 0 : (z<fLayerH0 ? fLayerH0 : fLayerHN));
-function fRoundH(h) = let (f=fFloorH(h), c=fCeilH(h)) h-f < c-h ? f : c;
-function fRoundZ(z) = let (f=fFloorZ(z), c=fCeilZ(z)) z-f < c-z ? f : c;
+function bRoundH(h) = round_relative_height_layer(h, bLayerHN);
+function dRoundH(h) = round_relative_height_layer(h, dLayerHN);
+function fRoundH(h) = round_relative_height_layer(h, fLayerHN);
+
+function bFloorZ(z) = floor_absolute_height_layer(z, bLayerHN, bLayerH0);
+function dFloorZ(z) = floor_absolute_height_layer(z, dLayerHN, dLayerH0);
+function fFloorZ(z) = floor_absolute_height_layer(z, fLayerHN, fLayerH0);
+
+function bCeilZ(z)  =  ceil_absolute_height_layer(z, bLayerHN, bLayerH0);
+function dCeilZ(z)  =  ceil_absolute_height_layer(z, dLayerHN, dLayerH0);
+function fCeilZ(z)  =  ceil_absolute_height_layer(z, fLayerHN, fLayerH0);
+
+function bRoundZ(z) = round_absolute_height_layer(z, bLayerHN, bLayerH0);
+function dRoundZ(z) = round_absolute_height_layer(z, dLayerHN, dLayerH0);
+function fRoundZ(z) = round_absolute_height_layer(z, fLayerHN, fLayerH0);
 
 // s - Snap: frame
 sLS     = [   1/Horizontal_hook_bump_latch_slope           ,   1/Vertical_hook_bump_latch_slope           ];  // latch slope
