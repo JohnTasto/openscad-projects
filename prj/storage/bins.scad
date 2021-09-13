@@ -97,6 +97,8 @@ Possible future improvements
 /* [Instructions] */
 // Start with the bottommost section and work up. Dial in all system settings before starting a production run by printing test pieces until satisfied. Detents may feel pretty similar between single and double wall drawers or single and multi unit heights, so choose a small test size and single wall drawers to start with to save time and material. Drawer detents are much tighter when neighbor frame pieces are attached though, so a good test configuration is three across by two high. Only the top middle frame needs to be reprinted if only the drawer detents have changed between tests.
 Overview = false;
+// Any checkbox with a fully capitalized name is an explanitory note or subsection heading. Toggling the checkbox will have no effect.
+Notes = false;
 // Main settings select individual components from a larger system of compatible parts, as well as several demo and cutaway scenes used to check part alignment. Check the demo scenes for highlighted features and the console for error messages before printing parts.
 Main = false;
 // Preview settings offer demo scene options and affect preview quality.
@@ -176,8 +178,6 @@ Fill_horizontal_gaps = false;
 Drawer_layer_compensation_lines = 2;  // [0:1:5]
 // in frame layers
 Thickness_of_front_fills = 3;  // [0:1:10]
-// in mm. Chamfer the wall on the upper left, which can be sharp.
-Horn_chamfer = 0.75;  // [0.00:0.25:10.00]
 // in mm. The back wall sometimes sticks to the piece below it and needs a bit more clearance to lay flat.
 Back_wall_extra_slop = 0.10;  // [0.00:0.01:1.00]
 
@@ -262,7 +262,7 @@ Keep_bump_ramp_slope = 1.000;  // [0.050:0.005:1.000]
 // in absolute drawer layers. The slots in the drawer bottoms. Must be even if using spiralize in Cura.
 Bottom_slot_height = 4;  // [0:1:10]
 // in absolute drawer layers. The bumps on the top frame hooks that keep drawers from falling out too easily. Add a little extra over the slot height to overcome filament dragging.
-Bottom_bump_height = 3.75;  // [0.00:0.25:12.00]
+Bottom_bump_height = 3.50;  // [0.00:0.25:12.00]
 // in frame layers
 Bottom_bump_peak_length = 2.50;  // [0.00:0.25:5.00]
 // in frame double walls. Must leave room for trim clip if trim is enabled.
@@ -298,33 +298,9 @@ Frame_height_units = "same";  // [same:same as width - defaults to mm if width i
 Frame_unit_height_in_mm = 20.000;  // [10.000:0.025:60.000]
 Frame_unit_height_in_inches = 4/7;//0.571;  // [0.400:0.001:2.400]
 
-/* [<global> Frame Detents - Left and Right Hooks] */
-// in mm
-Horizontal_hook_size = 1.25;  // [0.50:0.25:10.00]
-// in mm
-Horizontal_hook_bump_height = 0.85;  // [0.00:0.05:5.00]
-// in frame layers
-Horizontal_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
-Horizontal_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
-Horizontal_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
-// in mm. Move the bumps further apart, but keep them the size.
-Horizontal_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
-// in mm. The margin provides room for the hooks to flex. This setting may appear to have no effect when bin drawers are
-Horizontal_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
-// in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
-Horizontal_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
-// in frame layers
-Horizontal_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
-// in frame layers
-Horizontal_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
-// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
-Horizontal_hook_bump_minimum_contact_patch = 0.5;  // [0.10:0.05:10.00]
-// in mm
-Horizontal_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
-// in mm
-Horizontal_stem_chamfer = 10.00;  // [0.00:0.25:10.00]
-
 /* [<global> Frame Detents - Top and Bottom Hooks] */
+// Bump positions along the rail are calculated using their slopes and peak height. The bump overlap setting allows adjusting their position relative to each other without affecting their height, and the left and right bump height offset settings allow changing their height without affecting their position. The left and right bump height offsets are mostly side effect free, but they may cause overhangs greater than 45° if the bumps are not inset far enough. The two horn settings have no side effects on other parts at all, but have been placed here because they are highly related.
+TOP_AND_BOTTOM_HOOKS = false;
 // in mm
 Vertical_hook_size = 3.25;  // [0.50:0.25:10.00]
 // in mm
@@ -333,9 +309,9 @@ Vertical_hook_bump_height = 1.00;  // [0.00:0.05:5.00]
 Vertical_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Vertical_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
 Vertical_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
-// in mm. Move the bumps further apart, but keep them the size.
+// in mm. Move the bumps further apart, but keep them the size. This adjusts detent stiffness with minimal side effects on other parts, but it does change their position on the rail.
 Vertical_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
-// in mm. The margin provides room for the hooks to flex.
+// in mm. The margin provides room for the hooks to flex. It is automatically calculated but may be adjusted here. This does not change the bump position, but changing this setting causes other widespread incompatibilities with previously printed parts.
 Vertical_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
 Vertical_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
@@ -345,8 +321,48 @@ Vertical_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
 Vertical_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
 // in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
 Vertical_hook_bump_minimum_contact_patch = 1.00;  // [0.10:0.05:10.00]
-// in mm
+// in mm. Reduce sharp points to prevent injury when disassembling.
 Vertical_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
+// in mm. Chamfer the wall on the upper left to prevent injury when disassembling.
+Horn_chamfer = 0.75;  // [0.00:0.25:10.00]
+// in mm. Compensate for a weak left hook detent due to filament dragging reducing the horn height.
+Horn_height_offset = 0.05;  // [0.00:0.01:1.00]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Vertical_hook_left_bump_height_offset = 0.05;  // [-0.50:0.01:0.50]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Vertical_hook_right_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
+
+/* [<global> Frame Detents - Left and Right Hooks] */
+// Bump positions along the rail are calculated using their slopes and peak height. The bump overlap setting allows adjusting their position relative to each other without affecting their height, and the top and bottom bump height offset settings allow changing their height without affecting their position. The top and bottom bump height offsets are mostly side effect free, but they may cause overhangs greater than 45° if the bumps are not inset far enough.
+LEFT_AND_RIGHT_HOOKS = false;
+// in mm
+Horizontal_hook_size = 1.25;  // [0.50:0.25:10.00]
+// in mm
+Horizontal_hook_bump_height = 0.85;  // [0.00:0.05:5.00]
+// in frame layers
+Horizontal_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
+Horizontal_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
+Horizontal_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
+// in mm. Move the bumps further apart, but keep them the size. This adjusts detent stiffness with minimal side effects on other parts, but it does change their position on the rail.
+Horizontal_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
+// in mm. The margin provides room for the hooks to flex. It is automatically calculated but may be adjusted here. This does not change the bump position, but changing this setting causes other widespread incompatibilities with previously printed parts. It may have unpredictable effects when bin drawers are being compensated.
+Horizontal_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
+// in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
+Horizontal_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
+// in frame layers
+Horizontal_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
+// in frame layers
+Horizontal_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
+// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
+Horizontal_hook_bump_minimum_contact_patch = 0.5;  // [0.10:0.05:10.00]
+// in mm. Reduce sharp points to prevent injury when disassembling.
+Horizontal_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
+// in mm. Reduce sharp points to prevent injury when disassembling.
+Horizontal_stem_chamfer = 10.00;  // [0.00:0.25:10.00]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Horizontal_hook_top_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Horizontal_hook_bottom_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
 
 /* [<global> General] */
 // in mm. Minimum distance between walls. By empirical testing, Cura needs a 0.03 mm gap to prevent bridging cuts, plus leeway for curve approximations.
@@ -498,25 +514,27 @@ function dRoundZ(z) = round_absolute_height_layer(z, dLayerHN, dLayerH0);
 function fRoundZ(z) = round_absolute_height_layer(z, fLayerHN, fLayerH0);
 
 // s - Snap: frame
-sLS     = [   1/Horizontal_hook_bump_latch_slope           ,   1/Vertical_hook_bump_latch_slope           ];  // latch slope
-sRS     = [   1/Horizontal_hook_bump_ramp_slope            ,   1/Vertical_hook_bump_ramp_slope            ];  // ramp slope
-sPH     = [     Horizontal_hook_bump_height/2              ,     Vertical_hook_bump_height/2              ];  // peak height
-sPL     = [  fH(Horizontal_hook_bump_peak_length)          ,  fH(Vertical_hook_bump_peak_length)          ];  // peak length
-sLL     = [     sPH.x*sLS.x                                ,     sPH.y*sLS.y                              ];  // latch length
-sRL     = [     sPH.x*sRS.x                                ,     sPH.y*sRS.y                              ];  // ramp length
-sFI     = [  fH(Horizontal_hook_bump_front_inset+0.5)      ,  fH(Vertical_hook_bump_front_inset+0.5)      ];  // front inset length
-sBI     = [  fH(Horizontal_hook_bump_back_inset)           ,  fH(Vertical_hook_bump_back_inset)           ];  // back inset length
-sOL     = [  fH(Horizontal_hook_bump_overlap)              ,  fH(Vertical_hook_bump_overlap)              ];  // overlap
+sLS     = [  1/Horizontal_hook_bump_latch_slope            ,  1/Vertical_hook_bump_latch_slope             ];  // latch slope
+sRS     = [  1/Horizontal_hook_bump_ramp_slope             ,  1/Vertical_hook_bump_ramp_slope              ];  // ramp slope
+sPH     = [    Horizontal_hook_bump_height/2               ,    Vertical_hook_bump_height/2                ];  // peak height
+sPL     = [ fH(Horizontal_hook_bump_peak_length)           , fH(Vertical_hook_bump_peak_length)            ];  // peak length
+sLL     = [    sPH.x*sLS.x                                 ,    sPH.y*sLS.y                                ];  // latch length
+sRL     = [    sPH.x*sRS.x                                 ,    sPH.y*sRS.y                                ];  // ramp length
+sFI     = [ fH(Horizontal_hook_bump_front_inset)           , fH(Vertical_hook_bump_front_inset)            ];  // front inset length
+sBI     = [ fH(Horizontal_hook_bump_back_inset)            , fH(Vertical_hook_bump_back_inset)             ];  // back inset length
+sOL     = [ fH(Horizontal_hook_bump_overlap)               , fH(Vertical_hook_bump_overlap)                ];  // overlap
 
-hookGO  = [     Horizontal_hook_gap_offset                 ,     Vertical_hook_gap_offset                 ];  // gap offset
-hookMO  = [     Horizontal_hook_margin_offset              ,     Vertical_hook_margin_offset              ];  // margin offset
-hookMin = [     Horizontal_hook_bump_minimum_contact_patch ,     Vertical_hook_bump_minimum_contact_patch ];  // minimum contact
-hookW   = [     Horizontal_hook_size                       ,     Vertical_hook_size                       ];  // hook width
+sPHO    = [ [  Horizontal_hook_bottom_bump_height_offset/2 ,    Vertical_hook_left_bump_height_offset/2  ] ,
+            [  Horizontal_hook_top_bump_height_offset/2    ,    Vertical_hook_right_bump_height_offset/2 ] ];  // peak height offset
+hookGO  = [    Horizontal_hook_gap_offset                  ,    Vertical_hook_gap_offset                   ];  // gap offset
+hookMO  = [    Horizontal_hook_margin_offset               ,    Vertical_hook_margin_offset                ];  // margin offset
+hookMin = [    Horizontal_hook_bump_minimum_contact_patch  ,    Vertical_hook_bump_minimum_contact_patch   ];  // minimum contact
+hookW   = [    Horizontal_hook_size                        ,    Vertical_hook_size                         ];  // hook width
 
-hookG   = [     sPH.x   + hookGO.x                         ,     sPH.y   + hookGO.y                       ];  // gap
-hookM   = [     sPH.x/2 - hookGO.x/2 + hookMO.x            ,     sPH.y/2 - hookGO.y/2 + hookMO.y          ];  // margin
-claspD  = [      fWall4 + hookG.x    + hookM.x*2           ,      fWall4 + hookG.y    + hookM.y*2         ];  // clasp depth
-claspW  =        fWall4;                                                                                      // clasp width
+hookG   = [    sPH.x   + hookGO.x                          ,    sPH.y   + hookGO.y                         ];  // gap
+hookM   = [    sPH.x/2 - hookGO.x/2 + hookMO.x             ,    sPH.y/2 - hookGO.y/2 + hookMO.y            ];  // margin
+claspD  = [     fWall4 + hookG.x    + hookM.x*2            ,     fWall4 + hookG.y    + hookM.y*2           ];  // clasp depth
+claspW  =       fWall4;                                                                                        // clasp width
 
 fGridY = fHmm;
 drawerZ = fGridY - claspD.y + hookM.y - fWallGrid - dSlopZ*2;
@@ -550,10 +568,12 @@ fBulgeWall = fBulgeOX - fSideOX;
 fTHookY = fTopOY;
 fBHookY = -fHornY + fWallGrid;
 
-stemD   = [    claspD.x + stretchX/2 - hookM.x + fSlopXY   ,           claspD.y - hookM.y + fSlopXY       ];  // stem depth
+fHornYO = Horn_height_offset;
+
+stemD   = [    claspD.x + stretchX/2 - hookM.x + fSlopXY   ,           claspD.y - hookM.y + fSlopXY        ];  // stem depth
 hookOL  = fancy
-        ? [  0                                             ,  0                                           ]   // hook overlap
-        : [ -fBulgeWall + stretchX/2 + hookM.x             ,  fWall2 - claspD.y + hookM.y*2               ];
+        ? [  0                                             ,  0                                            ]   // hook overlap
+        : [ -fBulgeWall + stretchX/2 + hookM.x             ,  fWall2 - claspD.y + hookM.y*2                ];
 
 railD = fBulgeWall/2;
 
@@ -805,37 +825,39 @@ module latch(h, d, p, hang=fudge) {
   hookBZ = max(0, fBase-hookOL[d]);
   hangBZ = max(0, fBase-hookOL[d]-hang-stemD[d]);
   bumpBZ = hookBZ + hookW[d];
-  bumpFZ = fGridZ - stemC[d] - hookC[d];
+  bumpFZ = fGridZ - stemC[d] - max(hookC[d], fH(0.5));
+  sideStopFZ = fGridZ - stemC[d] - hookC[d];
   maxBumpL = hookW[d] - fSlopXY;
   minBumpL = max(fWall2, maxBumpL/2+hookMin[d]/2);
   fullBumpL = maxBumpL - fWallGrid;
   bumpL = min(max(minBumpL, fullBumpL), maxBumpL);
+  o = sPHO[h/2+0.5][d];
 
   hl(bumpL<fWall2, "Frame hooks are not wide enough.") translate([-(claspW+hookW[d])*h/2, stemD[d], 0]) {
     translate([(hookW[d]+fWall2)*h, -fWall2, 0]) {
       // side stop
-      if (minBumpL<=fullBumpL) translate([0, fudge, bumpFZ]) hull() {
-        box([-fWall2*h, -fudge         , bumpBZ-bumpFZ         ]);
-        box([-fWall2*h, -fudge-hookG[d], bumpBZ-bumpFZ+hookG[d]]);
+      if (minBumpL<=fullBumpL) translate([0, fudge, sideStopFZ]) hull() {
+        box([-fWall2*h, -fudge         , bumpBZ-sideStopFZ         ]);
+        box([-fWall2*h, -fudge-hookG[d], bumpBZ-sideStopFZ+hookG[d]]);
       }
       rotate([90,0,-90]) extrude(bumpL*h, convexity=1) {
         // front bump
         polygon(
-          [ [-fudge , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]            ]
-          , [ 0     , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]            ]
-          , [ sPH[d], bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]  -sLL[d]   ]
-          , [ sPH[d], bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]   ]
-          , [ 0     , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2 ]
-          , [-fudge , bumpFZ-sFI[d]+(hookGO[d]+fSlopXY)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2 ]
+          [ [-fudge   , min(bumpFZ, bumpFZ-sFI[d]+(hookGO[d]+fSlopXY+o)*sLS[d]-sOL[d]-sRL[d]-sPL[d]           ) ]
+          , [ 0       , min(bumpFZ, bumpFZ-sFI[d]+(hookGO[d]+fSlopXY+o)*sLS[d]-sOL[d]-sRL[d]-sPL[d]           ) ]
+          , [ sPH[d]+o, min(bumpFZ, bumpFZ-sFI[d]+(hookGO[d]+fSlopXY  )*sLS[d]-sOL[d]-sRL[d]-sPL[d]  -sLL[d]  ) ]
+          , [ sPH[d]+o, min(bumpFZ, bumpFZ-sFI[d]+(hookGO[d]+fSlopXY  )*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]  ) ]
+          , [ 0       , min(bumpFZ, bumpFZ-sFI[d]+(hookGO[d]+fSlopXY-o)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2) ]
+          , [-fudge   , min(bumpFZ, bumpFZ-sFI[d]+(hookGO[d]+fSlopXY-o)*sLS[d]-sOL[d]-sRL[d]-sPL[d]*2-sLL[d]*2) ]
           ]);
         // back bump
         polygon(
-          [ [-fudge , bumpBZ+sBI[d]                                         +sPL[d]  +sLL[d]*2 ]
-          , [ 0     , bumpBZ+sBI[d]                                         +sPL[d]  +sLL[d]*2 ]
-          , [ sPH[d], bumpBZ+sBI[d]                                         +sPL[d]  +sLL[d]   ]
-          , [ sPH[d], bumpBZ+sBI[d]                                                  +sLL[d]   ]
-          , [ 0     , bumpBZ+sBI[d]                                                            ]
-          , [-fudge , bumpBZ+sBI[d]                                                            ]
+          [ [-fudge   , max(bumpBZ, bumpBZ+sBI[d]                   +o *sLS[d]              +sPL[d]  +sLL[d]*2) ]
+          , [ 0       , max(bumpBZ, bumpBZ+sBI[d]                   +o *sLS[d]              +sPL[d]  +sLL[d]*2) ]
+          , [ sPH[d]+o, max(bumpBZ, bumpBZ+sBI[d]                                           +sPL[d]  +sLL[d]  ) ]
+          , [ sPH[d]+o, max(bumpBZ, bumpBZ+sBI[d]                                                    +sLL[d]  ) ]
+          , [ 0       , max(bumpBZ, bumpBZ+sBI[d]                   -o *sLS[d]                                ) ]
+          , [-fudge   , max(bumpBZ, bumpBZ+sBI[d]                   -o *sLS[d]                                ) ]
           ]);
       }
     }
@@ -869,11 +891,13 @@ module plate(h, d, p, hang=fudge, stop=undef) {
   hookBZ = max(0, fBase-hookOL[d]);
   stopBZ = hookBZ - fSlopZ + hookW[d];
   bumpBZ = hookBZ + hookW[d];
-  bumpFZ = fGridZ - stemC[d] - hookC[d];
+  bumpFZ = fGridZ - stemC[d] - max(hookC[d], fH(0.5));
+  sideStopFZ = fGridZ - stemC[d] - hookC[d];
   maxBumpL = hookW[d] - fSlopXY;
   minBumpL = max(fWall2, maxBumpL/2+hookMin[d]/2);
   fullBumpL = maxBumpL - fWallGrid;
   bumpL = min(max(minBumpL, fullBumpL), maxBumpL);
+  o = sPHO[h/2+0.5][d];
 
   hl(bumpL<fWall2, "Frame hooks are not wide enough.") translate([-(claspW+hookW[d])*h/2, stemD[d], 0]) {
     // hook stop
@@ -885,33 +909,33 @@ module plate(h, d, p, hang=fudge, stop=undef) {
       ]);
     translate([(hookW[d]+fWall2)*h, -fWall2, 0]) {
       // side stop
-      if (minBumpL<=fullBumpL) translate([0, fudge, 0]) box([-fWall2*h, -fudge-hookG[d], bumpFZ]);
+      if (minBumpL<=fullBumpL) translate([0, fudge, 0]) box([-fWall2*h, -fudge-hookG[d], sideStopFZ]);
       rotate([90,0,-90]) {
         // front bump
         extrude(bumpL*h, convexity=1) polygon(
-          [ [-fudge   , bumpFZ-sFI[d]                                                            ]
-          , [ 0       , bumpFZ-sFI[d]                                                            ]
-          , [ sPH[d]  , bumpFZ-sFI[d]                                  -sRL[d]                   ]
-          , [ sPH[d]  , bumpFZ-sFI[d]                                  -sRL[d]-sPL[d]            ]
-          , [ 0       , bumpFZ-sFI[d]                                  -sRL[d]-sPL[d]  -sLL[d]   ]
-          , [-fudge   , bumpFZ-sFI[d]                                  -sRL[d]-sPL[d]  -sLL[d]   ]
+          [ [-fudge   , min(bumpFZ, bumpFZ-sFI[d]                   +o *sLS[d]                                ) ]
+          , [ 0       , min(bumpFZ, bumpFZ-sFI[d]                   +o *sLS[d]                                ) ]
+          , [ sPH[d]+o, min(bumpFZ, bumpFZ-sFI[d]                                    -sRL[d]                  ) ]
+          , [ sPH[d]+o, min(bumpFZ, bumpFZ-sFI[d]                                    -sRL[d]-sPL[d]           ) ]
+          , [ 0       , min(bumpFZ, bumpFZ-sFI[d]                   -o *sLS[d]       -sRL[d]-sPL[d]  -sLL[d]  ) ]
+          , [-fudge   , min(bumpFZ, bumpFZ-sFI[d]                   -o *sLS[d]       -sRL[d]-sPL[d]  -sLL[d]  ) ]
           ]);
         // back bump
         extrude(bumpL*h, convexity=1) polygon(
-          [ [-fudge   , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2 ]
-          , [ 0       , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2 ]
-          , [ sPH[d]  , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]*2+sLL[d]*2 ]
-          , [ sPH[d]  , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]*2 ]
-          , [ 0       , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]   ]
-          , [-fudge   , bumpBZ+sBI[d]-(hookGO[d]+fSlopXY)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]   ]
+          [ [-fudge   , max(bumpBZ, bumpBZ+sBI[d]-(hookGO[d]+fSlopXY-o)*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2) ]
+          , [ 0       , max(bumpBZ, bumpBZ+sBI[d]-(hookGO[d]+fSlopXY-o)*sLS[d]+sOL[d]+sRL[d]+sPL[d]*2+sLL[d]*2) ]
+          , [ sPH[d]+o, max(bumpBZ, bumpBZ+sBI[d]-(hookGO[d]+fSlopXY  )*sLS[d]+sOL[d]       +sPL[d]*2+sLL[d]*2) ]
+          , [ sPH[d]+o, max(bumpBZ, bumpBZ+sBI[d]-(hookGO[d]+fSlopXY  )*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]*2) ]
+          , [ 0       , max(bumpBZ, bumpBZ+sBI[d]-(hookGO[d]+fSlopXY+o)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]  ) ]
+          , [-fudge   , max(bumpBZ, bumpBZ+sBI[d]-(hookGO[d]+fSlopXY+o)*sLS[d]+sOL[d]       +sPL[d]  +sLL[d]  ) ]
           ]);
         // back stop
         extrude(bumpL*h, convexity=1) polygon(
-          [ [-fudge   , stopBZ+sBI[d]+(hookGO[d]+fSlopXY)*sLS[d]                       +sLL[d]   ]
-          , [ 0       , stopBZ+sBI[d]+(hookGO[d]+fSlopXY)*sLS[d]                       +sLL[d]   ]
-          , [ hookG[d], stopBZ+sBI[d]           +fSlopXY *sLS[d]                                 ]
-          , [ hookG[d],      0                                                                   ]
-          , [-fudge   ,      0                                                                   ]
+          [ [-fudge   ,             stopBZ+sBI[d]+(hookGO[d]+fSlopXY+o)*sLS[d]                       +sLL[d]    ]
+          , [ 0       ,             stopBZ+sBI[d]+(hookGO[d]+fSlopXY+o)*sLS[d]                       +sLL[d]    ]
+          , [ hookG[d],             stopBZ+sBI[d]+(          fSlopXY+o)*sLS[d]                                  ]
+          , [ hookG[d],                  0                                                                      ]
+          , [-fudge   ,                  0                                                                      ]
           ]);
       }
     }
@@ -931,20 +955,35 @@ module plate(h, d, p, hang=fudge, stop=undef) {
   }
 }
 
-module tHooks(drawHooks=true) hl(fSideIX-fSlopXY-claspW-hookW.y<gap/2, "Top hooks are too close.")
-  flipX() translate([fSideIX-fSlopXY-claspW/2-hookW.y/2, fTHookY, 0]) {
-    if (drawHooks) plate(1, 1, 0, stop=claspD.y-hookM.y-fWall2);
-    hl(bPW<fWall2, "Bottom bumps are not wide enough.") translate([-claspW/2-hookW.y/2, stemD.y, fGridZ-bIL-bFL]) hull() {
+module tHooks(drawHooks=true) {
+  hl(fSideIX-fSlopXY-claspW-hookW.y<gap/2, "Top hooks are too close.") if (drawHooks) {
+    translate([-fSideIX+fSlopXY+claspW/2+hookW.y/2, fTHookY, 0]) plate(-1, 1, 0, stop=claspD.y-hookM.y-fWall2);
+    translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, fTHookY, 0]) plate( 1, 1, 0, stop=claspD.y-hookM.y-fWall2);
+  }
+  hl(bPW<fWall2, "Bottom bumps are not wide enough.") flipX() translate([fSideIX-fSlopXY-claspW-hookW.y, fTHookY+stemD.y, fGridZ-bIL-bFL])
+    hull() {
       translate([0, 0, bFL]) box([bPW, -fudge, -bFL-bPL-bBL]);
       box([bPW, bPH, -bPL]);
-    };
-  }
-module bHooks() rotate(180) flipX() translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=tClearance-hookM.y+fudge);
-module blHook() rotate(180)         translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=-hookM.y-fSlopXY);
-module brHook() rotate(180)         translate([-fSideIX+fSlopXY+claspW/2+hookW.y/2, -fBHookY-hookM.y, 0]) latch( 1, 1, 1, hang=-hookM.y-fSlopXY);
+    }
+}
 
-module lHooks() rotate( 90) flipX() translate([fHornY-claspW/2-hookW.x/2, fSideOX, 0]) latch( 1, 0, 0);
-module rHooks() rotate(270) flipX() translate([fHornY-claspW/2-hookW.x/2, fSideOX, 0]) plate(-1, 0, 1, stop=claspD.x/2+fSlopXY/2);
+module bHooks() rotate(180) {
+  translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=tClearance-hookM.y+fudge);
+  translate([-fSideIX+fSlopXY+claspW/2+hookW.y/2, -fBHookY-hookM.y, 0]) latch( 1, 1, 1, hang=tClearance-hookM.y+fudge);
+}
+
+module blHook() rotate(180) translate([ fSideIX-fSlopXY-claspW/2-hookW.y/2, -fBHookY-hookM.y, 0]) latch(-1, 1, 1, hang=-hookM.y-fSlopXY);
+module brHook() rotate(180) translate([-fSideIX+fSlopXY+claspW/2+hookW.y/2, -fBHookY-hookM.y, 0]) latch( 1, 1, 1, hang=-hookM.y-fSlopXY);
+
+module lHooks() rotate( 90) {
+  translate([-fHornY+claspW/2+hookW.x/2, fSideOX, 0]) latch(-1, 0, 0);
+  translate([ fHornY-claspW/2-hookW.x/2, fSideOX, 0]) latch( 1, 0, 0);
+}
+
+module rHooks() rotate(270) {
+  translate([ fHornY-claspW/2-hookW.x/2, fSideOX, 0]) plate(-1, 0, 1, stop=claspD.x/2+fSlopXY/2);
+  translate([-fHornY+claspW/2+hookW.x/2, fSideOX, 0]) plate( 1, 0, 1, stop=claspD.x/2+fSlopXY/2);
+}
 
 
 
@@ -1937,10 +1976,12 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
     if (drawSides) {
       ltHookFill(t);
       lbHookFill(b);
-      translate([-fSideOX, fGridY*t+fBulgeIY, 0]) hull() {
-        box([fWall2, fHornY-fBulgeIY-hornC, fGridZ      ]);
-        box([fWall2, fHornY-fBulgeIY      , fGridZ-hornC]);
+      translate([-fSideOX, fGridY*t+fTopIY, fBase]) hull() {
+        translate([0, 0,        ]) box([fWall2, fHornY-fTopIY+fHornYO-hornC, fGridZ      -fBase        ]);
+        translate([0, 0, fHornYO]) box([fWall2, fHornY-fTopIY+fHornYO      , fGridZ-hornC-fBase-fHornYO]);
+        translate([0, 0, -fudge ]) box([fWall2, fHornY-fTopIY-fudge        , fGridZ-hornC-fBase+fudge  ]);
       }
+      extrude(fGridZ) translate([-fSideOX, fGridY*t+fBulgeIY, 0]) rect([fWall2, fTopOY-fBulgeIY]);
       extrude(fGridZ) translate([-fSideOX, fGridY*b-fBulgeIY]) rect([fWall2, fBulgeIY-fHornY]);
     }
   }
