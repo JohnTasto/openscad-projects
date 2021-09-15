@@ -1,13 +1,15 @@
 // More stuff at https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Tips_and_Tricks
 
 
-/***********/
-/* logging */
-/***********/
+/***********************/
+/* logging & debugging */
+/***********************/
 
 $_debug = true;
 
 function tap(x, msg="") = let(_ = [for (i = [1:1]) if ($_debug) echo(str(msg, ": ", x))]) x;
+
+module noop() {}
 
 
 /*********/
@@ -35,28 +37,6 @@ function mm(inches) = 25.4*inches;
 function inches(mm) = mm/25.4;
 
 
-/********/
-/* math */
-/********/
-
-// like `sign`, but also works on lists recursively
-function signum(xs) = is_num(xs) ? sign(xs) : is_list(xs) ? [for (x = xs) signum(x)] : undef;
-
-// like `/`, but only the whole part, excuding the remainder
-function div(x, d) = floor(x/d);
-
-// like `%`, but with consistent results between 0 and the divisor for dividends of any sign
-function mod(x, d) = x - d*div(x, d);  // alternatively, mod(x, d) = (x%d + d)%d;
-
-// often needed in distance calculations
-function square(x) = x*x;
-function cube(x) = x*x*x;
-
-function _gcd(x, y) = y==0 ? x : _gcd(y, mod(x, y));
-function gcd(x, y) = x==0 ? y : _gcd(x, y);
-function lcm(x, y) = abs(x*y) / gcd(x, y);
-
-
 /*********/
 /* lists */
 /*********/
@@ -73,6 +53,9 @@ function tail(xs) = drop(1, xs);
 function map(f, xs)    = [for (x = xs) f(x)];
 function filter(f, xs) = [for (x = xs) if (f(x)) x];
 
+function any(f, xs) = len(filter(f, xs)) > 0;
+function all(f, xs) = len(filter(f, xs)) == len(xs);
+
 function replicate(n, x) = n > 0 ? [for (i = [0 : n-1]) x] : [];
 
 function reverse(xs) = let (l = len(xs)) l > 0 ? [for (i = [0 : l-1]) xs[l-i-1]] : [];
@@ -87,6 +70,58 @@ function interleave(xs, ys) = let (l = min(len(xs), len(ys)))
   concat(flatten(zip(xs, ys)), drop(l, xs), drop(l, ys));
 
 function sum(xs) = len(xs) > 0 ? xs * [for (_ = xs) 1] : 0;
+
+
+function is_len    (n,    xs) = assert(is_num(n))                        is_list(xs) && len(xs) == n;
+function are_of    (   f, xs) =                   assert(is_function(f)) is_list(xs)                 && all(f, xs);
+function are_len_of(n, f, xs) = assert(is_num(n)) assert(is_function(f)) is_list(xs) && len(xs) == n && all(f, xs);
+
+function are_bools        (   xs) = are_of    (   function(x) is_bool    (x), xs);
+function are_nums         (   xs) = are_of    (   function(x) is_num     (x), xs);
+function are_strings      (   xs) = are_of    (   function(x) is_string  (x), xs);
+function are_lists        (   xs) = are_of    (   function(x) is_list    (x), xs);
+function are_functions    (   xs) = are_of    (   function(x) is_function(x), xs);
+function are_len_bools    (n, xs) = are_len_of(n, function(x) is_bool    (x), xs);
+function are_len_nums     (n, xs) = are_len_of(n, function(x) is_num     (x), xs);
+function are_len_strings  (n, xs) = are_len_of(n, function(x) is_string  (x), xs);
+function are_len_lists    (n, xs) = are_len_of(n, function(x) is_list    (x), xs);
+function are_len_functions(n, xs) = are_len_of(n, function(x) is_function(x), xs);
+
+
+/********/
+/* math */
+/********/
+
+// like `sign`, but
+//   - also works on lists recursively
+// TODO: extract this pattern as a function that takes a lambda, and use it everywhere it fits
+function signum(xs) = is_num(xs) ? sign(xs) : is_list(xs) ? [for (x = xs) signum(x)] : undef;
+
+// like `/`, but
+//   - returns only the whole part of the result, excluding the remainder
+function div(x, d) = floor(x/d);
+
+// like `%`, but
+//   - has consistent results between 0 and the divisor for dividends of any sign
+function mod(x, d) = x - d*div(x, d);  // alternatively, mod(x, d) = (x%d + d)%d;
+
+// often needed in distance calculations
+// TODO: remove these and all references to them and switch to new syntax
+function square(x) = x*x;
+function cube(x) = x*x*x;
+
+function _gcd(x, y) = y==0 ? x : _gcd(y, mod(x, y));
+function gcd(x, y) = x==0 ? y : _gcd(x, y);
+function lcm(x, y) = abs(x*y) / gcd(x, y);
+
+function clamp(x, min, max) =
+  assert(is_num(x))
+  assert(is_num(min) && is_num(max) || are_len_nums(2, min) && is_undef(max))
+  let ( low  = is_list(min) ? min[0] : min
+      , high = is_list(min) ? min[1] : max
+      )
+  assert(low <= high)
+  min(high, max(x, low));
 
 
 /***********/
@@ -114,7 +149,9 @@ function identity(n) = [for (i = [0 : n-1]) [for (j = [0 : n-1]) i == j ? 1 : 0]
 
 function augment(n, m) = [for (i = [0 : n-1]) [for (j = [0 : n-1]) i < len(m) && j < len(m[i]) ? m[i][j] : i == j ? 1 : 0]];
 
-// same as the translate module, but returns a matrix
+// like the `translate()` module, but
+//   - returns a matrix
+//   - is unforgiving when given incomplete vectors
 function translate(v) = augment(4,
   [ [1, 0, 0, v.x]
   , [0, 1, 0, v.y]
@@ -130,7 +167,9 @@ function rotate_from_to(u, v) = let (uu = unit(u), uv = unit(v), uw = unit(cross
 
 function rotate_to(v) = rotate_from_to([0,0,1], v);
 
-// same as the rotate module, but returns a matrix
+// like the `rotate()` module, but
+//   - returns a matrix
+//   - is unforgiving when given incomplete vectors
 function rotate(a=0, v=[0,0,1]) = is_list(a)
   ? augment(4,
     [ [ cos(a.z), -sin(a.z),         0]
@@ -148,6 +187,9 @@ function rotate(a=0, v=[0,0,1]) = is_list(a)
     , [sin(a),  cos(a)] ]) *
     rotate_from_to(v, [0,0,1]);
 
+// like the `scale()` module, but
+//   - returns a matrix
+//   - is unforgiving when given incomplete vectors
 function scale(v) = augment(4,
   [ [v.x,   0,   0]
   , [  0, v.y,   0]
@@ -195,11 +237,13 @@ function multmatrices(ms, prod=identity(4), start=0, end=undef)
 
 // echo(multmatrices(replicate(999999, identity(4))));
 
+
 /*******************/
 /* transformations */
 /*******************/
 
-// mirror, but with an optional copy
+// like `mirror()`, but
+//   - copies by default
 module flip(v=[1, 0, 0], copy=true) {
   if (copy) children();
   mirror(v) children();
@@ -251,70 +295,118 @@ module shear(zX=0, zY=0, yZ=0, yX=0, xY=0, xZ=0, z, y, x) multmatrix(shear(zX, z
 /* circles & ellipses */
 /**********************/
 
-// number of fragments a circle of radius r would have given current settings
-function fragments(r) = $fn > 0
-  ? ($fn >= 3 ? $fn : 3)
-  : ceil(max(min(360/$fa, r*2*PI/$fs), 5));
+// number of fragments a circle of radius r would have given current settings. If `base` is given,
+// it rounds down to its nearest multiple.
+function fragments(r, base=1) = is_undef(r)
+  ? undef
+  : base*div($fn > 0
+      ? ($fn >= 3 ? $fn : 3)
+      : ceil(max(min(360/$fa, r*2*PI/$fs), 5))
+    , base);
 
-// smallest radius of an OpenSCAD circle (or arbitrary polygon if `sides` is given) that fits
+// smallest radius of an OpenSCAD circle (or arbitrary polygon if `segments` is given) that fits
 // fully around a perfect circle of radius `r` or diameter `d`.
-function circumgoncircumradius(r=1, d, sides) = let (radius = is_num(d) ? d/2 : r)
-  radius / cos(180 / (is_num(sides) ? sides : fragments(radius)));
+function circumgoncircumradius(r=1, d, segments) = let (radius = is_num(d) ? d/2 : r)
+  radius / cos(180 / (is_num(segments) ? segments : fragments(radius)));
 
-// smallest diameter of an OpenSCAD circle (or arbitrary polygon if `sides` is given) that fits
+// smallest diameter of an OpenSCAD circle (or arbitrary polygon if `segments` is given) that fits
 // fully around a perfect circle of radius `r` or diameter `d`.
-function circumgoncircumdiameter(r, d, sides) = 2*circumgoncircumradius(r, d, sides);
+function circumgoncircumdiameter(r, d, segments) = 2*circumgoncircumradius(r, d, segments);
 
 // largest radius of a perfect circle that fits fully inside an OpenSCAD circle (or arbitrary
-// polygon if `sides` is given) of radius `r` or diameter `d`.
-function ingoninradius(r=1, d, sides) = let (radius = is_num(d) ? d/2 : r)
-  radius * cos(180 / (is_num(sides) ? sides : fragments(radius)));
+// polygon if `segments` is given) of radius `r` or diameter `d`.
+function ingoninradius(r=1, d, segments) = let (radius = is_num(d) ? d/2 : r)
+  radius * cos(180 / (is_num(segments) ? segments : fragments(radius)));
 
 // largest radius of a perfect circle that fits fully inside an OpenSCAD circle (or arbitrary
-// polygon if `sides` is given) of radius `r` or diameter `d`.
-function ingonindiameter(r, d, sides) = 2*ingoninradius(r, d, sides);
+// polygon if `segments` is given) of radius `r` or diameter `d`.
+function ingonindiameter(r, d, segments) = 2*ingoninradius(r, d, segments);
 
-function point_on_ellipse(theta, a, b, size=[2,2]) = let
-  ( phi = mod(theta, 360)
-  , A = (is_num(a) ? a : size.x/2)
-  , B = (is_num(b) ? b : size.y/2)
-  )
+function point_on_ellipse(theta, a, b, size=[2,2]) =
+  let ( phi = mod(theta, 360)
+      , A   = (is_num(a) ? a : size.x/2)
+      , B   = (is_num(b) ? b : size.y/2)
+      )
   phi ==  90 ? [0,  B] :
   phi == 270 ? [0, -B] :
-  [ (phi < 90 || 270 < phi ? 1 : -1) * (A*B / sqrt(A*A*tan(theta)*tan(theta) + B*B))
-  , (phi < 90 || 270 < phi ? 1 : -1) * (A*B / sqrt(A*A*tan(theta)*tan(theta) + B*B)) * tan(theta)
-  ];
+    [ (phi < 90 || 270 < phi ? 1 : -1) * (A*B / sqrt(A*A*tan(theta)*tan(theta) + B*B))
+    , (phi < 90 || 270 < phi ? 1 : -1) * (A*B / sqrt(A*A*tan(theta)*tan(theta) + B*B)) * tan(theta)
+    ];
 
 
 /***************/
 /* 2D geometry */
 /***************/
 
+// like `circle()`, but
+//   - accepts an angle to create an arc like `rotate_extrude()`
+// NOTES:
+//   - segments are evenly spaced unless `segments` is directly specified as a non-integer value
+// TODO: add an r1, r2, d1, and d2 (or inner and outer????) To do full circles, call self for the
+//   difference. Otherwise, draw the second arc in reverse order, and do not draw the center point.
+module arc(r=1, a=360, d, segments, outer=false) {
+                           assert(is_num(r)        && r >= 0);
+                           assert(is_num(a));
+  if (!is_undef(d))        assert(is_num(d)        && d >= 0);
+  if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
+  if (!is_undef(outer))    assert(is_bool(outer));
+  if (a != 0) {
+    r = is_num(d) ? d/2 : r;
+    a = clamp(a, -360, 360);
+    fn = fragments(r);
+    segments = is_num(segments) ? segments : max(1, floor(abs(a)*fn/360));
+    segmentA = a / segments;
+    R = outer ? circumgoncircumradius(r, segments=segments*360/a) : r;
+    polygon(concat(
+      abs(a) == 360
+        ? []
+        : [ [0, 0] ],
+      [ for (i = [0 : ceil(segments)])
+        let (phi = segmentA*(i + (i > segments ? mod(segments, 1) - 1 : 0)))
+        [R*cos(phi), R*sin(phi)] ]
+    ));
+  }
+}
+
 // like `square()`, but
 //   - works with negative dimensions
 //   - centers or +/- aligns each axis individually
-module rect(size=[1,1], align=[1,1]) scale(size) translate(signum(align)/2-[.5,.5]) square();
+//     -   -1: left   0: center   1: right
+//   - optional rounded corners
+// TODO: figure out an interface for selecting which corners to round and which sides to teardrop
+// TODO: typecheck parameters
+// TODO: allow a 2-digit number for align (save 5 characters potentially)
+module rect(size=[1,1], align=[1,1], r=0) {
+  if (r==0) scale(size) translate(signum(align)/2-[.5,.5]) square();
+  else {
+    translate([align.x*r, 0]) rect(size-[r*2, 0], align);
+    translate([0, align.y*r]) rect(size-[0, r*2], align);
+    translate([align.x*size.x, align.y*size.y]/2) flipX() flipY() translate(size/2-[r,r]) circle(r, $fn=fragments(r, 4));
+    echo(r, $fn, fragments(r, 4));
+  }
+}
 
 // fillets a polygon with radius `r` or diameter `d`; outer if positive, inner if negative
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
 module fillet(r=1, d) {
-  assert(is_num(r));
+                    assert(is_num(r));
   if (!is_undef(d)) assert(is_num(d));
   // no need to rename `r`!!!!  Look at ring(), it works
   radius = is_num(d) ? d/2 : r;
   offset(radius) offset(-radius) children();
 }
 
-// like `circle()`, but with a peak tangent at `a` or of length `peak`
+// like `circle()`, but
+//   - has a peak tangent at `a` or of length `peak`
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
 module teardrop_2d(r=1, a=45, d, peak, truncate) {
-                           assert(is_num(r)         && r > 0);
-                          //  assert(is_num(a)         && a >= 0 && a < 90);
-  if (!is_undef(d))        assert(is_num(d)         && d > 0);
-  if (!is_undef(peak))     assert(is_num(peak)      && peak >= 0);
-  if (!is_undef(truncate)) assert(is_num(truncate)  && truncate >= 0);
+                           assert(is_num(r)        && r > 0);
+                           assert(is_num(a)        && a >= 0 && a < 90);
+  if (!is_undef(d))        assert(is_num(d)        && d > 0);
+  if (!is_undef(peak))     assert(is_num(peak)     && peak >= 0);
+  if (!is_undef(truncate)) assert(is_num(truncate) && truncate >= 0);
   r = is_num(d) ? d/2 : r;
   a = is_num(peak) ? acos(r/peak) : a;
   peak = is_num(peak) ? peak : r/cos(a);
@@ -340,13 +432,38 @@ module teardrop_2d(r=1, a=45, d, peak, truncate) {
 /* 3D geometry */
 /***************/
 
+// like `sphere()`, but
+//   - has vertices at the poles and along the equator
+// TODO: give `revolve()` a `w` and `h` just in case someone wants a huge sphere
+// TODO: revolve() an arc() instead to allow shells
+module ball(r=1, d) {
+                    assert(is_num(r) && r > 0);
+  if (!is_undef(d)) assert(is_num(d) && d > 0);
+  r = is_num(d) ? d/2 : r;
+  fn = fragments(r, 4);
+  revolve($fn=fn) circle(r, $fn=fn);
+}
+
 // like `cube()`, but
 //   - works with negative dimensions
 //   - centers and +/- aligns each axis individually
-module box(size=[1,1,1], align=[1,1,1]) scale(size) translate(signum(align)/2-[.5,.5,.5]) cube();
+//     -   -1: left   0: center   1: right
+//   - optional rounded edges
+// TODO: figure out an interface for selecting which edges to round and which faces to teardrop
+// TODO: typecheck parameters
+// TODO: allow a 3-digit number for align (save 7 characters potentially)
+module box(size=[1,1,1], align=[1,1,1], r=0)
+  if (r==0) scale(size) translate(signum(align)/2-[.5,.5,.5]) cube();
+  else {
+    translate([0, 0, align.z*size.z/2]) rotate([  0,  0, 0]) extrude(size.z-r*2, center=true) rect([size.x, size.y], [align.x, align.y], r);
+    translate([0, align.y*size.y/2, 0]) rotate([ 90,  0, 0]) extrude(size.y-r*2, center=true) rect([size.x, size.z], [align.x, align.z], r);
+    translate([align.x*size.x/2, 0, 0]) rotate([  0,-90, 0]) extrude(size.x-r*2, center=true) rect([size.z, size.y], [align.z, align.y], r);
+    translate([align.x*size.x, align.y*size.y, align.z*size.z]/2) flipX() flipY() flipZ() translate(size/2-[r,r,r]) ball(r);
+  }
 
 // like `cylinder()`, but
 //   - works with negative height
+// TODO: linear_extrude() an arc() instead; calculate scale from r1/r2 etc
 module rod(h=1, r1, r2, center, r, d1, d2, d) {
   assert(is_num(h));
   scale([1,1,sign(h)])
@@ -358,21 +475,22 @@ module rod(h=1, r1, r2, center, r, d1, d2, d) {
 //   - has a hole
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
+// TODO: linear_extrude() an arc() instead; calculate scale from r1/r2 etc
 module tube(h=1, outerR1=1, outerR2=1, innerR1=0.5, innerR2=0.5, center=false, outerR, innerR, outerD1, outerD2, innerD1, innerD2, outerD, innerD) {
-                          assert(is_num(h));    // && h != 0);
-                          assert(is_num(outerR1)   && outerR1 >= 0);
-                          assert(is_num(outerR2)   && outerR2 >= 0);
-                          assert(is_num(innerR1)   && innerR1 >= 0);
-                          assert(is_num(innerR2)   && innerR2 >= 0);
+                          assert(is_num(h));  // && h != 0);
+                          assert(is_num(outerR1) && outerR1 >= 0);
+                          assert(is_num(outerR2) && outerR2 >= 0);
+                          assert(is_num(innerR1) && innerR1 >= 0);
+                          assert(is_num(innerR2) && innerR2 >= 0);
                           assert(is_bool(center));
-  if (!is_undef(outerR))  assert(is_num(outerR)    && outerR >= 0);
-  if (!is_undef(innerR))  assert(is_num(innerR)    && innerR >= 0);
-  if (!is_undef(outerD2)) assert(is_num(outerD1)   && outerD1 >= 0);
-  if (!is_undef(outerD2)) assert(is_num(outerD2)   && outerD2 >= 0);
-  if (!is_undef(innerD1)) assert(is_num(innerD1)   && innerD1 >= 0);
-  if (!is_undef(innerD2)) assert(is_num(innerD2)   && innerD2 >= 0);
-  if (!is_undef(outerD))  assert(is_num(outerD)    && outerD >= 0);
-  if (!is_undef(innerD))  assert(is_num(innerD)    && innerD >= 0);
+  if (!is_undef(outerR))  assert(is_num(outerR)  && outerR  >= 0);
+  if (!is_undef(innerR))  assert(is_num(innerR)  && innerR  >= 0);
+  if (!is_undef(outerD2)) assert(is_num(outerD1) && outerD1 >= 0);
+  if (!is_undef(outerD2)) assert(is_num(outerD2) && outerD2 >= 0);
+  if (!is_undef(innerD1)) assert(is_num(innerD1) && innerD1 >= 0);
+  if (!is_undef(innerD2)) assert(is_num(innerD2) && innerD2 >= 0);
+  if (!is_undef(outerD))  assert(is_num(outerD)  && outerD  >= 0);
+  if (!is_undef(innerD))  assert(is_num(innerD)  && innerD  >= 0);
   // this might not have the same precedence as the built in `cylinder()`
   outerR1 = is_num(outerD) ? outerD/2 : is_num(outerR) ? outerR : is_num(outerD1) ? outerD1/2 : outerR1;
   outerR2 = is_num(outerD) ? outerD/2 : is_num(outerR) ? outerR : is_num(outerD2) ? outerD2/2 : outerR2;
@@ -386,25 +504,26 @@ module tube(h=1, outerR1=1, outerR2=1, innerR1=0.5, innerR2=0.5, center=false, o
       }
 }
 
-// like `cylinder()`, but with tapered ends
-//   negative `h` is degenerate
+// like `cylinder()`, but
+//   - has tapered ends
+// NOTE: negative `h` is degenerate
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
 module spindle(h=1, r1=1, r2=1, a1=45, a2=45, center=false, r, a, d1, d2, d, p1, p2, p) {
-                         assert(is_num(h));    // && h != 0);
-                         assert(is_num(r1)        && r1 >= 0);
-                         assert(is_num(r2)        && r2 >= 0);
-                         assert(is_num(a1)        && a1 >= 0 && a1 < 90);
-                         assert(is_num(a2)        && a2 >= 0 && a2 < 90);
-                         assert(is_bool(center));
-  if (!is_undef(r))      assert(is_num(r)         && r >= 0);
-  if (!is_undef(a))      assert(is_num(a)         && a >= 0 && a < 90);
-  if (!is_undef(d1))     assert(is_num(d1)        && d1 >= 0);
-  if (!is_undef(d2))     assert(is_num(d2)        && d2 >= 0);
-  if (!is_undef(d))      assert(is_num(d)         && d >= 0);
-  if (!is_undef(p1))     assert(is_num(p1)        && p1 >= 0);
-  if (!is_undef(p2))     assert(is_num(p2)        && p2 >= 0);
-  if (!is_undef(p))      assert(is_num(p)         && p >= 0);
+                     assert(is_num(h));
+                     assert(is_num(r1) && r1 >= 0);
+                     assert(is_num(r2) && r2 >= 0);
+                     assert(is_num(a1) && a1 >= 0 && a1 < 90);
+                     assert(is_num(a2) && a2 >= 0 && a2 < 90);
+                     assert(is_bool(center));
+  if (!is_undef(r))  assert(is_num(r)  && r  >= 0);
+  if (!is_undef(a))  assert(is_num(a)  && a  >= 0 && a  < 90);
+  if (!is_undef(d1)) assert(is_num(d1) && d1 >= 0);
+  if (!is_undef(d2)) assert(is_num(d2) && d2 >= 0);
+  if (!is_undef(d))  assert(is_num(d)  && d  >= 0);
+  if (!is_undef(p1)) assert(is_num(p1) && p1 >= 0);
+  if (!is_undef(p2)) assert(is_num(p2) && p2 >= 0);
+  if (!is_undef(p))  assert(is_num(p)  && p  >= 0);
   // this might not have the same precedence as the built in `cylinder()`
   r1 = is_num(d) ? d/2 : is_num(r) ? r : is_num(d1) ? d1/2 : r1;
   r2 = is_num(d) ? d/2 : is_num(r) ? r : is_num(d2) ? d2/2 : r2;
@@ -421,19 +540,21 @@ module spindle(h=1, r1=1, r2=1, a1=45, a2=45, center=false, r, a, d1, d2, d, p1,
     }
 }
 
+// like `cube()`, but.....different
 module octahedron(r=1, d) spindle(h=0, r=r, d=d, $fn=4);
 
-// like `sphere()`, but with a peak, defined by either the height `peak` or the
-//   reverse latitude angle `a`, where 0 is the north pole and 90 is the equator.
-//   The one not given is calculated to give a cone tangent to the sphere.
+// like `sphere()`, but
+//   - has a peak, defined by either the height `peak` or the reverse latitude angle `a`, where 0
+//     is the north pole and 90 is the equator. The one not given is calculated to give a cone
+//     tangent to the sphere.
 // TODO: reverse latitude is a bit weird. Should it be changed?
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
 module teardrop_3d(r=1, a=45, d, peak, truncate) {
-                           assert(is_num(r)        && r > 0);
-                           assert(is_num(a)        && a >= 0 && a < 90);
-  if (!is_undef(d))        assert(is_num(d)        && d > 0);
-  if (!is_undef(peak))     assert(is_num(peak)     && peak >= 0);
+                           assert(is_num(r)    && r > 0);
+                           assert(is_num(a)    && a >= 0 && a < 90);
+  if (!is_undef(d))        assert(is_num(d)    && d > 0);
+  if (!is_undef(peak))     assert(is_num(peak) && peak >= 0);
   if (!is_undef(truncate)) assert(is_num(truncate));
   r = is_num(d) ? d/2 : r;
   a = is_num(peak) ? acos(r/peak) : a;
@@ -462,13 +583,16 @@ module line_segment(v, r=0.5)
     rotate([0, acos(v.z/l), atan2(v.y, v.x)])
       cylinder(h=l, r=r);
 
-// like `linear_extrude()`, but allows negative heights and skips all the options
+// like `linear_extrude()`, but
+//   - allows negative heights
+//   - has less options
 module extrude(h=1, center=false, convexity=1, scale=[1,1])
   scale([1,1,sign(h)])
     linear_extrude(abs(h), center=center, convexity=convexity, slices=0, scale=scale)
       children();
 
-// like `linear_extrude()`, but fillets instead of twists
+// like `linear_extrude()`, but
+//   - fillets instead of twists
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
 module inflate(height, r=0, fillet, center, convexity, d) {
@@ -487,28 +611,50 @@ module inflate(height, r=0, fillet, center, convexity, d) {
   }
 }
 
-// like `rotate_extrude()`, but revolves 3D geometry around any axis
-// `r` and `d` are only for autocalculating fragments. Somehow `rotate_extrude()` does this
-//   automatically. If `$fn` is set, `r` and `d` do nothing.
-// TODO: typecheck `a`
+// like `rotate_extrude()`, but
+//   - strips negative x coordinates (by default)
+//   - allows negative x coordinates (if trim=false)
+//   - `angle` is called `a`, like every other module
+// TODO: figure out TODOs
+module revolve(a=360, convexity=1, trim=true, w=10000, h=10000) {
+  rotate_extrude(angle=a, convexity=convexity) intersection() {
+    children();
+    rect([w, h], [1,0]);
+  }
+  if (!trim) rotate_extrude(angle=a, convexity=convexity) difference() {
+    children();
+    rect([w, h], [1,0]);
+  }
+}
+
+// like `rotate_extrude()`, but
+//   - revolves 3D geometry around any axis
+// NOTES:
+//   - segments are evenly spaced unless `segments` is directly specified as a non-integer value
+//   - `r` and `d` are only for autocalculating fragments. Somehow `rotate_extrude()` does this
+//     automatically. If `$fn` is set, `r` and `d` are ignored. If `segments` is set, it overrides
+//     everything else.
+// TODO: typecheck `a` and `v`
 // TODO: `norm(a)` is not right
-module hull_rotate_extrude(a, v, r=1, d, segments) {
+module hull_rotate_extrude(a, v, r, d, segments) {
   if (!is_undef(r))        assert(is_num(r)        && r >= 0);
   if (!is_undef(d))        assert(is_num(d)        && d >= 0);
-  assert(!is_undef(r) || !is_undef(d));
   if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
+  assert(!is_undef(r) || !is_undef(d) || !is_undef(segments) || $fn > 0);
   if ($children > 0) {
     r = is_num(d) ? d/2 : r;
     fn = fragments(r);
     totalA = is_num(a) ? a : norm(a);
     segments = is_num(segments) ? segments : max(1, floor(abs(totalA)*fn/360));
     segmentA = a / segments;
-    for (i = [0 : segments-1]) for (j = [0 : $children-1]) hull() {
+    for (i = [0 : ceil(segments)-1]) for (j = [0 : $children-1]) hull() {
       rotate(segmentA*i, v) children(j);
-      rotate(segmentA*(i+1), v) children(j);
+      rotate(segmentA*(i+(i>segments-1?mod(segments,1):1)), v) children(j);
     }
   }
 }
+
+// // examples:
 // hull_rotate_extrude([0, 90, 90], r=25) translate([25, 0, 0]) sphere(10);
 // rotate([180, 270, 180]) hull_rotate_extrude(45, $fn=60) translate([25, 0, 0]) tull([100, 0, 0]) rotate(45) spindle(0, r=10, $fn=4);
 
@@ -549,33 +695,35 @@ module slice(layerH0, layerHN, minL, maxL, minH, maxH, size, align=[0,0]) {
   }
 }
 
-// layer -> relative height
+// float layer -> float height
 function layer_relative_height(l, layerHN) =
   layerHN*l;
 
-// layer -> absolute height
+// float layer -> float position
 function layer_absolute_height(l, layerHN, layerH0) =
   l<=0 ? 0 :
   l<=1 ? layerH0*l :
   layerH0 + layer_relative_height(l-1, layerHN);
 
-// relative height -> layer
+// float height -> snap height
 function floor_relative_height_layer(h, layerHN) = div(h, layerHN)*layerHN;
 function  ceil_relative_height_layer(h, layerHN) = floor_relative_height_layer(h, layerHN)
                                                  + (mod(h, layerHN)==0 ? 0 : layerHN);
-function round_relative_height_layer(h, layerHN) = let
-  ( f =  floor_relative_height_layer(h, layerHN)
-  , c =   ceil_relative_height_layer(h, layerHN)
-  ) h-f < c-h ? f : c;
+function round_relative_height_layer(h, layerHN) =
+  let ( f =  floor_relative_height_layer(h, layerHN)
+      , c =   ceil_relative_height_layer(h, layerHN)
+      )
+  h-f < c-h ? f : c;
 
-// absolute height -> layer
+// float position -> snap position
 function floor_absolute_height_layer(z, layerHN, layerH0) = max(0, div(z-layerH0, layerHN)*layerHN + layerH0);
 function  ceil_absolute_height_layer(z, layerHN, layerH0) = floor_absolute_height_layer(z, layerHN, layerH0)
                                                           + (mod(z-layerH0, layerHN)==0 ? 0 : z<layerH0 ? layerH0 : layerHN);
-function round_absolute_height_layer(z, layerHN, layerH0) = let
-  ( f =  floor_absolute_height_layer(z, layerHN, layerH0)
-  , c =   ceil_absolute_height_layer(z, layerHN, layerH0)
-  ) z-f < c-z ? f : c;
+function round_absolute_height_layer(z, layerHN, layerH0) =
+  let ( f =  floor_absolute_height_layer(z, layerHN, layerH0)
+      , c =   ceil_absolute_height_layer(z, layerHN, layerH0)
+      )
+  z-f < c-z ? f : c;
 
 
 /*********/

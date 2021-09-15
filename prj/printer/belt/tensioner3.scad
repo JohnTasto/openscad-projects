@@ -16,7 +16,7 @@ module tensioner(hex=false) {
       union() {
         rotate([90,0,0]) cylinder
         ( length-2*fillet
-        , d=hex?circumgoncircumdiameter(d=d-2*fillet, sides=6):d-2*fillet
+        , d=hex?circumgoncircumdiameter(d=d-2*fillet, segments=6):d-2*fillet
         , center=true
         , $fn=hex?6:$fn
         );
