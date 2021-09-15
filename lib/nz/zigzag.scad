@@ -6,7 +6,7 @@ function tiles(bounds, tileMax)      = [ ceil(bounds.x / tileMax.x), ceil(bounds
 function tile(bounds, tiles)         = [         bounds.x / tiles.x,         bounds.y / tiles.y ];
 function hole(tile, wall, gap)       = [              tile.x - wall,      tile.y - wall*2 - gap ];
 
-module zigzag(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall=0.41, gap=0.03, offsets=[[],[]], alternate=false) {
+module zigzag(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall=0.41, gap=0.03, offsets=[[],[]], alternate=false, solid=false) {
 
   tileMax = tileMax(holeMax, wall, gap);
   tiles = is_list(tiles) ? tiles : tiles(bounds, tileMax);
@@ -17,10 +17,10 @@ module zigzag(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall
   // echo(str("Tile size:  ", tile));
   // echo(str("Hole size:  ", hole));
 
-  extra = [
-    (mod(tiles.x, 2) == 0 ? !centerLine.x : centerLine.x) ? 1 : 0,
-    (mod(tiles.y, 2) == 0 ? centerLine.y : !centerLine.y) ? 1 : 0
-  ];
+  extra =
+    [ (mod(tiles.x, 2) == 0 ? !centerLine.x :  centerLine.x) ? 1 : 0
+    , (mod(tiles.y, 2) == 0 ?  centerLine.y : !centerLine.y) ? 1 : 0
+    ];
 
   mainL = tile.y - wall*sqrt(2) - wall - gap*2*sqrt(2);
   rampL = wall + wall/2*sqrt(2) - gap/2*sqrt(2) + gap*2;
@@ -56,7 +56,7 @@ module zigzag(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall
   maskEnd = (mod(tiles.x, 2) == 0 && !centerLine.x && alternate) || (mod(tiles.x, 2) == 1 && centerLine.x && !alternate) ? -1 : 0;
   linesExtra = (mod(tiles.x, 2) == 0 && centerLine.x) || (mod(tiles.x, 2) == 1 && !centerLine.x) ? 1 : 0;
 
-  intersection() {
+  if (!solid) intersection() {
     translate([(-bounds.x-tile.x*extra.x)/2, (-bounds.y-tile.y*extra.y)/2])
       for (i = [-linesExtra : tiles.x+extra.x+linesExtra])
         for (j = [0 : tiles.y+extra.y])
@@ -92,24 +92,25 @@ module zigzag(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall
             }
     difference() {
       offset(delta=wall) if ($children > 0) children(); else rect(bounds, [0,0]);
-      if ($children > 0) children(); else rect(bounds, [0,0]);
+      if (!solid) { if ($children > 0) children(); else rect(bounds, [0,0]); }
     }
   }
 }
 
 
-module zigzagMask(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall=0.41, gap=0.03, offsets=[[],[]], alternate=false)
+module zigzagMask(bounds, holeMax=[5, 5], tiles=undef, centerLine=[true, true], wall=0.41, gap=0.03, offsets=[[],[]], alternate=false, solid=false)
   if ($children > 0)
     intersection() {
       offset(delta=gap)
-        zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate)
+        zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate, solid)
           children();
+      // prevent offset acute angles from sticking out past bounds
       offset(delta=wall+gap)
         children();
     }
   else
     offset(delta=gap)
-      zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate);
+      zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate, solid);
 
 
 
@@ -122,43 +123,45 @@ module demo() {
   gap = 0.3;
   offsets = [[-3], [-3]];
   alternate = false;
+  solid = false;
 
   module demoPerimeter() {
     module perimeter() {
       size = bounds - [cos($t*360)*10+20, sin($t*1080)*10+15];
+      // size = bounds - [cos(.26666*360)*10+20, sin(.26666*1080)*10+15];
       difference() {
         rect(size, [0,0]);
         flipX() flipY() translate(size/2) circle(10);
       }
     }
-    color("yellow")
+    color("orange")
       extrude(1, center=true)
-        zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate)
+        zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate, solid)
           perimeter();
     color("gray", 0.5)
       extrude(1, center=true)
         difference() {
           rect(bounds, [0,0]);
           perimeter();
-          zigzagMask(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate)
+          zigzagMask(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate, solid)
             perimeter();
         }
   }
 
   module demoBounds() {
-    color("yellow")
-      extrude(1, center=true)
-        zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate);
+    color("orange")
+      extrude(1.50, center=true)
+        zigzag(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate, solid);
     color("blue")
-      extrude(-0.5)
-        zigzagMask(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate);
-    color("grey", 0.25)
-      extrude(0.5, center=true)
+      extrude(1.00, center=true)
+        zigzagMask(bounds, holeMax, tiles, centerLine, wall, gap, offsets, alternate, solid);
+    color("grey", 0.5)
+      extrude(1.25, center=true)
         rect(bounds, [0,0]);
   }
 
-  // demoPerimeter($fn=60);
-  demoBounds($fn=60);
+  demoPerimeter($fn=60);
+  // demoBounds($fn=60);
 }
 
 demo();
