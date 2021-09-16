@@ -15,11 +15,11 @@ module tensioner(hex=false) {
     minkowski() {
       union() {
         rotate([90,0,0]) cylinder
-        ( length-2*fillet
-        , d=hex?circumgoncircumdiameter(d=d-2*fillet, segments=6):d-2*fillet
-        , center=true
-        , $fn=hex?6:$fn
-        );
+          ( length-2*fillet
+          , d=hex?circumgoncircumdiameter(d=d-2*fillet, segments=6):d-2*fillet
+          , center=true
+          , $fn=hex?6:$fn
+          );
         box([d/2+1-fillet, length-2*fillet, d-2*fillet], [1,0,0]);
       }
       sphere(fillet);

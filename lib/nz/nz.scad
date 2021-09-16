@@ -295,32 +295,30 @@ module shear(zX=0, zY=0, yZ=0, yX=0, xY=0, xZ=0, z, y, x) multmatrix(shear(zX, z
 /* circles & ellipses */
 /**********************/
 
-// number of fragments a circle of radius r would have given current settings. If `base` is given,
-// it rounds down to its nearest multiple.
-function fragments(r, base=1) = is_undef(r)
-  ? undef
-  : base*div($fn > 0
-      ? ($fn >= 3 ? $fn : 3)
-      : ceil(max(min(360/$fa, r*2*PI/$fs), 5))
-    , base);
+// number of fragments a circle of radius `r` or diameter `d` would have given current settings,
+// rounded down to the nearest multiple of `base` if is given.
+function fragments(r, d, base=1) = let (r = is_num(d) ? d/2 : r)
+  $fn > 0     ? base*div($fn >= 3 ? $fn : 3, base) :
+  is_undef(r) ? undef :
+                base*div(ceil(max(min(360/$fa, r*2*PI/$fs), 5)), base);
 
 // smallest radius of an OpenSCAD circle (or arbitrary polygon if `segments` is given) that fits
 // fully around a perfect circle of radius `r` or diameter `d`.
-function circumgoncircumradius(r=1, d, segments) = let (radius = is_num(d) ? d/2 : r)
-  radius / cos(180 / (is_num(segments) ? segments : fragments(radius)));
+function circumgoncircumradius(r=1, d, segments) = let (r = is_num(d) ? d/2 : r)
+  r / cos(180 / (is_num(segments) ? segments : fragments(r)));
 
 // smallest diameter of an OpenSCAD circle (or arbitrary polygon if `segments` is given) that fits
 // fully around a perfect circle of radius `r` or diameter `d`.
-function circumgoncircumdiameter(r, d, segments) = 2*circumgoncircumradius(r, d, segments);
+function circumgoncircumdiameter(r=1, d, segments) = 2*circumgoncircumradius(r, d, segments);
 
 // largest radius of a perfect circle that fits fully inside an OpenSCAD circle (or arbitrary
 // polygon if `segments` is given) of radius `r` or diameter `d`.
-function ingoninradius(r=1, d, segments) = let (radius = is_num(d) ? d/2 : r)
-  radius * cos(180 / (is_num(segments) ? segments : fragments(radius)));
+function ingoninradius(r=1, d, segments) = let (r = is_num(d) ? d/2 : r)
+  r * cos(180 / (is_num(segments) ? segments : fragments(r)));
 
 // largest radius of a perfect circle that fits fully inside an OpenSCAD circle (or arbitrary
 // polygon if `segments` is given) of radius `r` or diameter `d`.
-function ingonindiameter(r, d, segments) = 2*ingoninradius(r, d, segments);
+function ingonindiameter(r=1, d, segments) = 2*ingoninradius(r, d, segments);
 
 function point_on_ellipse(theta, a, b, size=[2,2]) =
   let ( phi = mod(theta, 360)
@@ -381,20 +379,16 @@ module rect(size=[1,1], align=[1,1], r=0) {
   else {
     translate([align.x*r, 0]) rect(size-[r*2, 0], align);
     translate([0, align.y*r]) rect(size-[0, r*2], align);
-    translate([align.x*size.x, align.y*size.y]/2) flipX() flipY() translate(size/2-[r,r]) circle(r, $fn=fragments(r, 4));
-    echo(r, $fn, fragments(r, 4));
+    translate([align.x*size.x, align.y*size.y]/2) flipX() flipY() translate(size/2-[r,r]) circle(r, $fn=fragments(r, base=4));
   }
 }
 
 // fillets a polygon with radius `r` or diameter `d`; outer if positive, inner if negative
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
-module fillet(r=1, d) {
-                    assert(is_num(r));
-  if (!is_undef(d)) assert(is_num(d));
-  // no need to rename `r`!!!!  Look at ring(), it works
-  radius = is_num(d) ? d/2 : r;
-  offset(radius) offset(-radius) children();
+module fillet(r=1) {
+  assert(is_num(r));
+  offset(r) offset(-r) children();
 }
 
 // like `circle()`, but
@@ -440,7 +434,7 @@ module ball(r=1, d) {
                     assert(is_num(r) && r > 0);
   if (!is_undef(d)) assert(is_num(d) && d > 0);
   r = is_num(d) ? d/2 : r;
-  fn = fragments(r, 4);
+  fn = fragments(r, base=4);
   revolve($fn=fn) circle(r, $fn=fn);
 }
 
@@ -464,10 +458,10 @@ module box(size=[1,1,1], align=[1,1,1], r=0)
 // like `cylinder()`, but
 //   - works with negative height
 // TODO: linear_extrude() an arc() instead; calculate scale from r1/r2 etc
-module rod(h=1, r1, r2, center, r, d1, d2, d) {
+module rod(h=1, r1, r2, r, d1, d2, d, center) {
   assert(is_num(h));
   scale([1,1,sign(h)])
-    cylinder(h=abs(h), r1=r1, r2=r2, center=center, r=r, d1=d1, d2=d2, d=d);
+    cylinder(h=abs(h), r1=r1, r2=r2, r=r, d1=d1, d2=d2, d=d, center=center);
 }
 
 // like `cylinder()`, but
@@ -476,7 +470,7 @@ module rod(h=1, r1, r2, center, r, d1, d2, d) {
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
 // TODO: linear_extrude() an arc() instead; calculate scale from r1/r2 etc
-module tube(h=1, outerR1=1, outerR2=1, innerR1=0.5, innerR2=0.5, center=false, outerR, innerR, outerD1, outerD2, innerD1, innerD2, outerD, innerD) {
+module tube(h=1, outerR1=1, outerR2=1, innerR1=0.5, innerR2=0.5, outerR, innerR, outerD1, outerD2, innerD1, innerD2, outerD, innerD, center=false) {
                           assert(is_num(h));  // && h != 0);
                           assert(is_num(outerR1) && outerR1 >= 0);
                           assert(is_num(outerR2) && outerR2 >= 0);
@@ -509,7 +503,7 @@ module tube(h=1, outerR1=1, outerR2=1, innerR1=0.5, innerR2=0.5, center=false, o
 // NOTE: negative `h` is degenerate
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
-module spindle(h=1, r1=1, r2=1, a1=45, a2=45, center=false, r, a, d1, d2, d, p1, p2, p) {
+module spindle(h=1, r1=1, r2=1, a1=45, a2=45, r, a, d1, d2, d, p1, p2, p, center=false) {
                      assert(is_num(h));
                      assert(is_num(r1) && r1 >= 0);
                      assert(is_num(r2) && r2 >= 0);
@@ -547,6 +541,7 @@ module octahedron(r=1, d) spindle(h=0, r=r, d=d, $fn=4);
 //   - has a peak, defined by either the height `peak` or the reverse latitude angle `a`, where 0
 //     is the north pole and 90 is the equator. The one not given is calculated to give a cone
 //     tangent to the sphere.
+// TODO: arrange vertices like `ball()` instead of `sphere()`?
 // TODO: reverse latitude is a bit weird. Should it be changed?
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
@@ -595,17 +590,16 @@ module extrude(h=1, center=false, convexity=1, scale=[1,1])
 //   - fillets instead of twists
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
-module inflate(height, r=0, fillet, center, convexity, d) {
-  if (!is_undef(height))    assert(is_num(height)    && height > 0);
+module inflate(h, r=0, fillet, center, convexity) {
+  if (!is_undef(h))         assert(is_num(h)         && h > 0);
                             assert(is_num(r)         && r >= 0);
   if (!is_undef(fillet))    assert(is_num(fillet)    && fillet >= 0);
   if (!is_undef(center))    assert(is_bool(center));
   if (!is_undef(convexity)) assert(is_num(convexity) && convexity > 0);
-  if (!is_undef(d))         assert(is_num(d)         && d >= 0);
-  outerR = is_num(d) ? d/2 : r;
+  outerR = r;
   innerR = is_num(fillet) ? fillet : outerR;
   minkowski() {
-    linear_extrude(height, center=center, convexity=convexity, slices=0)
+    linear_extrude(h, center=center, convexity=convexity, slices=0)
       offset(-(outerR+innerR)) offset(innerR) children();
     sphere(circumgoncircumradius(outerR));
   }
@@ -848,11 +842,11 @@ module m_bolt_washer(m, washer=0, slack=slack, taper=0) if (washer > 0) {
 
 // module m_bolt(m, depth=0, shank=0, nut, button=0, socket=0, $fn=24) {
 //   if (depth > 0) translate([0, 0, -depth]) cylinder(depth+1, d=m_thread_width(m)-.2);
-//   if (shank > 0) translate([0, 0, -shank]) cylinder(shank+1, d=circumgoncircumdiameter(d=m_thread_width(m))+.25);
+//   if (shank > 0) translate([0, 0, -shank]) cylinder(shank+1, d=circumgoncircumdiameter(d=m_thread_width(m)+.25));
 //   if (is_num(nut)) translate([0, 0, -nut-m_nut_height(m)]) cylinder(m_nut_height(m), d=m_nut_width(m)+.1, $fn=6);
 //   if (is_list(nut)) translate([0, 0, -nut[1]]) cylinder(nut[1]-nut[0], d=m_nut_width(m)+.1, $fn=6);
-//   if (button > 0) cylinder(button, d=circumgoncircumdiameter(d=m_button_head_width(m))+.25);
-//   if (socket > 0) cylinder(socket, d=circumgoncircumdiameter(d=m_socket_head_width(m))+.25);
+//   if (button > 0) cylinder(button, d=circumgoncircumdiameter(d=m_button_head_width(m)+.25));
+//   if (socket > 0) cylinder(socket, d=circumgoncircumdiameter(d=m_socket_head_width(m)+.25));
 // }
 
 module m_bolt(m, depth=0, shank=0, nut=undef, button=0, socket=0, washer=0, width=0, height=0, grip=undef, gripA=gripA, gripB=gripB, slack=slack, taper=0) {

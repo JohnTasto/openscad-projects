@@ -54,7 +54,7 @@ module y_carriage() {
     }
 
     // x rod
-    flip([0,1,0]) translate([w/2-xRodL-0.4, xW/2, 0]) rotate([0,90,0]) cylinder(w, d=circumgoncircumdiameter(d=xRodD)+0.25);
+    flip([0,1,0]) translate([w/2-xRodL-0.4, xW/2, 0]) rotate([0,90,0]) cylinder(w, d=circumgoncircumdiameter(d=xRodD+0.25));
     flip([0,1,0]) translate([-1, xW/2, 0]) rotate([0,90,0]) cylinder(w+2, d=xAccessD);
     flip([0,1,0]) translate([w-xRodD/2-1, xW/2, 0]) rotate([0,90,0]) cylinder((l-xW)/2, r1=0, r2=(l-xW)/2);
 
@@ -62,7 +62,7 @@ module y_carriage() {
     translate([w/2, -l/2-2, drop]) rotate([-90,0,0]) cylinder(l+2, d=yRodD+2);
 
     // linear bearing
-    flip([0,1,0]) translate([w/2, lbWall-l/2, drop]) rotate([-90, 0, 0]) cylinder(lbL+0.5, d=circumgoncircumdiameter(d=lbD)+0.25);
+    flip([0,1,0]) translate([w/2, lbWall-l/2, drop]) rotate([-90, 0, 0]) cylinder(lbL+0.5, d=circumgoncircumdiameter(d=lbD+0.25));
 
     // linear bearing bolts
     // still lots of magic numbers here

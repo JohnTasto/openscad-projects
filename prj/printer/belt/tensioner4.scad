@@ -38,7 +38,7 @@ module tensioner() {
               }
             difference() {
               rotate([90,180,0]) extrude(zipW+2*fillet, center=true) teardrop_2d(d=innerD);
-              translate([0, 0, -ingonindiameter(d=(outerD-2*fillet),sides=6)/2-fillet])
+              translate([0, 0, -ingonindiameter(d=(outerD-2*fillet), segments=6)/2-fillet])
                 box([outerD+2, length+2, 1000], [0,0,-1]);
             }
           }
@@ -49,6 +49,6 @@ module tensioner() {
         }
 }
 
-translate([0, lineW-boltX/2+nutW/2, ingonindiameter(d=(outerD-2*fillet),sides=6)/2+fillet])
+translate([0, lineW-boltX/2+nutW/2, ingonindiameter(d=(outerD-2*fillet), segments=6)/2+fillet])
   rotate([-90,0,0])
     tensioner($fn=fn);

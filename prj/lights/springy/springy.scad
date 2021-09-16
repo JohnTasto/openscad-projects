@@ -38,17 +38,17 @@ lampBump = (lampGap - (12.5 + slop*2))/2;
 echo(lampGap);
 
 knobR = 4.025;
-adjKnobR = circumgoncircumradius(r=knobR) + slack*2;  // should slack be really be doubled?
+adjKnobR = circumgoncircumradius(r=knobR+slack*2);  // should slack be really be doubled?
 knobOuterR = adjKnobR + mMargin;
 knobInset = 3.0;
 
 studR = 4.15;
-adjStudR = circumgoncircumradius(r=studR) + slack*2;  // should slack be really be doubled?
+adjStudR = circumgoncircumradius(r=studR+slack*2);  // should slack be really be doubled?
 studOuterR = adjStudR + mMargin;
 studInset = plateW + bump - 3.0;
 
 hookR = 4;
-adjHookR = circumgoncircumradius(r=hookR) + slack*2;  // should slack be really be doubled?
+adjHookR = circumgoncircumradius(r=hookR+slack*2);  // should slack be really be doubled?
 hookOuterR = adjHookR + mMargin;
 hookInset = plateW + bump - lineW*2;
 

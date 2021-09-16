@@ -116,7 +116,7 @@ module y_carriage_idler(color) {
     // BLTouch
     translate([ycW()/2-blD+fillet, blY, 0])
       rotate([90,0,90])
-        inflate(blD+1, fillet)
+        inflate(blD+1, r=fillet)
           polygon([
             [blScrewW/2-blScrewR, blRise],
             [blScrewW/2-blScrewR, blRise+blScrewH],

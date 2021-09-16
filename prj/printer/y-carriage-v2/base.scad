@@ -102,7 +102,7 @@ module y_carriage(color) {
 
       // x rod             // is this slop() really necessary? it used to be 0.4 btw
       flip([0,1,0]) translate([-xRodL-slop(), xW/2, 0]) rotate([0,90,0])
-        cylinder(ycW(), d=circumgoncircumdiameter(d=xRodD())+slop());
+        cylinder(ycW(), d=circumgoncircumdiameter(d=xRodD()+slop()));
       flip([0,1,0]) translate([0, xW/2, 0]) rotate([0,90,0])
         cylinder(ycW()+2, d=xAccessD, center=true);
       flip([0,1,0]) translate([ycW()/2-xRodD()/2-1, xW/2, 0]) rotate([0,90,0])
@@ -114,7 +114,7 @@ module y_carriage(color) {
 
       // linear bearing
       flip([0,1,0]) translate([0, lbWall-ycL()/2, drop()]) rotate([-90, 0, 0])
-        cylinder(lbL, d=circumgoncircumdiameter(d=lbD)+slop());
+        cylinder(lbL, d=circumgoncircumdiameter(d=lbD+slop()));
 
       // linear bearing screws
       translate([ycW()/2-3, 0, 0]) {

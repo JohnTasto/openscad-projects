@@ -27,7 +27,7 @@ frameLedge = 41.8;
 // pfteH = 9;
 // pfteThread = m_adjusted_thread_width(mm(3/8));
 // pfteR = pfteThread/2;
-pfteD = circumgoncircumdiameter(d=4) + slack*2;
+pfteD = circumgoncircumdiameter(d=4+slack*2);
 pfteR = pfteD/2;
 wireR = 7.5;  // should match tie.scad
 

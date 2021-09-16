@@ -25,14 +25,14 @@ function supported() = false;
 xW = 70;
 
 function xRodD() = 8;
-function adjXRodD() = circumgoncircumdiameter(d=xRodD()) + slop();
+function adjXRodD() = circumgoncircumdiameter(d=xRodD()+slop());
 xRodL = 6.25;  // past center of Y rods
 xAccessD = 3;  // access hole diameter, useful for verifying X rods are inserted all the way
 function xRodWall() = 2.4 + slop()/2;  // + 0.01;
 function keel() = adjXRodD()/2 + xRodWall();  // 6.5 below X rod center
 
 function yRodD() = 8;
-function adjYRodD() = circumgoncircumdiameter(d=yRodD()) + slop();
+function adjYRodD() = circumgoncircumdiameter(d=yRodD()+slop());
 function yRodClearance() = 0;  // 1;
 yRodWall = 1.2;
 function yRodSide() = 22.5;         // frame side wall to Y rod center
@@ -59,7 +59,7 @@ function adjLbL() = lbL + slack();
 function lbOWall() = 2.4;
 function lbIWall() = 7.6;
 lbD = 8;  // 15;
-function adjLbD() = circumgoncircumdiameter(d=lbD) + slop();
+function adjLbD() = circumgoncircumdiameter(d=lbD+slop());
 function lbDWall() = pulleyYRodZ - adjLbD()/2;
 
 screwWall = 1.2;

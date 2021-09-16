@@ -28,7 +28,7 @@ module belt_end(sides) {
             translate([0, (fillet-innerD/2)*sin(-360/sides), (fillet-innerD/2)*cos(-360/sides)])
               rotate([360/sides,0,0]) box([length-2*fillet, outerD, innerD-2*fillet], [0,-1,1]);
           }
-          translate([0, 0, -ingoninradius(d=outerD-2*fillet, sides=sides)]) box([2*outerD, 2*outerD, outerD], [0,0,-1]);
+          translate([0, 0, -ingoninradius(d=outerD-2*fillet, segments=sides)]) box([2*outerD, 2*outerD, outerD], [0,0,-1]);
         }
       }
       sphere(fillet);
