@@ -179,7 +179,7 @@ Drawer_layer_compensation_lines = 2;  // [0:1:5]
 // in frame layers
 Thickness_of_front_fills = 3;  // [0:1:10]
 // in mm. The back wall sometimes sticks to the piece below it and needs a bit more clearance to lay flat.
-Back_wall_extra_slop = 0.10;  // [0.00:0.01:1.00]
+Back_wall_extra_slop = 0.05;  // [0.00:0.01:1.00]
 
 /* [<sides> Trim Detents] */
 // in mm
@@ -305,32 +305,34 @@ TOP_AND_BOTTOM_HOOKS = false;
 Vertical_hook_size = 3.25;  // [0.50:0.25:10.00]
 // in mm
 Vertical_hook_bump_height = 1.00;  // [0.00:0.05:5.00]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Vertical_hook_left_bump_height_offset = 0.08;  // [-0.50:0.01:0.50]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Vertical_hook_right_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers
 Vertical_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Vertical_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
 Vertical_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
+// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
+Vertical_hook_bump_minimum_contact_width = 1.00;  // [0.10:0.05:10.00]
 // in mm. Move the bumps further apart, but keep them the size. This adjusts detent stiffness with minimal side effects on other parts, but it does change their position on the rail.
 Vertical_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
 // in mm. The margin provides room for the hooks to flex. It is automatically calculated but may be adjusted here. This does not change the bump position, but changing this setting causes other widespread incompatibilities with previously printed parts.
 Vertical_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
-Vertical_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
+Vertical_hook_bump_overlap = -1.25;  // [-5.00:0.25:5.00]
+// in frame layers. Compensate for frame misalignment.
+Vertical_back_stop_overlap = -1.50;  // [-5.00:0.25:5.00]
 // in frame layers
 Vertical_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
 // in frame layers
 Vertical_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
-// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
-Vertical_hook_bump_minimum_contact_patch = 1.00;  // [0.10:0.05:10.00]
 // in mm. Reduce sharp points to prevent injury when disassembling.
 Vertical_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
 // in mm. Chamfer the wall on the upper left to prevent injury when disassembling.
 Horn_chamfer = 0.75;  // [0.00:0.25:10.00]
 // in mm. Compensate for a weak left hook detent due to filament dragging reducing the horn height.
-Horn_height_offset = 0.05;  // [0.00:0.01:1.00]
-// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
-Vertical_hook_left_bump_height_offset = 0.05;  // [-0.50:0.01:0.50]
-// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
-Vertical_hook_right_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
+Horn_height_offset = 0.10;  // [0.00:0.01:1.00]
 
 /* [<global> Frame Detents - Left and Right Hooks] */
 // Bump positions along the rail are calculated using their slopes and peak height. The bump overlap setting allows adjusting their position relative to each other without affecting their height, and the top and bottom bump height offset settings allow changing their height without affecting their position. The top and bottom bump height offsets are mostly side effect free, but they may cause overhangs greater than 45° if the bumps are not inset far enough.
@@ -339,30 +341,32 @@ LEFT_AND_RIGHT_HOOKS = false;
 Horizontal_hook_size = 1.25;  // [0.50:0.25:10.00]
 // in mm
 Horizontal_hook_bump_height = 0.85;  // [0.00:0.05:5.00]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Horizontal_hook_top_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
+// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
+Horizontal_hook_bottom_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers
 Horizontal_hook_bump_peak_length = 2.00;  // [0.00:0.25:5.00]
 Horizontal_hook_bump_latch_slope = 0.750;  // [0.050:0.005:1.000]
 Horizontal_hook_bump_ramp_slope = 0.175;  // [0.050:0.005:1.000]
+// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
+Horizontal_hook_bump_minimum_contact_width = 0.5;  // [0.10:0.05:10.00]
 // in mm. Move the bumps further apart, but keep them the size. This adjusts detent stiffness with minimal side effects on other parts, but it does change their position on the rail.
 Horizontal_hook_gap_offset = 0.05;  // [-0.50:0.01:0.50]
 // in mm. The margin provides room for the hooks to flex. It is automatically calculated but may be adjusted here. This does not change the bump position, but changing this setting causes other widespread incompatibilities with previously printed parts. It may have unpredictable effects when bin drawers are being compensated.
 Horizontal_hook_margin_offset = 0.00;  // [-0.50:0.01:0.50]
 // in frame layers. Keep presure on the bumps even after they're fully inserted so they don't feel loose.
-Horizontal_hook_bump_overlap = -0.25;  // [-5.00:0.25:5.00]
+Horizontal_hook_bump_overlap = -1.25;  // [-5.00:0.25:5.00]
+// in frame layers. Compensate for frame misalignment.
+Horizontal_back_stop_overlap = -1.00;  // [-5.00:0.25:5.00]
 // in frame layers
 Horizontal_hook_bump_front_inset = 5.00;  // [0.00:0.25:10.00]
 // in frame layers
 Horizontal_hook_bump_back_inset = 5.00;  // [0.00:0.25:10.00]
-// in mm. If there is room, an extra lip is added to the hooks which helps prevent them from derailing.
-Horizontal_hook_bump_minimum_contact_patch = 0.5;  // [0.10:0.05:10.00]
 // in mm. Reduce sharp points to prevent injury when disassembling.
 Horizontal_hook_chamfer = 0.75;  // [0.00:0.25:10.00]
 // in mm. Reduce sharp points to prevent injury when disassembling.
 Horizontal_stem_chamfer = 10.00;  // [0.00:0.25:10.00]
-// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
-Horizontal_hook_top_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
-// in mm. Compensate for uneven hooks detents caused by backlash and print direction and acceleration.
-Horizontal_hook_bottom_bump_height_offset = 0.00;  // [-0.50:0.01:0.50]
 
 /* [<global> General] */
 // in mm. Minimum distance between walls. By empirical testing, Cura needs a 0.03 mm gap to prevent bridging cuts, plus leeway for curve approximations.
@@ -397,8 +401,6 @@ Frame_layer_height = 0.20;  // [0.02:0.04:1.00]
 Frame_first_layer_height = 0.32;  // [0.02:0.04:1.00]
 // in absolute frame layers
 Frame_base_layers = 7;  // [1:1:25]
-// in frame layers
-Frame_vertical_slop = -0.25;  // [-5.00:0.25:5.00]
 
 /* [Hidden] */
 
@@ -480,7 +482,6 @@ dSlop45 = max(0, dSlopZ - dSlopXY);
 
 fSlopXY = Frame_horizontal_slop;
 fSlopB  = Back_wall_extra_slop;
-fSlopZ  = fH(Frame_vertical_slop);  // hook overhang
 fWallGrid = fWall2 + fSlopXY;
 fWall4 = fWallGrid + fWall2;
 
@@ -517,18 +518,18 @@ function fRoundZ(z) = round_absolute_height_layer(z, fLayerHN, fLayerH0);
 sLS     = [  1/Horizontal_hook_bump_latch_slope            ,  1/Vertical_hook_bump_latch_slope             ];  // latch slope
 sRS     = [  1/Horizontal_hook_bump_ramp_slope             ,  1/Vertical_hook_bump_ramp_slope              ];  // ramp slope
 sPH     = [    Horizontal_hook_bump_height/2               ,    Vertical_hook_bump_height/2                ];  // peak height
+sPHO    = [ [  Horizontal_hook_bottom_bump_height_offset/2 ,    Vertical_hook_left_bump_height_offset/2  ] ,
+            [  Horizontal_hook_top_bump_height_offset/2    ,    Vertical_hook_right_bump_height_offset/2 ] ];  // peak height offset
 sPL     = [ fH(Horizontal_hook_bump_peak_length)           , fH(Vertical_hook_bump_peak_length)            ];  // peak length
 sLL     = [    sPH.x*sLS.x                                 ,    sPH.y*sLS.y                                ];  // latch length
 sRL     = [    sPH.x*sRS.x                                 ,    sPH.y*sRS.y                                ];  // ramp length
 sFI     = [ fH(Horizontal_hook_bump_front_inset)           , fH(Vertical_hook_bump_front_inset)            ];  // front inset length
 sBI     = [ fH(Horizontal_hook_bump_back_inset)            , fH(Vertical_hook_bump_back_inset)             ];  // back inset length
-sOL     = [ fH(Horizontal_hook_bump_overlap)               , fH(Vertical_hook_bump_overlap)                ];  // overlap
-
-sPHO    = [ [  Horizontal_hook_bottom_bump_height_offset/2 ,    Vertical_hook_left_bump_height_offset/2  ] ,
-            [  Horizontal_hook_top_bump_height_offset/2    ,    Vertical_hook_right_bump_height_offset/2 ] ];  // peak height offset
+sOL     = [ fH(Horizontal_hook_bump_overlap)               , fH(Vertical_hook_bump_overlap)                ];  // bump overlap
+stopOL  = [ fH(Horizontal_back_stop_overlap)               , fH(Vertical_back_stop_overlap)                ];  // stop overlap
 hookGO  = [    Horizontal_hook_gap_offset                  ,    Vertical_hook_gap_offset                   ];  // gap offset
 hookMO  = [    Horizontal_hook_margin_offset               ,    Vertical_hook_margin_offset                ];  // margin offset
-hookMin = [    Horizontal_hook_bump_minimum_contact_patch  ,    Vertical_hook_bump_minimum_contact_patch   ];  // minimum contact
+hookMin = [    Horizontal_hook_bump_minimum_contact_width  ,    Vertical_hook_bump_minimum_contact_width   ];  // minimum contact
 hookW   = [    Horizontal_hook_size                        ,    Vertical_hook_size                         ];  // hook width
 
 hookG   = [    sPH.x   + hookGO.x                          ,    sPH.y   + hookGO.y                         ];  // gap
@@ -889,7 +890,7 @@ module latch(h, d, p, hang=fudge) {
 // hang - how far below the origin to sink the stem into whatever its growing out of
 module plate(h, d, p, hang=fudge, stop=undef) {
   hookBZ = max(0, fBase-hookOL[d]);
-  stopBZ = hookBZ - fSlopZ + hookW[d];
+  stopBZ = hookBZ - stopOL[d] + hookW[d];
   bumpBZ = hookBZ + hookW[d];
   bumpFZ = fGridZ - stemC[d] - max(hookC[d], fH(0.5));
   sideStopFZ = fGridZ - stemC[d] - hookC[d];
