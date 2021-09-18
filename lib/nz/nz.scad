@@ -255,9 +255,11 @@ module flipZ(copy=true) flip([0, 0, 1], copy) children();
 
 
 // translate & hull
-module tull(v, center=false) hull() {
+module tull(v, center=false, flip=false) hull() {
   translate(center ? -v/2 : v*0) children();
-  translate(center ?  v/2 : v*1) children();
+  translate(center ?  v/2 : v*1)
+    if (flip) mirror(v) children();
+    else children();
 }
 
 // rotational array

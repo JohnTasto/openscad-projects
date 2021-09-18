@@ -71,7 +71,6 @@ Possible future improvements
      -  not possible on right sides
   [ ] buttresses in voids behind radii of fixed divider drawers
     - automated solution may be very difficult
-  [ ] use better sweep method for drawer handles to reduce polygon count by half
   printbed layout
     [ ] add rotation option
     [ ] calculate external dimensions
@@ -661,9 +660,9 @@ fGridZ      = fDUseBU ? fCeilZ(fGridZIdeal)                    : fFloorZ(fGridZI
 stretchY    = fDUseBU ? fGridZ - fGridZIdeal + dBackD + dFloat : drawerMaxY - drawerY + dBackD + dFloat;
 
 cInset = cIL + dBL + dPL - (railD+dSlopXY-dPH)*dFS + fBase + stretchY - fBulgeWall;  // back catch bump
-dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;               // front drawer bump
-hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;      // front hold bump
-kInset = kIL;                                                                    // front keep bump
+dInset = kIL + kFL + kPL - (railD+dSlopXY-kPH)*dFS + dFloat - gap;                   // front drawer bump
+hInset = hIL + dFL + dPL - (railD+dSlopXY-dPH)*dBS + dInset + gap - dFloat;          // front hold bump
+kInset = kIL;                                                                        // front keep bump
 
 dTravel = drawerY + fBulgeWall - dInset - dFL - dPL - dBL;
 
@@ -2268,34 +2267,27 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
     }
   }
 
-  module handleOuter(r, trunc)
-    rotate([0, 90, 0]) extrude(fudge, center=true) handleProfile(r, trunc);
+  module handleOuter(r, trunc) handleProfile(r, trunc);
 
-  module handleInner(r, trunc)
-    rotate([0, 90, 0]) extrude(fudge, center=true) difference() {
-      intersection() {
-        translate([0, -dWall2]) handleProfile(r, trunc);
-        translate([0,  dWall2]) handleProfile(r, trunc);
-      }
-      translate([r-dBase, 0]) rect([dBase+fudge, r*8], [1,0]);
+  module handleInner(r, trunc) difference() {
+    intersection() {
+      translate([0, -dWall2]) handleProfile(r, trunc);
+      translate([0,  dWall2]) handleProfile(r, trunc);
     }
+    translate([r-dBase, 0]) rect([dBase+fudge, r*8], [1,0]);
+  }
 
-  module handleCut(r, trunc)
-    rotate([0, 90, 0]) extrude(fudge, center=true) translate([r-dBase, 0]) rect([dLayerHN*2-trunc+dBase-r, gap], [1,0]);
-
-  // translate([0     ,0,100]) color("blue")  handleOuter(5, 3);
-  // translate([fudge ,0,100]) color("green") handleInner(5, 3);
-  // translate([fudge2,0,100]) color("red")   handleCut(5, 3);
+  module handleCut(r, trunc) translate([r-dBase, 0]) rect([dLayerHN*2-trunc+dBase-r, gap], [1,0]);
 
   module handleSweep(r, a, b, step) translate([0, 0, r]) {
     if (handleElliptical) rotate(180) for (i=[0:step:180-step]) hull() {
-      translate([a*cos(i), b*sin(i), 0]) rotate(atan2(b*cos(i), -a*sin(i))) children();
-      translate([a*cos(i+step), b*sin(i+step), 0]) rotate(atan2(b*cos(i+step), -a*sin(i+step))) children();
+      translate([a*cos(i), b*sin(i), 0]) rotate([0, 90, atan2(b*cos(i), -a*sin(i))]) extrude(-fudge, scale=1-fudge/r) children();
+      translate([a*cos(i+step), b*sin(i+step), 0]) rotate([0, 90, atan2(b*cos(i+step), -a*sin(i+step))]) extrude(fudge, scale=1-fudge/r) children();
     }
     else {
-      if (handleR<b) flipX() translate([a, 0, 0]) tull([0, handleR-b, 0]) rotate(90) children();
-      translate([0, -b, 0]) tull([handleR*2-a*2, 0, 0], center=true) children();
-      flipX() translate([a-handleR, handleR-b]) hull_rotate_extrude(90, $fn=handleRFn) translate([0, -handleR, 0]) children();
+      if (handleR<b) flipX() translate([a, 0, 0]) tull([0, handleR-b, 0], flip=true) rotate([0, 90, 90]) extrude(fudge, scale=1-fudge/r) children();
+      translate([0, -b, 0]) tull([handleR*2-a*2, 0, 0], center=true, flip=true) rotate([0, 90, 0]) extrude(fudge, scale=1-fudge/4) children();
+      flipX() translate([handleR-a, handleR-b]) rotate_extrude(angle=90, $fn=handleRFn) translate([-handleR, 0]) rotate(-90) children();
     }
   }
 
@@ -2466,6 +2458,11 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       b = handleL - r;
       step = 360/handleRFn;
       layers = dFloorH(r + trunc - dBase) / dLayerHN;
+      // translate([0, -drawerY/2-(dubWall?0:gap)-dWall2-handleL-r, r]) rotate([0, 90, 0]) {
+      //   color(solidGrey) extrude(fudge*1, center=true) handleOuter(r, trunc);
+      //   color(solidBlue) extrude(fudge*2, center=true) handleInner(r, trunc);
+      //   color(transGrey) extrude(fudge*3, center=true) handleCut(r, trunc);
+      // }
       difference() {
         translate([0, -drawerY/2-(dubWall?0:gap)-dWall2, 0]) {
           difference() {
@@ -2553,6 +2550,7 @@ module bin(x=1, y=1, h=1) {
         }
       }
 }
+
 
 
 /////////////////
