@@ -1552,7 +1552,7 @@ module drawer(x=1, h=1, drawFace=true) {
   module innerVerticalHandle(midR, hW, trunc) {
     translate([midR, 0]) hull() {
       difference() {
-        rotate(90) teardrop_2d(d=hW, $fn=$fn/2);
+        rotate(90) teardrop(d=hW, $fn=$fn/2);
         rect([hW/2+fudge, hW+fudge2], [1,0]);
       }
       rect([fudge, fudge], [0,0]);
@@ -1563,7 +1563,7 @@ module drawer(x=1, h=1, drawFace=true) {
   module outerVerticalHandle(midR, hW, trunc) {
     translate([midR, 0]) hull() {
       difference() {
-        rotate(-90) teardrop_2d(d=hW, truncate=hW*sqrt(2)/2-trunc, $fn=$fn/2);
+        rotate(-90) teardrop(d=hW, truncate=hW*sqrt(2)/2-trunc, $fn=$fn/2);
         rect([-hW/2-fudge, hW+fudge2], [1,0]);
       }
       rect([-fudge, fudge], [0,0]);
@@ -1571,9 +1571,9 @@ module drawer(x=1, h=1, drawFace=true) {
   }
 
   module horizontalHandleSegment(hH, trunc, tray=true) {
-    rotate([90, 0, 90]) extrude(fudge, center=true) teardrop_2d(d=hH, truncate=trunc, $fn=$fn/2);
-    rotate([-90, 0, 90]) extrude(fudge, center=true) teardrop_2d(d=hH, truncate=hH/2, $fn=$fn/2);
-    if (tray) rotate([-90, -67.5, 90]) extrude(fudge, center=true) teardrop_2d(d=hH, a=67.5, $fn=$fn/2);
+    rotate([90, 0, 90]) extrude(fudge, center=true) teardrop(d=hH, truncate=trunc, $fn=$fn/2);
+    rotate([-90, 0, 90]) extrude(fudge, center=true) teardrop(d=hH, truncate=hH/2, $fn=$fn/2);
+    if (tray) rotate([-90, -67.5, 90]) extrude(fudge, center=true) teardrop(d=hH, a=67.5, $fn=$fn/2);
   }
 
   // translate([0,0,30]) horizontalHandleSegment();

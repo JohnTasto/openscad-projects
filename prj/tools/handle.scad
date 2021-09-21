@@ -36,9 +36,9 @@ difference() {
             }
             translate([r+thumbR1-thumbD, thumbH]) rotate(thumbA) scale([thumbR1, thumbR2]) circle();
           }
-        rotate(180) teardrop_2d(fillet, truncate=fillet, $fn=$fn/2);
+        rotate(180) teardrop(fillet, truncate=fillet, $fn=$fn/2);
       }
       translate([0, -fudge]) rect([-r-fudge, h+fudge2]);
     }
-  ring(90, n=flutings) translate([r+flutingR-flutingD, 0, flutingBot]) tull([0, 0, flutingTop-flutingBot]) teardrop_3d(flutingR);
+  ring(90, n=flutings) translate([r+flutingR-flutingD, 0, flutingBot]) tull([0, 0, flutingTop-flutingBot]) revolve() teardrop(flutingR);
 }

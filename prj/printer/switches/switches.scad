@@ -1,7 +1,7 @@
 use <nz/nz.scad>
 use <../filter/filter.scad>
 
-fn = 60;
+fn = 32;//60;
 
 switchW = 19.75;
 switchL = 31;
@@ -152,7 +152,8 @@ module shell()
                 [coverD,         sealD-fillet],
               ]);
           difference() {
-            teardrop_3d(circumgoncircumradius(fillet), truncate=fillet);
+            // revolve() teardrop(circumgoncircumradius(fillet), truncate=fillet);
+            revolve() teardrop(fillet, truncate=fillet);
             box([2*fillet+1, 2*fillet+1, fillet+1], [0,0,-1]);
             box([2*fillet+1, fillet+1, 2*fillet+1], [0,-1,0]);
           }
@@ -185,8 +186,9 @@ module cavity() {
                 [coverD-sealW+wall,                         sealD-fillet],
               ]);
         difference() {
-          // teardrop_3d(circumgoncircumradius(fillet-wall), truncate=fillet-wall);
-          sphere(circumgoncircumradius(fillet-wall));
+          // revolve() teardrop(circumgoncircumradius(fillet-wall), truncate=fillet-wall);
+          // sphere(circumgoncircumradius(fillet-wall));
+          ball(fillet-wall);
           translate([0, 0, -0.1]) box([2*fillet, 2*fillet, fillet], [0,0,-1]);
           translate([0, -0.1, 0]) box([2*fillet, fillet, 2*fillet], [0,-1,0]);
         }
@@ -206,14 +208,14 @@ module wire_slot()
         ]);
 
 
-module cover(show_panel=true, show_cup=true, show_filer=true) {
+module cover(show_panel=true, show_cup=true) {
 
   module screw_front() {
     r = thread/2 + screwWall;
     z = coverHF/2 - wall;
     difference() {
       union() {
-        rotate(90) extrude(coverHF) teardrop_2d(r);
+        rotate(90) extrude(coverHF) teardrop(r);
         translate([-r, 0, z+wall])
           flipZ()
             rotate([90,0,0])
@@ -491,7 +493,8 @@ module switch_panel(show_switches=true) {
                 rotate([guardAngle, 0, 0])
                   box([panelW+2, switchL+2*guardWall+slack+1, guardHyp], [-1,-1,0]);
             }
-            sphere(circumgoncircumradius(guardFillet), $fn=4*round((1/16)*$fn));
+            ball(guardFillet, $fn=4*round($fn/16));
+            // sphere(circumgoncircumradius(guardFillet), $fn=4*round((1/16)*$fn));
           }
           translate([1, wall/2, -1]) box([panelW+2, panelD, panelH+2], [-1,1,1]);
         }
@@ -615,9 +618,9 @@ module print_cup_bottom()
 
 difference() {
   // cover($fn=fn, false, false);
-  // cover($fn=fn, true, true);
-  // translate([0,0,80]) box([coverW+1, coverD+1, 100], [-1,1,1]);
-  // translate([-50,0,-1]) box([100, coverD+1, coverHB+2], [1,1,1]);
+  cover($fn=fn, true, true);
+  translate([0,0,80]) box([coverW+1, coverD+1, 100], [-1,1,1]);
+  translate([-50,0,-1]) box([100, coverD+1, coverHB+2], [1,1,1]);
 }
 // led_strip();
 
@@ -629,7 +632,7 @@ difference() {
 
 index = 1;
 
-f_chain_stats(filterSize, filterDs, filterWall, filterSealWs, filterSealD, filterMargin, materialDs, endZs, braceZs, minPleatGaps, slack, slop);
+// f_chain_stats(filterSize, filterDs, filterWall, filterSealWs, filterSealD, filterMargin, materialDs, endZs, braceZs, minPleatGaps, slack, slop);
 
 // f_chain_print_frame_base(filterSize, filterDs, filterWall, filterSealD, filterMargin, materialDs, endZs, latchW, slack, slop);
 // f_chain_print_frame_cap(filterSize, filterDs, filterWall, filterSealD, filterMargin, materialDs, endZs, latchW, slack, slop);
@@ -638,4 +641,4 @@ f_chain_stats(filterSize, filterDs, filterWall, filterSealWs, filterSealD, filte
 // f_chain_print_anchor(index, filterSize, filterDs, filterWall, filterSealWs, filterMargin, materialDs, endZs, slack, slop);
 // f_chain_print_riser(index, filterSize, filterDs, filterWall, filterSealWs, filterMargin, materialDs, endZs, braceZs, minPleatGaps, slack);
 
-f_chain_assembly(filterSize, filterDs, filterWall, filterSealWs, filterSealD, filterMargin, materialDs, endZs, braceZs, minPleatGaps, latchW, slack, slop, true, true);
+// f_chain_assembly(filterSize, filterDs, filterWall, filterSealWs, filterSealD, filterMargin, materialDs, endZs, braceZs, minPleatGaps, latchW, slack, slop, true, true);

@@ -1098,7 +1098,7 @@ module drawer(h=1, l=0, r=0, drawFace=true) {
   module innerHandle(midR, hW, trunc) {
     translate([midR, 0]) hull() {
       difference() {
-        rotate(90) teardrop_2d(d=hW, $fn=$fn/2);
+        rotate(90) teardrop(d=hW, $fn=$fn/2);
         rect([hW/2+fudge, hW+fudge2], [1,0]);
       }
       rect([fudge, fudge], [0,0]);
@@ -1109,7 +1109,7 @@ module drawer(h=1, l=0, r=0, drawFace=true) {
   module outerHandle(midR, hW, trunc) {
     translate([midR, 0]) hull() {
       difference() {
-        rotate(-90) teardrop_2d(d=hW, truncate=hW*sqrt(2)/2-trunc, $fn=$fn/2);
+        rotate(-90) teardrop(d=hW, truncate=hW*sqrt(2)/2-trunc, $fn=$fn/2);
         rect([-hW/2-fudge, hW+fudge2], [1,0]);
       }
       rect([-fudge, fudge], [0,0]);

@@ -72,20 +72,20 @@ function interleave(xs, ys) = let (l = min(len(xs), len(ys)))
 function sum(xs) = len(xs) > 0 ? xs * [for (_ = xs) 1] : 0;
 
 
-function is_len    (n,    xs) = assert(is_num(n))                        is_list(xs) && len(xs) == n;
-function are_of    (   f, xs) =                   assert(is_function(f)) is_list(xs)                 && all(f, xs);
-function are_len_of(n, f, xs) = assert(is_num(n)) assert(is_function(f)) is_list(xs) && len(xs) == n && all(f, xs);
+function is_len   (n,    xs) = assert(is_num(n))                        is_list(xs) && len(xs) == n;
+function is_of    (   f, xs) =                   assert(is_function(f)) is_list(xs)                 && all(f, xs);
+function is_len_of(n, f, xs) = assert(is_num(n)) assert(is_function(f)) is_list(xs) && len(xs) == n && all(f, xs);
 
-function are_bools        (   xs) = are_of    (   function(x) is_bool    (x), xs);
-function are_nums         (   xs) = are_of    (   function(x) is_num     (x), xs);
-function are_strings      (   xs) = are_of    (   function(x) is_string  (x), xs);
-function are_lists        (   xs) = are_of    (   function(x) is_list    (x), xs);
-function are_functions    (   xs) = are_of    (   function(x) is_function(x), xs);
-function are_len_bools    (n, xs) = are_len_of(n, function(x) is_bool    (x), xs);
-function are_len_nums     (n, xs) = are_len_of(n, function(x) is_num     (x), xs);
-function are_len_strings  (n, xs) = are_len_of(n, function(x) is_string  (x), xs);
-function are_len_lists    (n, xs) = are_len_of(n, function(x) is_list    (x), xs);
-function are_len_functions(n, xs) = are_len_of(n, function(x) is_function(x), xs);
+function is_bools        (   xs) = is_of    (   function(x) is_bool    (x), xs);
+function is_nums         (   xs) = is_of    (   function(x) is_num     (x), xs);
+function is_strings      (   xs) = is_of    (   function(x) is_string  (x), xs);
+function is_lists        (   xs) = is_of    (   function(x) is_list    (x), xs);
+function is_functions    (   xs) = is_of    (   function(x) is_function(x), xs);
+function is_len_bools    (n, xs) = is_len_of(n, function(x) is_bool    (x), xs);
+function is_len_nums     (n, xs) = is_len_of(n, function(x) is_num     (x), xs);
+function is_len_strings  (n, xs) = is_len_of(n, function(x) is_string  (x), xs);
+function is_len_lists    (n, xs) = is_len_of(n, function(x) is_list    (x), xs);
+function is_len_functions(n, xs) = is_len_of(n, function(x) is_function(x), xs);
 
 
 /********/
@@ -116,7 +116,7 @@ function lcm(x, y) = abs(x*y) / gcd(x, y);
 
 function clamp(x, min, max) =
   assert(is_num(x))
-  assert(is_num(min) && is_num(max) || are_len_nums(2, min) && is_undef(max))
+  assert(is_num(min) && is_num(max) || is_len_nums(2, min) && is_undef(max))
   let ( low  = is_list(min) ? min[0] : min
       , high = is_list(min) ? min[1] : max
       )
@@ -165,7 +165,8 @@ function rotate_from_to(u, v) = let (uu = unit(u), uv = unit(v), uw = unit(cross
     ? identity(4)
     : undef;
 
-function rotate_to(v) = rotate_from_to([0,0,1], v);
+function rotate_from(v) = rotate_from_to(v, [0,0,1]);
+function rotate_to(v)   = rotate_from_to([0,0,1], v);
 
 // like the `rotate()` module, but
 //   - returns a matrix
@@ -287,6 +288,9 @@ module rotate_about(tv, a, rv) translate(tv) rotate(a, rv) translate(-tv) childr
 // rotate from u to v
 module rotate_from_to(u, v) multmatrix(rotate_from_to(u, v)) children();
 
+// rotate from v to [0,0,1]
+module rotate_from(v) multmatrix(rotate_from(v)) children();
+
 // rotate from [0,0,1] to v
 module rotate_to(v) multmatrix(rotate_to(v)) children();
 
@@ -339,32 +343,30 @@ function point_on_ellipse(theta, a, b, size=[2,2]) =
 /***************/
 
 // like `circle()`, but
-//   - accepts an angle to create an arc like `rotate_extrude()`
-// NOTES:
-//   - segments are evenly spaced unless `segments` is directly specified as a non-integer value
+//   - less so
+// NOTE: `a` is either
+//   - a number specifying the arc length in degrees
+//   - a list of two numbers specifying the start and end angles in degrees
 // TODO: add an r1, r2, d1, and d2 (or inner and outer????) To do full circles, call self for the
 //   difference. Otherwise, draw the second arc in reverse order, and do not draw the center point.
 module arc(r=1, a=360, d, segments, outer=false) {
                            assert(is_num(r)        && r >= 0);
-                           assert(is_num(a));
+                           assert(is_num(a) || is_len_nums(2, a));
   if (!is_undef(d))        assert(is_num(d)        && d >= 0);
   if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
   if (!is_undef(outer))    assert(is_bool(outer));
-  if (a != 0) {
+  A = is_list(a) ? a[0] : 0;
+  L = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
+  if (L != 0) {
     r = is_num(d) ? d/2 : r;
-    a = clamp(a, -360, 360);
     fn = fragments(r);
-    segments = is_num(segments) ? segments : max(1, floor(abs(a)*fn/360));
-    segmentA = a / segments;
-    R = outer ? circumgoncircumradius(r, segments=segments*360/a) : r;
-    polygon(concat(
-      abs(a) == 360
-        ? []
-        : [ [0, 0] ],
-      [ for (i = [0 : ceil(segments)])
-        let (phi = segmentA*(i + (i > segments ? mod(segments, 1) - 1 : 0)))
-        [R*cos(phi), R*sin(phi)] ]
-    ));
+    segs = floor(is_num(segments) ? segments : max(1, abs(L)*fn/360));
+    segA = L / segs;
+    R = outer ? circumgoncircumradius(r, segments=segs*360/L) : r;
+    polygon(concat
+      ( abs(L) == 360 ? [] : [ [0, 0] ]
+      , [ for (i = [0 : segs]) [R*cos(segA*i+A), R*sin(segA*i+A)] ]
+      ));
   }
 }
 
@@ -397,30 +399,26 @@ module fillet(r=1) {
 //   - has a peak tangent at `a` or of length `peak`
 // TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
 //   argument is given for each type of parameter
-module teardrop_2d(r=1, a=45, d, peak, truncate) {
-                           assert(is_num(r)        && r > 0);
-                           assert(is_num(a)        && a >= 0 && a < 90);
-  if (!is_undef(d))        assert(is_num(d)        && d > 0);
-  if (!is_undef(peak))     assert(is_num(peak)     && peak >= 0);
-  if (!is_undef(truncate)) assert(is_num(truncate) && truncate >= 0);
+module teardrop(r=1, a=45, d, peak, truncate) {
+                           assert(is_num(r)    && r > 0);
+                           assert(is_num(a)    && a >= 0 && a < 90);
+  if (!is_undef(d))        assert(is_num(d)    && d > 0);
+  if (!is_undef(peak))     assert(is_num(peak) && peak >= r);
+  if (!is_undef(truncate)) assert(is_num(truncate));
   r = is_num(d) ? d/2 : r;
-  a = is_num(peak) ? acos(r/peak) : a;
+  a = is_num(peak) ? max(0, acos(r/peak)) : a;
   peak = is_num(peak) ? peak : r/cos(a);
-  fn = fragments(r);
-  polygon(concat(
-    [ is_undef(truncate)
-        ? [0, peak]
-        : [tan(90-a)*(peak-truncate), truncate],
-      [r*sin(a), r*cos(a)] ],
-    [ for (i = [0:fn])
-      let (phi = 360*i/fn)
-      if (phi > a && phi < 360-a)
-      [r*sin(phi), r*cos(phi)] ],
-    is_undef(truncate)
-      ? [ [r*sin(360-a), r*cos(360-a)] ]
-      : [ [r*sin(360-a), r*cos(360-a)],
-          [-tan(90-a)*(peak-truncate), truncate] ]
-  ));
+  intersection() {
+    hull() {
+      rotate(90) circle(r);
+      polygon(
+        [ [-r*sin(a), r*cos(a)]
+        , [ 0       , peak    ]
+        , [ r*sin(a), r*cos(a)]
+        ]);
+    }
+    if (is_num(truncate)) translate([0, -r]) rect([r*2, r+truncate], [0,1]);
+  }
 }
 
 
@@ -536,43 +534,9 @@ module spindle(h=1, r1=1, r2=1, a1=45, a2=45, r, a, d1, d2, d, p1, p2, p, center
     }
 }
 
-// like `cube()`, but.....different
+// like `cube()`, but
+//   - not a cube
 module octahedron(r=1, d) spindle(h=0, r=r, d=d, $fn=4);
-
-// like `sphere()`, but
-//   - has a peak, defined by either the height `peak` or the reverse latitude angle `a`, where 0
-//     is the north pole and 90 is the equator. The one not given is calculated to give a cone
-//     tangent to the sphere.
-// TODO: arrange vertices like `ball()` instead of `sphere()`?
-// TODO: reverse latitude is a bit weird. Should it be changed?
-// TODO: probably better to add `!is_undef()` to every parameter, then assert at least one
-//   argument is given for each type of parameter
-module teardrop_3d(r=1, a=45, d, peak, truncate) {
-                           assert(is_num(r)    && r > 0);
-                           assert(is_num(a)    && a >= 0 && a < 90);
-  if (!is_undef(d))        assert(is_num(d)    && d > 0);
-  if (!is_undef(peak))     assert(is_num(peak) && peak >= 0);
-  if (!is_undef(truncate)) assert(is_num(truncate));
-  r = is_num(d) ? d/2 : r;
-  a = is_num(peak) ? acos(r/peak) : a;
-  peak = is_num(peak) ? peak : r/cos(a);
-  truncate = is_num(truncate) ? min(truncate, peak) : peak;
-  fn = fragments(r);
-  rotate_extrude(angle=360, convexity=1)
-    polygon(concat(
-      is_undef(truncate)
-        ? [ [0, peak],
-            [r*sin(a), r*cos(a)] ]
-        : [ [0, truncate],
-            [tan(90-a)*(peak-truncate), truncate],
-            [r*sin(a), r*cos(a)] ],
-      [ for (i = [1:fn/2])
-        let (phi = (2*i-1)*180/fn)
-        if (phi > a)
-        [r*sin(phi), r*cos(phi)] ],
-      [ [0, r*cos(180-180/fn)] ]
-    ));
-}
 
 // cylinder of radius `r` aligned with vector `v`
 module line_segment(v, r=0.5)
@@ -624,38 +588,103 @@ module revolve(a=360, convexity=1, trim=true, w=10000, h=10000) {
 }
 
 // like `rotate_extrude()`, but
-//   - revolves 3D geometry around any axis
-// NOTES:
-//   - segments are evenly spaced unless `segments` is directly specified as a non-integer value
-//   - `r` and `d` are only for autocalculating fragments. Somehow `rotate_extrude()` does this
-//     automatically. If `$fn` is set, `r` and `d` are ignored. If `segments` is set, it overrides
-//     everything else.
-// TODO: typecheck `a` and `v`
-// TODO: `norm(a)` is not right
-module hull_rotate_extrude(a, v, r, d, segments) {
+//   - sweeps convex polygons around an ellipse
+//   - x=0 becomes the rim of the ellipse rather than the center of rotation
+// NOTE:
+//   - each child should be a convext polygon
+//   - the union of children should contain [0,0], ideally away from any edges
+//   - use the `translate` parameter to compensate for this restriction
+// NOTE: `a` is either
+//   - a number specifying the arc length in degrees
+//   - a list of two numbers specifying the start and end angles in degrees
+// NOTE: `fudge` is either
+//   - a number specifying the amount to extend each end
+//   - a list of two numbers specifying the amounts to extend the start and end
+// NOTE: these segments may not need to overlap since the vertices should line up exactly. However,
+//   they are made to by a tiny amount just in case. If it isn't enough, `fDef` may need to be
+//   increased to something proportional to `norm([RX*c, RY*s] - [RX*C, RY*S])*fn/360`.
+module orbit(a=360, r=1, d, rX, rY, dX, dY, segments, translate=[0,0], fudge) {
+                           assert(is_len_nums(2, a) || is_num(a));
+                           assert(is_num(r)        && r  >= 0);
+  if (!is_undef(d))        assert(is_num(d)        && d  >= 0);
+  if (!is_undef(rX))       assert(is_num(rX)       && rX >= 0);
+  if (!is_undef(rY))       assert(is_num(rY)       && rY >= 0);
+  if (!is_undef(dX))       assert(is_num(dX)       && dX >= 0);
+  if (!is_undef(dY))       assert(is_num(dY)       && dY >= 0);
+  if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
+                           assert(is_len_nums(2, translate));
+  if (!is_undef(fudge))    assert(is_len_nums(2, fudge) || is_num(fudge));
+  A = is_list(a) ? a[0] : 0;
+  L = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
+  fDef = signum(L)/100;
+  f = is_list(fudge) ? [max(0, fudge[0]), max(0, fudge[1])]*signum(L)
+    : is_num(fudge)  ? [max(0, fudge   ), max(0, fudge   )]*signum(L)
+    :                  [    0           ,     0           ];
+  fBeg = f[0] != 0;
+  fEnd = f[1] != 0;
+  if (L != 0 && $children > 0) {
+    RX = is_num(rX) ? rX : is_num(dX) ? dX/2 : is_num(d) ? d/2 : r;
+    RY = is_num(rY) ? rY : is_num(dY) ? dY/2 : is_num(d) ? d/2 : r;
+    fn = fragments(max(RX, RY));
+    segs = floor(is_num(segments) ? segments : max(1, abs(L)*fn/360));
+    segA = L / segs;
+    for (i = [0 : segs-1]) for (j = [0 : $children-1]) {
+      s = sin(A+segA*i     );
+      c = cos(A+segA*i     );
+      S = sin(A+segA*i+segA);
+      C = cos(A+segA*i+segA);
+      beg = abs(L) != 360 && i == 0;
+      end = abs(L) != 360 && i == segs-1;
+      hull() {
+        translate([RX*c, RY*s, 0]) rotate([90, 0, atan2(RY*c, -RX*s)-90]) translate(translate) extrude(fDef*(beg && !fBeg ? -1 :  1), scale=0) children(j);
+        translate([RX*C, RY*S, 0]) rotate([90, 0, atan2(RY*C, -RX*S)-90]) translate(translate) extrude(fDef*(end && !fEnd ?  1 : -1), scale=0) children(j);
+      }
+      if (beg && fBeg) translate([RX*c, RY*s, 0]) rotate([90, 0, atan2(RY*c, -RX*s)-90]) translate(translate) extrude( f[0], scale=1) children(j);
+      if (end && fEnd) translate([RX*C, RY*S, 0]) rotate([90, 0, atan2(RY*C, -RX*S)-90]) translate(translate) extrude(-f[1], scale=1) children(j);
+    }
+  }
+}
+
+// // example:
+// orbit(a=[0, 90], rX=50, rY=100, translate=[20,10], fudge=[1, 1], $fn=36) teardrop(5, $fn=16);
+// orbit(a=[30, -270], rX=50, rY=100, fudge=[50, 1], $fn=32) teardrop(5, $fn=16);
+
+
+// like `rotate_extrude()`, but
+//   - revolves 3D geometry
+// NOTE: `a` is either
+//   - a number specifying the arc length in degrees
+//   - a list of two numbers specifying the start and end angles in degrees
+// NOTE: `r` and `d` are only for autocalculating fragments. Somehow `rotate_extrude()` does this
+//   automatically. If `$fn` is set, `r` and `d` are ignored. If `segments` is set, it overrides
+//   everything else.
+module hull_rotate_extrude(a=360, r, d, segments) {
+                           assert(is_len_nums(2, a) || is_num(a));
   if (!is_undef(r))        assert(is_num(r)        && r >= 0);
   if (!is_undef(d))        assert(is_num(d)        && d >= 0);
   if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
   assert(!is_undef(r) || !is_undef(d) || !is_undef(segments) || $fn > 0);
-  if ($children > 0) {
+  A = is_list(a) ? a[0] : 0;
+  L = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
+  if (L != 0 && $children > 0) {
     r = is_num(d) ? d/2 : r;
     fn = fragments(r);
-    totalA = is_num(a) ? a : norm(a);
-    segments = is_num(segments) ? segments : max(1, floor(abs(totalA)*fn/360));
-    segmentA = a / segments;
-    for (i = [0 : ceil(segments)-1]) for (j = [0 : $children-1]) hull() {
-      rotate(segmentA*i, v) children(j);
-      rotate(segmentA*(i+(i>segments-1?mod(segments,1):1)), v) children(j);
+    segs = floor(is_num(segments) ? segments : max(1, abs(L)*fn/360));
+    segA = L / segs;
+    for (i = [0 : segs-1]) for (j = [0 : $children-1]) hull() {
+      rotate(A+segA*(i  )) children(j);
+      rotate(A+segA*(i+1)) children(j);
     }
   }
 }
 
 // // examples:
-// hull_rotate_extrude([0, 90, 90], r=25) translate([25, 0, 0]) sphere(10);
-// rotate([180, 270, 180]) hull_rotate_extrude(45, $fn=60) translate([25, 0, 0]) tull([100, 0, 0]) rotate(45) spindle(0, r=10, $fn=4);
+// hull_rotate_extrude([15, 255], r=25, segments=15.4) translate([25, 0, 0]) sphere(10);
+// hull_rotate_extrude(45, $fn=60) translate([25, 0, 0]) tull([100, 0, 0]) rotate(45) spindle(0, r=10, $fn=4);
 
 // // crazy ring thing:
-// hull_rotate_extrude(360, v=[1,1,1], segments=8) translate([25, 0, 0]) spindle(10);
+// hull_rotate_extrude(360, segments=8) rotate_from([1,1,1]) translate([25, 0, 0]) spindle(10, $fn=4);
+
 
 // could be useful for fillets
 module top(r=1)

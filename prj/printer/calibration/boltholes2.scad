@@ -20,8 +20,8 @@ r = wall+thread/2;
 translate([0, 0, r])
   difference() {
     union() {
-      translate([-r, 0, 0]) rotate([-90, 0, -90]) extrude(length) teardrop_2d(r=r, truncate=r);
-      translate([0, -r, 0]) rotate([-90, 0, 0]) extrude(length) teardrop_2d(r=r, truncate=r);
+      translate([-r, 0, 0]) rotate([-90, 0, -90]) extrude(length) teardrop(r=r, truncate=r);
+      translate([0, -r, 0]) rotate([-90, 0, 0]) extrude(length) teardrop(r=r, truncate=r);
       translate([0, 0, -r]) cylinder(length, r=r);
     }
     translate([-r-1, 0, 0]) rotate([-90, 0, -90]) cylinder(length+2, d=thread);

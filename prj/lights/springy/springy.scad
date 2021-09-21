@@ -101,9 +101,9 @@ mBraceFrontInset = 15;
 mBraceBackInset  =  3;
 
 
-module teardrop(r) rotate([0,90,0]) extrude(width, center=true) rotate(-90) teardrop_2d(r=r, a=60, truncate=r);
+// module teardrop(r) rotate([0,90,0]) extrude(width, center=true) rotate(-90) teardrop(r=r, a=60, truncate=r);
 
-module teardrop_fillet(r) rotate([0,90,0]) extrude(width-fillet*2, center=true) rotate(-90) teardrop_2d(r=r-fillet, a=50, truncate=r);
+module teardrop_fillet(r) rotate([0,90,0]) extrude(width-fillet*2, center=true) rotate(-90) teardrop(r=r-fillet, a=50, truncate=r);
 
 module hollow(clearance) rotate([0,90,0]) rod(plateGap, r=clearance+slop, center=true);
 
@@ -182,7 +182,7 @@ module shoulder() {
           }
           // stem
           translate([0, mOuterR, stemR*sqrt(2)/2]) rotate([-90])
-            extrude(-mOuterR-slack*2-stemL) teardrop_2d(r=stemR, truncate=stemR*sqrt(2)/2);
+            extrude(-mOuterR-slack*2-stemL) teardrop(r=stemR, truncate=stemR*sqrt(2)/2);
         }
         box([100, 100, -fillet-fudge], [0,1,1]);
         // rod cut

@@ -37,7 +37,7 @@ difference() {
     // frame plate
     box([screwFrameX, plateFrameD, plateFrameW], [0,1,1]);
     flipX() translate([screwFrameX/2, 0, plateFrameW/2])
-      rotate([-90,0,0]) extrude(plateFrameD) teardrop_2d(d=plateFrameW, truncate=plateFrameW/2);
+      rotate([-90,0,0]) extrude(plateFrameD) teardrop(d=plateFrameW, truncate=plateFrameW/2);
   }
   // fan hole
   translate([0, fanH+fanNominal/2, -1]) cylinder(plateFrameW+2, r=fanHoleR);

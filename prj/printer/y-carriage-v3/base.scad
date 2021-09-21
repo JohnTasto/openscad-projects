@@ -99,13 +99,13 @@ module y_carriage(color)
           box([ycW(), lbOWall()+adjLbL()+lbIWall(), drop()], [0,-1,1]);
         flip([0,1,0]) translate([0, ycL()/2, drop()]) rotate([90,0,0])
           if (supported()) cylinder(lbOWall()+adjLbL()+lbIWall(), d=ycW());
-          else extrude(lbOWall()+adjLbL()+lbIWall()) flipX() rotate(90) teardrop_2d(d=ycW(), truncate=ycW()/2);
+          else extrude(lbOWall()+adjLbL()+lbIWall()) flipX() rotate(90) teardrop(d=ycW(), truncate=ycW()/2);
 
         // middle
         box([ycW(), ycL(), drop()+adjYRodD()/2+yRodClearance()+yRodWall-ycW()/2], [0,0,1]);
         translate([0, 0, drop()+adjYRodD()/2+yRodClearance()+yRodWall-ycW()/2]) rotate([90,0,0])
           if (supported()) cylinder(ycL(), d=ycW(), center=true);
-          else extrude(ycL(), center=true) flipX() rotate(90) teardrop_2d(d=ycW(), truncate=ycW()/2);
+          else extrude(ycL(), center=true) flipX() rotate(90) teardrop(d=ycW(), truncate=ycW()/2);
       }
 
       // x rod             // is this slop() really necessary? it used to be 0.8 btw
@@ -172,7 +172,7 @@ module belt_clamp_back()
         difference() {
           rotate([-90,0,0])
             if (supported()) cylinder(clampL, d=ycW());
-            else extrude(clampL) rotate(90) teardrop_2d(d=ycW(), truncate=ycW()/2);
+            else extrude(clampL) rotate(90) teardrop(d=ycW(), truncate=ycW()/2);
           translate([1, -1, 0]) box([ycW(), clampL+2, ycW()+2], [1,1,0]);
           translate([0, -1, -1]) box([ycW()+2, clampL+2, ycW()], [0,1,-1]);
         }

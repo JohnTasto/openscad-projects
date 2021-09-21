@@ -37,7 +37,7 @@ module tensioner() {
                 sphere(circumgoncircumradius(fillet));
               }
             difference() {
-              rotate([90,180,0]) extrude(zipW+2*fillet, center=true) teardrop_2d(d=innerD);
+              rotate([90,180,0]) extrude(zipW+2*fillet, center=true) teardrop(d=innerD);
               translate([0, 0, -ingonindiameter(d=(outerD-2*fillet), segments=6)/2-fillet])
                 box([outerD+2, length+2, 1000], [0,0,-1]);
             }

@@ -58,7 +58,7 @@ r = circumgoncircumradius(wall/2, $fn=fn);
 intersection() {
   minkowski() {
     translate([0, 0, floor]) ovalateX(wall) rod(size.z, d=size.x+wall, $fn=fn*8);
-    scale([1, 1, -1]) teardrop_3d(r, truncate=floor, $fn=fn);
+    scale([1, 1, -1]) revolve() teardrop(r, truncate=floor, $fn=fn);
   }
   union() {
     minkowski() {

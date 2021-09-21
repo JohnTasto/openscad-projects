@@ -1517,8 +1517,8 @@ module rSide(x=[0], z=1, color=true, trimColor=false) {
 // CORNER HELPERS
 
 module cornerWall(r, offset, align, trim=false, wall=fWall2) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) difference() {
-  circle(r=r, $fn=cornerFn);
-  circle(r=r-min(r, wall), $fn=cornerFn);
+  circle(r, $fn=cornerFn);
+  circle(r-min(r, wall), $fn=cornerFn);
   translate([0, -(r-wall)*align.y]) rect([(r+fudge)*align.x, (r*2-wall+fudge)*align.y]);
   translate([-(r-wall)*align.x, 0]) rect([(r*2-wall+fudge)*align.x, (r+fudge)*align.y]);
   if (is_list(trim) && len(trim)==2) {
@@ -1530,12 +1530,12 @@ module cornerWall(r, offset, align, trim=false, wall=fWall2) translate([(fGridX-
 // translate([0,0,100]) cornerWall(5, [1,0], [1,-1], trim=[1, -2]);
 
 module cornerSquare(r, offset, align, wall=[fWall2, fWall2]) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) difference() {
-  circle(r=r, $fn=cornerFn);
+  circle(r, $fn=cornerFn);
   translate([-(r-wall.x)*align.x, -(r-wall.y)*align.y]) rect([(r*2-wall.x+fudge)*align.x, (r*2-wall.y+fudge)*align.y]);
 }
 
 module cornerMask(r, offset, align) translate([(fGridX-offset.x)*align.x, (fGridY-offset.y)*align.y]) {
-  circle(r=r, $fn=cornerFn);
+  circle(r, $fn=cornerFn);
   translate([0, -align.y*r]) rect([(fGridX/2+offset.x)*align.x, (fGridY/2+offset.y+r)*align.y]);
   translate([-align.x*r, 0]) rect([(fGridX/2+offset.x+r)*align.x, (fGridY/2+offset.y)*align.y]);
 }
@@ -2007,7 +2007,7 @@ module frame(x=1, z=1, hookInserts=false, drawer=false, divisions=false, drawFac
       else {
         rotate(180/keyholeFn) circle(keyShaftR, $fn=keyholeFn);
         rect([keyholeW, -keyholeL], [0,1]);
-        translate([0, -keyholeL, 0]) teardrop_2d(keyOpeningR, a=keyOpeningB, truncate=keyholeL, $fn=keyholeFn);
+        translate([0, -keyholeL, 0]) teardrop(keyOpeningR, a=keyOpeningB, truncate=keyholeL, $fn=keyholeFn);
       }
 
   if (t>=b && l<=r) {
@@ -2246,7 +2246,7 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
         // mid cuts
         if (division<bounds.x && division<binR*(2-sqrt(2))+edge && division>=edge)
           translate([0, 0, dBase-fudge*2]) extrude(bodyZ-dBase+fudge*3) difference() {
-            hull() flipX() translate([bounds.x/2-division/2, dividers[i]+division/2]) rotate(-90) teardrop_2d(d=gap, $fn=8);
+            hull() flipX() translate([bounds.x/2-division/2, dividers[i]+division/2]) rotate(-90) teardrop(d=gap, $fn=8);
             if (is_list(divisions[i]) && len(divisions[i])==2)
               translate([-subBounds.y/2, dividers[i]+subBounds.x/2]) rotate(-90) dividerSurrogates(subBounds, divisions[i][1]);
           }
@@ -2258,10 +2258,10 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
   }
 
   module handleProfile(r, trunc) {
-    rotate(90) teardrop_2d(r=r, truncate=trunc, $fn=handleDFn);
-    rotate(-90) teardrop_2d(r=r, truncate=r, $fn=handleDFn);
+    rotate(90) teardrop(r, truncate=trunc, $fn=handleDFn);
+    rotate(-90) teardrop(r, truncate=r, $fn=handleDFn);
     if (handleTray) difference() {
-      rotate(-22.5) teardrop_2d(r=r, a=67.5, $fn=handleDFn);
+      rotate(-22.5) teardrop(r, a=67.5, $fn=handleDFn);
       rect([r*2+fudge2, -r-fudge], [0,1]);
       rotate(-45) rect([r*2+fudge2, -r-fudge], [0,1]);
     }
@@ -2279,14 +2279,11 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
 
   module handleCut(r, trunc) translate([r-dBase, 0]) rect([dLayerHN*2-trunc+dBase-r, gap], [1,0]);
 
-  module handleSweep(r, a, b, step) translate([0, 0, r]) {
-    if (handleElliptical) rotate(180) for (i=[0:step:180-step]) hull() {
-      translate([a*cos(i), b*sin(i), 0]) rotate([0, 90, atan2(b*cos(i), -a*sin(i))]) extrude(-fudge, scale=1-fudge/r) children();
-      translate([a*cos(i+step), b*sin(i+step), 0]) rotate([0, 90, atan2(b*cos(i+step), -a*sin(i+step))]) extrude(fudge, scale=1-fudge/r) children();
-    }
+  module handleSweep(a, b) {
+    if (handleElliptical) orbit(-180, rX=a, rY=b, fudge=fudge, $fn=handleRFn) rotate(-90) children();
     else {
-      if (handleR<b) flipX() translate([a, 0, 0]) tull([0, handleR-b, 0], flip=true) rotate([0, 90, 90]) extrude(fudge, scale=1-fudge/r) children();
-      translate([0, -b, 0]) tull([handleR*2-a*2, 0, 0], center=true, flip=true) rotate([0, 90, 0]) extrude(fudge, scale=1-fudge/4) children();
+      if (handleR<b) flipX() translate([a, 0, 0]) tull([0, handleR-b, 0], flip=true) rotate([0, 90, 90]) extrude(fudge, scale=1-fudge) children();
+      translate([0, -b, 0]) tull([handleR*2-a*2, 0, 0], center=true, flip=true) rotate([0, 90, 0]) extrude(fudge, scale=1-fudge) children();
       flipX() translate([handleR-a, handleR-b]) rotate_extrude(angle=90, $fn=handleRFn) translate([-handleR, 0]) rotate(-90) children();
     }
   }
@@ -2456,7 +2453,6 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       trunc = r*sqrt(2) - dWall2/2 + dLayerHN/2;
       a = faceX/2 - r;
       b = handleL - r;
-      step = 360/handleRFn;
       layers = dFloorH(r + trunc - dBase) / dLayerHN;
       // translate([0, -drawerY/2-(dubWall?0:gap)-dWall2-handleL-r, r]) rotate([0, 90, 0]) {
       //   color(solidGrey) extrude(fudge*1, center=true) handleOuter(r, trunc);
@@ -2466,18 +2462,18 @@ module drawer(x=1, h=1, divisions=false, drawFace=true) {
       difference() {
         translate([0, -drawerY/2-(dubWall?0:gap)-dWall2, 0]) {
           difference() {
-            handleSweep(r, a, b, step) handleOuter(r, trunc);
+            translate([0, 0, r]) handleSweep(a, b) handleOuter(r, trunc);
             translate([0, dWall2, -fudge]) {
               if (r*2-dWall2>handleL) box([faceX+fudge2, r*2-dWall2-handleL+fudge, h+fudge2], [0,1,1]);
               if (!handleElliptical && handleR-dWall2>b) box([faceX+fudge2, handleR-dWall2-b+fudge, h+fudge2], [0,1,1]);
             }
             if (drawCuts) {
               difference() {
-                handleSweep(r, a, b, step) handleInner(r, trunc);
+                translate([0, 0, r]) handleSweep(a, b) handleInner(r, trunc);
                 translate([0, dWall2, 0]) box([faceX, -gap-dWall2*2, r+trunc], [0,1,1]);
               }
               difference() {
-                handleSweep(r, a, b, step) handleCut(r, trunc);
+                translate([0, 0, r]) handleSweep(a, b) handleCut(r, trunc);
                 translate([0, dWall2, dBase]) for (i=[0:layers-3]) translate([0, 0, i*dLayerHN])
                   box([(a+r+fudge)*(mod(i, 2)==0?1:-1), -gap-dWall2*2, dLayerHN+fudge]);
               }
