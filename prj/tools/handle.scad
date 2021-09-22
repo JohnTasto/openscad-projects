@@ -18,7 +18,7 @@ thumbR2 = 14;
 thumbD = 1.5;
 thumbA = -12;
 
-flutings = 4;
+flutings = 5;
 flutingR = r;
 flutingD = 1.125;
 flutingTop = h;
@@ -40,5 +40,5 @@ difference() {
       }
       translate([0, -fudge]) rect([-r-fudge, h+fudge2]);
     }
-  ring(90, n=flutings) translate([r+flutingR-flutingD, 0, flutingBot]) tull([0, 0, flutingTop-flutingBot]) revolve() teardrop(flutingR);
+  ring(flutings) translate([r+flutingR-flutingD, 0, flutingBot]) tull([0, 0, flutingTop-flutingBot]) revolve() teardrop(flutingR);
 }

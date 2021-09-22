@@ -35,26 +35,18 @@ difference() {
       translate([0, 0, -1]) box([100-2*perimeters*line_width, 100-2*perimeters*line_width, height+2], [0,0,1]);
     }
     difference() {
-      ring(45, n=8) {
-        union() {
-          for (i=[1:steps]) {
-            translate([pinwheel(i), 0, 0]) box([pinwheel(i)-pinwheel(i-1), start+2*line_width*(i-1), height], [-1,1,1]);
-            translate([pinwheel(i), start+2*line_width*i, 0]) rotate(-45) box([2*line_width*sqrt(2), 2*line_width*sqrt(2), height], [1,-1,1]);
-          }
-        }
+      ring(8) for (i=[1:steps]) {
+        translate([pinwheel(i), 0, 0]) box([pinwheel(i)-pinwheel(i-1), start+2*line_width*(i-1), height], [-1,1,1]);
+        translate([pinwheel(i), start+2*line_width*i, 0]) rotate(-45) box([2*line_width*sqrt(2), 2*line_width*sqrt(2), height], [1,-1,1]);
       }
-      ring(90, n=4) {
-        translate([50, 0, -1]) box([75, 250, height+2], [1, 0, 1]);
-      }
+      ring(4) translate([50, 0, -1]) box([75, 250, height+2], [1, 0, 1]);
     }
-    ring(90, n=4) {
-      union () {
-        translate([50, 50, 0]) rotate(45) box([10, 10, height], [-1,0,1]);
-        difference() {
-          rotate(45) translate([50-perimeters*line_width, 0, 0]) box([25, 50, height], [1,0,1]);
-          translate([50, 0, -1]) box([50, 100, height+2], [1,1,1]);
-          translate([0, 50, -1]) box([100, 50, height+2], [1,1,1]);
-        }
+    ring(4) union () {
+      translate([50, 50, 0]) rotate(45) box([10, 10, height], [-1,0,1]);
+      difference() {
+        rotate(45) translate([50-perimeters*line_width, 0, 0]) box([25, 50, height], [1,0,1]);
+        translate([50, 0, -1]) box([50, 100, height+2], [1,1,1]);
+        translate([0, 50, -1]) box([100, 50, height+2], [1,1,1]);
       }
     }
   }

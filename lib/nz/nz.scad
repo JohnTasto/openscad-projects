@@ -273,8 +273,9 @@ module tull(v, center=false, flip=false) hull() {
 // n = -1  ..x...
 // n = -2  .xx...
 // n = -3  xxx...
-module ring(a, v, n, start, end) {
+module ring(n, a, v, start, end) {
   n = is_undef(n) ? $children : n;
+  a = is_undef(a) ? 360/n : a;
   start = is_undef(start) ? min(n, 0) : start;
   end = is_undef(end) ? max(n-1, -1) : end;
   if (n != 0 && $children > 0)

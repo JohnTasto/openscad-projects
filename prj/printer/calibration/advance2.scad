@@ -31,7 +31,7 @@ echo(str("Height: ", height));
 echo(str("Layers: ", step_layer(steps) + 1));
 echo("0: initial layer");
 
-module mark(depth) if (depth > 0) ring(90, n=4) translate([0, size/2, 0]) hull() flipX()
+module mark(depth) if (depth > 0) ring(4) translate([0, size/2, 0]) hull() flipX()
   translate([size/2, 0, 0]) rotate(45) spindle(0, r=depth*sqrt(2), p=depth, $fn=4);
 
 module advance() {
