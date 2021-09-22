@@ -2,37 +2,53 @@ use <nz/nz.scad>
 
 
 // print settings:
-//   top surface skin layers :  1
 //
-//   top and bottom concentric:
-//     top surface skin pattern:      concentric   (found under Experimental)
-//     bottom pattern initial layer:  concentric
-//   all layers concentric:
-//     top/bottom pattern:            concentric
+// Walls
+//   Wall Line Count                  half of what `wall` is set to here
+//   Minimum Wall Flow                >0
+//   z Seam Alignment                 User Specified
+//   z Seam Position                  Left or Right
+//   Seam Corner Preference           None
 //
-//   wall line count:                 as many as it takes to fix inCurable concentric glitches
-//   minimum wall flow:               >0
-//   z-seam position:                 right or left
-//   combing mode:                    not in skin
+// Top/Bottom
+//   Top Surface Skin Layers          1
+//   Top Layers:                      1
+//   Bottom Layers:                   above the base and below the snaps
+//   Top/Bottom Pattern:              Concentric
+//   Bottom Pattern Initial Layer     Concentric
+//   Skin Removal Width               at least as high as what `wall` is set to here
+//   Skin Expand Distance             0
+//
+// Infill
+//   Infill Line Distance             1000
+//   Infill X Offset                  500
+//   Extra Infill Wall Count          0
+//
+// Travel
+//   Combing Mode                     Not in Skin
+//
+// Experimental
+//   Top Surface Skin Pattern         Concentric
+//
 //
 // .stl files are numbered by $fn, amount to add to wall, and base
 //   Cura pukes on $fn=32 files
 //   `soap-lid-24-+1-4.stl` slices well
 
-ffn = 32;  // should be divisible by 8
-cfn = 128;
-// ffn = 16;  // should be divisible by 8
-// cfn = 32;
 
-fudge = 0.01;
+ffn = $preview ? 16 :  32;  // should be divisible by 8
+cfn = $preview ? 32 : 128;  // anything greather than ~128 causes weird patterns in Cura
+
+fudge  = 0.01;
 fudge2 = 0.02;
-slop = 0.15;
+slop   = 0.15;
+slack  = 0.25;
 
-lineW = 0.4;
-hExpand0 = -0.1;
+lineW    =  0.6;//0.4;
+hExpand0 = -0.15;//-0.10;
 
-layerH0 = 0.32;
-layerHN = 0.2;
+layerH0 = 0.44;//0.32;
+layerHN = 0.28;//0.2;
 
 function h(l) = layer_relative_height(l, layerHN);
 function z(l) = layer_absolute_height(l, layerHN, layerH0);
@@ -43,30 +59,39 @@ function floorZ(z) = floor_absolute_height_layer(z, layerHN, layerH0);
 function  ceilZ(z) =  ceil_absolute_height_layer(z, layerHN, layerH0);
 function roundZ(z) = round_absolute_height_layer(z, layerHN, layerH0);
 
-// size = [136.1, 109.45, 10];   // 133.35-135.7 (2.35)  x  107.75-109.05 (1.3)
-// size = [137.1, 110.45, 6];   // 133.35-135.7 (2.35)  x  107.75-109.05 (1.3)
-// size = [138.0, 111.5, 6];   // 133.35-135.7 (2.35)  x  107.75-109.05 (1.3)
-size = [138.0, 111.0, roundH(6)];   // 133.35-135.7 (2.35)  x  107.75-109.05 (1.3)
+// 133.35-135.7 (2.35)  x  107.75-109.05 (1.3)
+// size = [136.1, 109.45, 10];
+// size = [137.1, 110.45, 6];
+// size = [138.0, 111.5, 6];
+// size = [138.0, 111.0, roundH(6)];
+// size = [137.25, 111.75, roundH(6)];
+// size = [136.25, 110.75, roundH(6)];
+// size = [136.25, 110.75, roundH(6+2)];
+// size = [137.50, 109.75, roundH(5.5)];
+size = [137.75, 109.75, roundH(6.0)];
 
-// snap = [3.125, 2.6];   // 1.75-2 (1.75 mostly)  x  1.25x-2 (1.5 mostly)
-// snap = [2.0625, 1.8];   // 1.75-2 (1.75 mostly)  x  1.25x-2 (1.5 mostly)
-// snap = [2.0, 1.8];   // 1.75-2 (1.75 mostly)  x  1.25x-2 (1.5 mostly)
-snap = [2.0, 2.0];   // 1.75-2 (1.75 mostly)  x  1.25x-2 (1.5 mostly)
-snapOffset = take(2, size)/2;
+// 1.75-2 (1.75 mostly)  x  1.25x-2 (1.5 mostly)
+// snap = [3.125, 2.6];
+// snap = [2.0625, 1.8];
+// snap = [2.0, 1.8];
+// snap = [2.0, 2.0];
+// snap = [1.5, 1.5];
+snap = [1.5, 0.75];
+snapRatio = [1/4, 1/4];
 
-wall = lineW*4;
+wall     = lineW*2;
+baseWall = lineW*5;
 
-base = z(4);
+base = z(6);
 lipR = 1.5;
+wallR = 4.5;//5.75;
 
-wallR = 4.5;
-
-minWall = lineW*2;
-grooveW = wall + slop*2;
+minWall = lineW;//*2;
+grooveW = wall + slack*2;
 
 grooveCurveH = grooveW/2*sqrt(2)/2;
 grooveFlatH = grooveW/2*sqrt(2)/2;
-grooveD = grooveFlatH + grooveCurveH + .75;
+grooveD = grooveFlatH + grooveCurveH - 0;//layerHN*1;
 
 grooveH = grooveD - grooveCurveH - grooveFlatH;
 
@@ -97,7 +122,7 @@ module ovalateY(extra=0) scale([ovalateY(extra), 1, 1]) children();
 difference() {
   union() {
     // base
-    ovalateX(wall*2+lipW*2-lipR*2) rod(base, d=size.x+wall*2+lipW*2-lipR*2, $fn=cfn);
+    ovalateX(wall*2) rod(base, d=size.x+wall*2, $fn=cfn);
     // wall
     orbit(dX=size.x+wall, dY=size.y+wall, translate=[0, base+size.z+max(snap)], $fn=cfn) union() {
       rect([wall, base+size.z+max(snap)], [0,-1]);
@@ -119,11 +144,11 @@ difference() {
         ]);
     }
     // inner minimum wall (make sure container will still fit!)
-    orbit(dX=size.x+wall, dY=size.y+wall, translate=[0, grooveH], $fn=cfn) {
+    orbit(dX=size.x+wall, dY=size.y+wall, $fn=cfn) {
       polygon(
-        [ [        0                           ,  grooveW/2*sqrt(2)+minWall ]  // top diagonal
-        , [        0                           , -grooveH                   ]  // corner
-        , [ -grooveW*sqrt(2)/2-grooveH-minWall , -grooveH                   ]  // bottom diagonal
+        [ [        0                            , grooveW/2*sqrt(2)+grooveH+baseWall ]  // top diagonal
+        , [        0                            ,       0                            ]  // corner
+        , [ -grooveW*sqrt(2)/2-grooveH-baseWall ,       0                            ]  // bottom diagonal
         ]
       );
     }
@@ -149,16 +174,18 @@ difference() {
 
 // outer wall fillet
 difference() {
-  orbit(dX=size.x+wall, dY=size.y+wall, translate=[wall/2, lipR*sqrt(2)+lipW + wallR*sqrt(2)-wallR], $fn=cfn)
+  orbit(dX=size.x+wall, dY=size.y+wall, translate=[wall/2, lipR*sqrt(2)+lipW+wallR*(sqrt(2)-1)], $fn=cfn)
     translate([-fudge, 0]) rect([wallR*(1-sqrt(2)/2)+fudge, wallR*sqrt(2)/2], [1,-1]);
-  orbit(dX=size.x+wall, dY=size.y+wall, translate=[wall/2+wallR/2, lipR*sqrt(2)+lipW + wallR*sqrt(2)-wallR], $fn=cfn)
-    translate([wallR/2, 0]) arc(wallR, [135, 225]);
+  orbit(dX=size.x+wall, dY=size.y+wall, translate=[wall/2+wallR/2, lipR*sqrt(2)+lipW+wallR*(sqrt(2)-1)], $fn=cfn)
+    translate([wallR/2, 0]) arc(wallR, [135, 225], $fn=ffn*2);
 }
 
 flipX() intersection() {
-  translate([-snapOffset.x, 0, 0])
-    ovalateX(wall-snap.x*2) rotate(-22.5) rotate_extrude(angle=45, $fn=cfn*2)
-      translate([snapOffset.x+size.x/2+wall/2-snap.x, base+size.z]) {
+  translate([-size.x*snapRatio.x, 0, 0])
+    // ovalateX(wall-snap.x*2) rotate(-22.5) rotate_extrude(angle=45, $fn=cfn*2)
+    ovalateX(wall-snap.x*2) rotate(180) rotate_extrude($fn=cfn*(1+snapRatio.x*2))
+      // translate([size.x*snapRatio.x+size.x/2+wall/2-snap.x, base+size.z]) {
+      translate([size.x*(snapRatio.x+0.5)+wall/2-snap.x, base+size.z]) {
         circle(wall/2, $fn=ffn);
         polygon(
           [ [-wall/2*sqrt(2)/2,  wall/2*sqrt(2)/2     ]
@@ -171,9 +198,11 @@ flipX() intersection() {
 }
 
 flipY() intersection() {
-  translate([0, -snapOffset.y, 0])
-    ovalateY(wall-snap.y*2) rotate(67.5) rotate_extrude(angle=45, $fn=cfn*2)
-      translate([snapOffset.y+size.y/2+wall/2-snap.y, base+size.z]) {
+  translate([0, -size.y*snapRatio.y, 0])
+    // ovalateY(wall-snap.y*2) rotate(67.5) rotate_extrude(angle=45, $fn=cfn*2)
+    ovalateY(wall-snap.y*2) rotate(-90) rotate_extrude($fn=cfn*(1+snapRatio.y*2))
+      // translate([size.y*snapRatio.y+size.y/2+wall/2-snap.y, base+size.z]) {
+      translate([size.y*(snapRatio.y+0.5)+wall/2-snap.y, base+size.z]) {
         circle(wall/2, $fn=ffn);
         polygon(
           [ [-wall/2*sqrt(2)/2,  wall/2*sqrt(2)/2     ]
