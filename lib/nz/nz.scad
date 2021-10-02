@@ -12,9 +12,12 @@ function tap(x, msg="") = let(_ = [for (i = [1:1]) if ($_debug) echo(str(msg, ":
 module noop() {}
 
 
-/*********/
-/* tests */
-/*********/
+/******************/
+/* floating point */
+/******************/
+
+num_min = -1.79769313486231585574870450727757997810840606689453125*1e308;
+num_max =  1.79769313486231585574870450727757997810840606689453125*1e308;
 
 epsilon = 0.01;
 
@@ -27,6 +30,31 @@ function epsilon_equals(u, v, e=epsilon, i=0) = is_num(u) && is_num(v)
     ? true
     : abs(u[i] - v[i]) <= e && epsilon_equals(u, v, e, i+1)
   : false;
+
+// find a solution (x intercept) for `f` using binary search
+// limit recursion depth using one or more of:
+//   - `delta`   - tolerance of the independent variable
+//   - `epsilon` - tolerance of the dependent variable
+//   - `depth`   - strict recursion limit
+// `f` must be monotonically increasing between `min` and `max`
+// newton's method and related are faster but require knowing the derivatives of `f`
+function solve(f, min=num_min, max=num_max, delta, epsilon, depth) =
+  assert(is_function(f))
+  assert(is_num(min) && is_num(max) && min <= max)
+  assert(is_undef(delta)   || is_num(delta))
+  assert(is_undef(epsilon) || is_num(epsilon))
+  assert(is_undef(depth)   || is_num(depth) && depth >= 0)
+  let ( x = (min + max)/2, y = f(x) )
+  assert(is_num(y))
+  is_num(delta)   && max-min <= abs(delta)   ? x :
+  is_num(epsilon) && abs(y)  <= abs(epsilon) ? x :
+  is_num(depth)   && depth   == 0            ? x :
+  y > 0 ? solve(f, min, x, delta, epsilon, is_num(depth) ? depth-1 : undef) :
+  y < 0 ? solve(f, x, max, delta, epsilon, is_num(depth) ? depth-1 : undef) :
+          x;
+
+// // example:
+// echo(solve(function (x) x^3 - 5, -100, 100, epsilon=0.01));
 
 
 /********************/
@@ -71,6 +99,13 @@ function interleave(xs, ys) = let (l = min(len(xs), len(ys)))
 
 function sum(xs) = len(xs) > 0 ? xs * [for (_ = xs) 1] : 0;
 
+
+/**************/
+/* type tests */
+/**************/
+
+function is_def(x) = !is_undef(x);
+function is_nan(x) = x != x;
 
 function is_len   (n,    xs) = assert(is_num(n))                        is_list(xs) && len(xs) == n;
 function is_of    (   f, xs) =                   assert(is_function(f)) is_list(xs)                 && all(f, xs);
@@ -209,34 +244,36 @@ function shear(zX=0, zY=0, yZ=0, yX=0, xY=0, xZ=0, z, y, x) = let
   , [xy,  1, zy]
   , [xz, yz,  1] ]);
 
-// function multmatrices(ms, i=0, prod=identity(4)) = i >= len(ms) ? prod : multmatrices(ms, i+1, prod*ms[i]);
-
+// multiply an array of matrices together, from index start to index end if given
 function multmatrices(ms, prod=identity(4), start=0, end=undef)
   = start >= len(ms) || (is_num(end) && start >= end) ? prod
   : multmatrices(ms, prod*ms[start], start+1, end);
 
-// // this doesn't actually allow memoization
+// old
+// function multmatrices(ms, i=0, prod=identity(4)) = i >= len(ms) ? prod : multmatrices(ms, i+1, prod*ms[i]);
+
+// // memoization attempt (doesn't work)
 // // is memoization even compatible with tail recursion?
 // function _multmatrices(ms, prod, start, end)
 //   = start >= end ? prod
 //   : _multmatrices(ms, ms[end-1]*prod, start, end-1);
 // function multmatrices(ms, prod=identity(4), start=0, end=undef) = _multmatrices(ms, prod, start, is_num(end)?end:len(ms));
 
-// translate([-20,0,0])
-// rotate([0,30,0])
-// translate([0,0,5])
-// rotate([30,0,0])
-// box([5,5,5],[0,0,0]);
-
-// translate([0,0,0])
-// multmatrix(rotate([0,30,0]) * translate([0,0,5]) * rotate([30,0,0]))
-// box([5,5,5],[0,0,0]);
-
-// translate([20,0,0])
-// multmatrix(multmatrices([rotate([0,30,0]), translate([0,0,5]), rotate([30,0,0])]))
-// box([5,5,5],[0,0,0]);
-
-// echo(multmatrices(replicate(999999, identity(4))));
+// // example:
+// rot1   = [ 30,  0,  0 ];
+// tran   = [  0,  0,  5 ];
+// rot2   = [  0, 30,  0 ];
+// size   = [  5,  5,  5 ];
+// center = [  0,  0,  0 ];
+// translate([-10, 0, 0])
+//   rotate(rot2) translate(tran) rotate(rot1)
+//     box(size, center);
+// translate([0, 0, 0])
+//   multmatrix(rotate(rot2) * translate(tran) * rotate(rot1))
+//     box(size, center);
+// translate([10, 0, 0])
+//   multmatrix(multmatrices([rotate(rot2), translate(tran), rotate(rot1)]))
+//     box(size, center);
 
 
 /*******************/
@@ -357,15 +394,15 @@ module arc(r=1, a=360, d, segments, outer=false) {
   if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
   if (!is_undef(outer))    assert(is_bool(outer));
   A = is_list(a) ? a[0] : 0;
-  L = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
-  if (L != 0) {
+  arcL = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
+  if (arcL != 0) {
     r = is_num(d) ? d/2 : r;
     fn = fragments(r);
-    segs = floor(is_num(segments) ? segments : max(1, abs(L)*fn/360));
-    segA = L / segs;
-    R = outer ? circumgoncircumradius(r, segments=segs*360/L) : r;
+    segs = floor(is_num(segments) ? segments : max(1, abs(arcL)*fn/360));
+    segA = arcL / segs;
+    R = outer ? circumgoncircumradius(r, segments=segs*360/arcL) : r;
     polygon(concat
-      ( abs(L) == 360 ? [] : [ [0, 0] ]
+      ( abs(arcL) == 360 ? [] : [ [0, 0] ]
       , [ for (i = [0 : segs]) [R*cos(segA*i+A), R*sin(segA*i+A)] ]
       ));
   }
@@ -380,7 +417,7 @@ module arc(r=1, a=360, d, segments, outer=false) {
 // TODO: typecheck parameters
 // TODO: allow a 2-digit number for align (save 5 characters potentially)
 module rect(size=[1,1], align=[1,1], r=0) {
-  if (r==0) scale(size) translate(signum(align)/2-[.5,.5]) square();
+  if (r==0) { if (all(function (x) x!=0, size)) scale(size) translate(signum(align)/2-[.5,.5]) square(); }
   else {
     translate([align.x*r, 0]) rect(size-[r*2, 0], align);
     translate([0, align.y*r]) rect(size-[0, r*2], align);
@@ -448,7 +485,7 @@ module ball(r=1, d) {
 // TODO: typecheck parameters
 // TODO: allow a 3-digit number for align (save 7 characters potentially)
 module box(size=[1,1,1], align=[1,1,1], r=0)
-  if (r==0) scale(size) translate(signum(align)/2-[.5,.5,.5]) cube();
+  if (r==0) { if (all(function (x) x!=0, size)) scale(size) translate(signum(align)/2-[.5,.5,.5]) cube(); }
   else {
     translate([0, 0, align.z*size.z/2]) rotate([  0,  0, 0]) extrude(size.z-r*2, center=true) rect([size.x, size.y], [align.x, align.y], r);
     translate([0, align.y*size.y/2, 0]) rotate([ 90,  0, 0]) extrude(size.y-r*2, center=true) rect([size.x, size.z], [align.x, align.z], r);
@@ -616,26 +653,26 @@ module orbit(a=360, r=1, d, rX, rY, dX, dY, segments, translate=[0,0], fudge) {
                            assert(is_len_nums(2, translate));
   if (!is_undef(fudge))    assert(is_len_nums(2, fudge) || is_num(fudge));
   A = is_list(a) ? a[0] : 0;
-  L = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
-  fDef = signum(L)/100;
-  f = is_list(fudge) ? [max(0, fudge[0]), max(0, fudge[1])]*signum(L)
-    : is_num(fudge)  ? [max(0, fudge   ), max(0, fudge   )]*signum(L)
+  arcL = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
+  fDef = signum(arcL)/100;
+  f = is_list(fudge) ? [max(0, fudge[0]), max(0, fudge[1])]*signum(arcL)
+    : is_num(fudge)  ? [max(0, fudge   ), max(0, fudge   )]*signum(arcL)
     :                  [    0           ,     0           ];
   fBeg = f[0] != 0;
   fEnd = f[1] != 0;
-  if (L != 0 && $children > 0) {
+  if (arcL != 0 && $children > 0) {
     RX = is_num(rX) ? rX : is_num(dX) ? dX/2 : is_num(d) ? d/2 : r;
     RY = is_num(rY) ? rY : is_num(dY) ? dY/2 : is_num(d) ? d/2 : r;
     fn = fragments(max(RX, RY));
-    segs = floor(is_num(segments) ? segments : max(1, abs(L)*fn/360));
-    segA = L / segs;
+    segs = floor(is_num(segments) ? segments : max(1, abs(arcL)*fn/360));
+    segA = arcL / segs;
     for (i = [0 : segs-1]) for (j = [0 : $children-1]) {
       s = sin(A+segA*i     );
       c = cos(A+segA*i     );
       S = sin(A+segA*i+segA);
       C = cos(A+segA*i+segA);
-      beg = abs(L) != 360 && i == 0;
-      end = abs(L) != 360 && i == segs-1;
+      beg = abs(arcL) != 360 && i == 0;
+      end = abs(arcL) != 360 && i == segs-1;
       hull() {
         translate([RX*c, RY*s, 0]) rotate([90, 0, atan2(RY*c, -RX*s)-90]) translate(translate) extrude(fDef*(beg && !fBeg ? -1 :  1), scale=0) children(j);
         translate([RX*C, RY*S, 0]) rotate([90, 0, atan2(RY*C, -RX*S)-90]) translate(translate) extrude(fDef*(end && !fEnd ?  1 : -1), scale=0) children(j);
@@ -646,7 +683,7 @@ module orbit(a=360, r=1, d, rX, rY, dX, dY, segments, translate=[0,0], fudge) {
   }
 }
 
-// // example:
+// // examples:
 // orbit(a=[0, 90], rX=50, rY=100, translate=[20,10], fudge=[1, 1], $fn=36) teardrop(5, $fn=16);
 // orbit(a=[30, -270], rX=50, rY=100, fudge=[50, 1], $fn=32) teardrop(5, $fn=16);
 
@@ -666,12 +703,12 @@ module hull_rotate_extrude(a=360, r, d, segments) {
   if (!is_undef(segments)) assert(is_num(segments) && segments >= 1);
   assert(!is_undef(r) || !is_undef(d) || !is_undef(segments) || $fn > 0);
   A = is_list(a) ? a[0] : 0;
-  L = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
-  if (L != 0 && $children > 0) {
+  arcL = clamp(is_list(a) ? a[1]-a[0] : a, -360, 360);
+  if (arcL != 0 && $children > 0) {
     r = is_num(d) ? d/2 : r;
     fn = fragments(r);
-    segs = floor(is_num(segments) ? segments : max(1, abs(L)*fn/360));
-    segA = L / segs;
+    segs = floor(is_num(segments) ? segments : max(1, abs(arcL)*fn/360));
+    segA = arcL / segs;
     for (i = [0 : segs-1]) for (j = [0 : $children-1]) hull() {
       rotate(A+segA*(i  )) children(j);
       rotate(A+segA*(i+1)) children(j);
